@@ -1,21 +1,17 @@
-Deploying Container-native Storage
-==================================
-
 !!! Summary "Overview"
-    In this section you will set up container-native storage (CNS) in your OpenShift environment. You will use this to dynamically provision storage to be available to workloads in OpenShift. It is provided by GlusterFS running in containers. GlusterFS in turn is backed by local storage available to the OpenShift nodes.
+    In this module you will set up container-native storage (CNS) in your OpenShift environment. You will use this to dynamically provision storage to be available to workloads in OpenShift. It is provided by GlusterFS running in containers. GlusterFS in turn is backed by local storage available to the OpenShift nodes.
 
     At the end of this module you will have 3 GlusterFS pods running together with the heketi API frontend properly integrated into OpenShift.
-
-!!! Caution
-    All of the following tasks are carried out as the ec2-user from the master node. For Copy & Paste convenience we will omit the shell prompt unless necessary.
-
-    All files created can be stored in root’s home directory unless a particular path is specified.
-
 
 &#x3009;Make sure you are logged on as the `ec2-user` to the master node:
 
     [ec2-user@master ~]$ hostname -f
     master.lab
+
+!!! Caution
+    All of the following tasks are carried out as the ec2-user from the master node. For Copy & Paste convenience we will omit the shell prompt unless necessary.
+
+    All files created can be stored in root’s home directory unless a particular path is specified.
 
 &#x3009;First install the CNS deployment tool:
 
@@ -111,10 +107,9 @@ Your output should look like this.
     node2.example.com          : ok=3    changed=2    unreachable=0    failed=0
     node3.example.com          : ok=3    changed=2    unreachable=0    failed=0
 
+With this we checked the requirement for additional firewall ports to be opened on the OpenShift app nodes.
 
 ---
-
-With this we checked the requirement for additional firewall ports to be opened on the OpenShift app nodes.
 
 Prepare OpenShift for CNS
 -------------------------
