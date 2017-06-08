@@ -1,252 +1,232 @@
+!!! Summary "Overview"
+    In this module you will use CNS as a developer would do in OpenShift. For that purpose you will dynamically provision storage both in standalone fashion and in context of an application deployment.
+
+    At the end of this module you will have two application stacks running that consume persistent storage provided by CNS.
+
 Creating a StorageClass
-------------------------
+-----------------------
 
-OpenShift uses Kubernetes' PersistentStorage facility to dynamically allocate storage for applications. This is a fairly simple framework in which only 3 components exists: the storage provider, the storage volume and the request for a storage volume.
+OpenShift uses Kubernetes' PersistentStorage facility to dynamically allocate storage of any kind for applications. This is a fairly simple framework in which only 3 components exists: the storage provider, the storage volume and the request for a storage volume.
 
-![OpenShift Storage Lifecycle](cns_diagram_pvc.svg)
+[![OpenShift Storage Lifecycle](img/cns_diagram_pvc.svg)](img/cns_diagram_pvc.svg)
 
-OpenShift knows non-ephemeral storage as "persistent" volumes. This is storage that is decoupled from pod lifecycles. Users can request such storage by submitting a **PersistentVolumeClaim** to the system, which carries aspects like desired capacity or access mode (shared, single, read-only).+ A storage provider in the system is represented by a **StorageClass** and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  
-The storage is represented in OpenShift as a **PersistentVolume** which can directly be used by pods to mount it.
+OpenShift knows non-ephemeral storage as "persistent" volumes. This is storage that is decoupled from pod lifecycles. Users can request such storage by submitting a *PersistentVolumeClaim* to the system, which carries aspects like desired capacity or access mode (shared, single, read-only).
+
+A storage provider in the system is represented by a *StorageClass* and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  
+
+The storage is represented in OpenShift as a *PersistentVolume* which can directly be used by pods to mount it.
 
 With these basics defined we can configure our system for CNS. First we will set up the credentials for CNS in OpenShift.
 
-Create an encoded value for the CNS admin user like below:
+&#x3009;Create an encoded value for the CNS admin user like below:
 
-    [root@master ~]# echo -n "myS3cr3tpassw0rd" | base64
+    echo -n "myS3cr3tpassw0rd" | base64
+
+The encoded string looks like this:
+
     bXlTM2NyM3RwYXNzdzByZA==
 
-We will store this encoded value in an OpenShift secret. Create a file called `cns-secret.yml` as per below:
+We will store this encoded value in an OpenShift secret.
 
-**cns-secret.yml.**
+&#x3009;Create a file called `cns-secret.yml` with the as per below (highlight shows where to put encoded password):
 
-    apiVersion: v1
-    kind: Secret
-    metadata:
-      name: cns-secret
-      namespace: default
-    data:
-      key: bXlTM2NyM3RwYXNzdzByZA==
-    type: kubernetes.io/glusterfs
+<kbd>cns-secret.yml:</kbd>
 
--   *key* contains base64-encoded version of *myS3cr3tpassw0rd*
+```yaml hl_lines="7"
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cns-secret
+  namespace: default
+data:
+  key: bXlTM2NyM3RwYXNzdzByZA==
+type: kubernetes.io/glusterfs
+```
 
 Create the secret in OpenShift with the following command:
 
-    [root@master ~]# oc create -f cns-secret.yml
+&#x3009;oc create -f cns-secret.yml
 
 To represent CNS as a storage provider in the system you first have to create a StorageClass. Define by creating a file called `cns-storageclass.yml` which references the secret and the heketi URL shown earlier with the contents as below:
 
-**cns-storageclass.yml.**
+<kbd>cns-storageclass.yml:</kbd>
+```yaml
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: container-native-storage
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/glusterfs
+parameters:
+  resturl: "http://heketi-container-native-storage.cloudapps.example.com"
+  restauthenabled: "true"
+  restuser: "admin"
+  volumetype: "replicate:3"
+  secretNamespace: "default"
+  secretName: "cns-secret"
+```
 
-    apiVersion: storage.k8s.io/v1beta1
-    kind: StorageClass
-    metadata:
-      name: container-native-storage
-      annotations:
-        storageclass.beta.kubernetes.io/is-default-class: "true"
-    provisioner: kubernetes.io/glusterfs
-    parameters:
-      resturl: "http://heketi-container-native-storage.cloudapps.example.com"
-      restauthenabled: "true"
-      restuser: "admin"
-      volumetype: "replicate:3"
-      secretNamespace: "default"
-      secretName: "cns-secret"
+&#x3009;Create the StorageClass in OpenShift with the following command:
 
-Create the StorageClass in OpenShift with the following command:
-
-    [root@master ~]# oc create -f cns-storageclass.yml
+    oc create -f cns-storageclass.yml
 
 With these components in place the system is ready to dynamically provision storage capacity from Container-native Storage.
 
-### Requesting Storage
+---
+
+Requesting Storage
+------------------
 
 To get storage provisioned as a user you have to "claim" storage. The *PersistentVolumeClaim* (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.  
 Also the access mode is set here, where *ReadWriteOnce* allows one container at a time to mount this storage.
 
-Create a claim by specifying a file called `cns-pvc.yml` with the following contents:
+&#x3009;Create a claim by specifying a file called `cns-pvc.yml` with the following contents:
 
-**cns-pvc.yml.**
-
-    kind: PersistentVolumeClaim
-    apiVersion: v1
-    metadata:
-      name: my-container-storage
-      annotations:
-        volume.beta.kubernetes.io/storage-class: container-native-storage
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
-
+<kbd>cns-pvc.yml:</kbd>
+```yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: my-container-storage
+  annotations:
+    volume.beta.kubernetes.io/storage-class: container-native-storage
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+```
 With above PVC we are requesting 10 GiB of non-shared storage. Instead of *ReadWriteOnce* you could also have specified *ReadWriteOnly* (for read-only) and *ReadWriteMany* (for shared storage).
 
-Submit the PVC to the system like so:
+&#x3009;Submit the PVC to the system like so:
 
-    [root@master ~]# oc create -f cns-pvc.yml
-    persistentvolumeclaim "my-container-storage" created
+    oc create -f cns-pvc.yml
 
-Look at the requests state with the following command:
+&#x3009;Look at the requests state with the following command:
 
-    [root@master ~]# oc get pvc
+    oc get pvc
+
+You should see the PVC listed and in *Bound* state.
+
     NAME                   STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
     my-container-storage   Bound     pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8   10Gi       RWO           16s
 
-> **Note**
->
-> It may take up to 15 seconds for the claim to be in **bound**.
+!!! Note
+    It may take a couple seconds for the claim to be in **bound**.
 
-> **Caution**
->
-> If the PVC is stuck in *PENDING* state you will need to investigate. Run `oc describe pvc/my-container-storage` to see a more detailed explanation. Typically there are two root causes - the StorageClass is not properly setup (wrong name, wrong credentials, incorrect secret name, wrong heketi URL, heketi service not up, heketi pod not up…) or the PVC is malformed (wrong StorageClass, name already taken …)
+!!! Caution
+    If the PVC is stuck in *PENDING* state you will need to investigate. Run `oc describe pvc/my-container-storage` to see a more detailed explanation. Typically there are two root causes - the StorageClass is not properly setup (wrong name, wrong credentials, incorrect secret name, wrong heketi URL, heketi service not up, heketi pod not up…) or the PVC is malformed (wrong StorageClass, name already taken …)
 
-> **Tip**
->
-> You can also do this step with the UI. If you like you can switch to an arbitrary project you have access to and go to the "Storage" tab. Select "Create" storage and make selections accordingly to the PVC described before.
+!!! Tip
+    You can also do this step with the UI. If you like you can switch to an arbitrary project you have access to and go to the "Storage" tab. Select "Create" storage and make selections accordingly to the PVC described before.
 
-When the claim was fulfilled successfully it is in the **Bound** state. That means the system has successfully (via the StorageClass) reached out to the storage backend (in our case GlusterFS). The backend in turn provisioned the storage and provided a handle back OpenShift. In OpenShift the provisioned storage is then represented by a *PersistentVolume* (PV) which is *bound* to the PVC.  
-Look at the PVC for these details:
+When the claim was fulfilled successfully it is in the *Bound* state. That means the system has successfully (via the StorageClass) reached out to the storage backend (in our case GlusterFS). The backend in turn provisioned the storage and provided a handle back OpenShift. In OpenShift the provisioned storage is then represented by a *PersistentVolume* (PV) which is *bound* to the PVC.
 
-    [root@master ~]# oc describe pvc/my-container-storage
-    Name:           my-container-storage
-    Namespace:      container-native-storage
-    StorageClass:   container-native-storage
-    Status:         Bound
-    Volume:         pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
-    Labels:         <none>
-    Capacity:       10Gi
-    Access Modes:   RWO
-    No events.
+&#x3009;Look at the PVC for these details:
 
--   The StorageClass against which the PVC was submitted.
+    oc describe pvc/my-container-storage
 
--   The name of PV that has been created.
+The details of the PVC show against which *StorageClass* it has been submitted and the name of the *PersistentVolume* which was generated to fulfill the claim.
 
-> **Note**
->
-> The PV name will be different in your environment since it’s automatically generated.
+``` hl_lines="1 5"
+Name:           my-container-storage
+Namespace:      container-native-storage
+StorageClass:   container-native-storage
+Status:         Bound
+Volume:         pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
+Labels:         <none>
+Capacity:       10Gi
+Access Modes:   RWO
+No events.
+```
 
-Let’s look at the corresponding PV by it’s name:
+!!! Note
+    The PV name will be different in your environment since it’s automatically generated.
 
-    [root@master ~]# oc describe pv/pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
-    Name:           pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
-    Labels:         <none>
-    StorageClass:   container-native-storage
-    Status:         Bound
-    Claim:          container-native-storage/my-container-storage
-    Reclaim Policy: Delete
-    Access Modes:   RWO
-    Capacity:       10Gi
-    Message:
-    Source:
-        Type:               Glusterfs (a Glusterfs mount on the host that shares a pod's lifetime)
-        EndpointsName:      glusterfs-dynamic-my-container-storage
-        Path:               vol_304670f0d50bf5aa4717a69652bd48ff
-        ReadOnly:           false
-    No events.
+&#x3009;Look at the corresponding PV by it’s name:
 
--   The StorageClass which provisioned this PV.
+    oc describe pv/pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
 
--   The claim that initiated the provisioning.
+The output shows several interesting things, like the access mode (RWO = ReadWriteOnce), the reclaim policy (what happens when the PV object gets deleted), the capacity and the type of storage backing this PV (in our case GlusterFS as part of CNS):
 
--   What happens to the storage when the PV object is deleted: here it’s deleted as well.
+``` hl_lines="4 5 6 7 8 11"
+Name:           pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
+Labels:         <none>
+StorageClass:   container-native-storage
+Status:         Bound
+Claim:          container-native-storage/my-container-storage
+Reclaim Policy: Delete
+Access Modes:   RWO
+Capacity:       10Gi
+Message:
+Source:
+    Type:               Glusterfs (a Glusterfs mount on the host that shares a pod's lifetime)
+    EndpointsName:      glusterfs-dynamic-my-container-storage
+    Path:               vol_304670f0d50bf5aa4717a69652bd48ff
+    ReadOnly:           false
+No events.
+```
 
--   The desired access mode. RWO = ReadWriteOnce.
-
--   The capacity of the provisioned storage.
-
--   The type of storage: in our case GlusterFS as part of CNS.
-
-> **Tip**
->
-> Note that in earlier documentation you may also find references about administrators actually **pre-provisioning** PVs. Later PVCs would "pick up" a suitable PV by looking at it’s capacity. This was needed for storage like NFS that does not have an API and therefore does not support **dynamic provisioning**.  
-> This kind of storage should not be used anymore as it requires manual intervention, risky capacity planning and incurs inefficient storage utilization.
+!!! Tip
+    Note that in earlier documentation you may also find references about administrators actually **pre-provisioning** PVs. Later PVCs would "pick up" a suitable PV by looking at it’s capacity. This was needed for storage like NFS that does not have an API and therefore does not support **dynamic provisioning**. Hence it's called *static provisioning*.
+    This kind of storage should not be used anymore as it requires manual intervention, risky capacity planning and incurs inefficient storage utilization.
 
 Let’s release this storage capacity again, since it’s in the wrong namespace anyway.  
 Storage is freed up by deleting the **PVC**. The PVC controls the lifecycle of the storage, not the PV.
 
-> **Important**
->
-> Never delete PVs that are dynamically provided. They are only handles for pods mounting the storage. Storage lifecycle is entirely controlled via PVCs.
+!!! Caution "Important"
+    Never delete PVs that are dynamically provided. They are only handles for pods mounting the storage. Storage lifecycle is entirely controlled via PVCs.
 
-Delete the storage by deleting the PVC like this:
+&#x3009;Delete the storage by deleting the PVC like this:
 
-    [root@master ~]# oc delete pvc/my-container-storage
+    oc delete pvc/my-container-storage
 
-### Using non-shared storage for databases
+---
+
+Using non-shared storage for databases
+--------------------------------------
 
 Normally a user doesn’t request storage with a PVC directly. Rather the PVC is integrated in a larger template that describe the entire application. Such examples ship with OpenShift out of the box.
 
-> **Tip**
->
-> The following steps can again also be done with the UI. For this purpose follow these steps:
+!!! Tip:
+    The steps described in this section can again also be done with the UI. For this purpose follow these steps:
 
-1.  Log on to a project you have access to and quota available
+> 1.  Log on to a project you have access to and quota available
 
-2.  next to the project’s name select *Add to project*
+> 2.  next to the project’s name select *Add to project*
 
-3.  In the *Browse Catalog* view select *Ruby* from the list of programming languages
+> 3.  In the *Browse Catalog* view select *Ruby* from the list of programming languages
 
-4.  Select the example app entitled *Rails + PostgreSQL (Persistent)*
+> 4.  Select the example app entitled *Rails + PostgreSQL (Persistent)*
 
-5.  Optionally change the *Volume Capacity* parameter to something greater than 1GiB, e.g. 15 GiB
+> 5.  Optionally change the *Volume Capacity* parameter to something greater than 1GiB, e.g. 15 GiB
 
-6.  Select *Create* to start deploying the app
+> 6.  Select *Create* to start deploying the app
 
-7.  Select *Continue to Overview* in the confirmation screen
+> 7.  Select *Continue to Overview* in the confirmation screen
 
-8.  Back on the overview page select the deploymentconfig *postgresql*
+> 8.  Back on the overview page select the deploymentconfig *postgresql*
 
-9.  On the following page select *Actions* &gt; *Edit Health Checks*
+> 9.  On the following page select *Actions* &gt; *Edit Health Checks*
 
-10. In the settings menu change the *Initial Delay* values for both *Readiness Probe* and *Liveliness Probe* to 180 seconds
+> 10. In the settings menu change the *Initial Delay* values for both *Readiness Probe* and *Liveliness Probe* to 180 seconds
 
-Log on to the system as `marina` und create a project with an arbitrary name.
+&#x3009;Create a new project with an arbitrary name.
 
-    [root@master ~]# oc login -u marina --insecure-skip-tls-verify --server=https://master.example.com:8443
-    [root@master ~]# oc new-project my-test-project
+    oc new-project my-test-project
 
-To use some of the examples that ship with OpenShift enter the following command to export the template for a sample Ruby on Rails with PostgreSQL application:
+To use some of the examples that ship with OpenShift we can export and modify the template for a sample Ruby on Rails with PostgreSQL application. All these templates ship in pre-defined namespace called `openshift`.
 
-    [root@master ~]# oc export template/rails-pgsql-persistent -n openshift -o yaml > rails-app-template.yml
+&#x3009;Export the template from the `openshift` namespace with the `oc export` command in YAML format:
 
-In the file `rails-app-template.yml` you can now review the template for this entire application stack in all it’s glory. In essence it creates Rails Application instance which mimics a very basic blogging application. The articles are saved in a PostgreSQL database which runs in another pod. In addition a PVC is issued (line 194) to supply this pod with persistent storage below the mount point /var/lib/pgsql/data (line 275).
+    oc export template/rails-pgsql-persistent -n openshift -o yaml > rails-app-template.yml
 
-We need to modify this template now. Open it in your favorite editor and increase the values for `initialDelaySeconds` in both sections (`livenessProbe` and `readinessProbe`), around lines 255 - 270:
-
-**rails-app-template.yml.**
-
-    [...omitted...]
-
-              livenessProbe:
-                initialDelaySeconds: 180
-                tcpSocket:
-                  port: 5432
-                timeoutSeconds: 1
-              name: postgresql
-              ports:
-              - containerPort: 5432
-              readinessProbe:
-                exec:
-                  command:
-                  - /bin/sh
-                  - -i
-                  - -c
-                  - psql -h 127.0.0.1 -U ${POSTGRESQL_USER} -q -d ${POSTGRESQL_DATABASE}
-                    -c 'SELECT 1'
-                initialDelaySeconds: 180
-                timeoutSeconds: 1
-              resources:
-
-    [...omitted...]
-
--   Set the *initialDelaySeconds* value to 180 in both the livenessProbe and readinessProbe section
-
-> **Important**
->
-> In production you don’t have to change these values. Your test environment however is using nested virtualization and therefore has much lower performance than a production environment in the cloud or on-premise. Therefore the postgres container takes longer to initialize and would be declared unhealthy by OpenShift with the default delays when checking the container health.
+In the file `rails-app-template.yml` you can now review the template for this entire application stack in all it’s glory.
+In essence it creates Rails Application instance which mimics a very basic blogging application. The articles are saved in a PostgreSQL database which runs in a separate pod.
+The template describes all OpenShift resources necessary to stand up the rails pod and the postgres pod and make them accessible.
+In addition a PVC is issued (line 194) to supply this pod with persistent storage below the mount point /var/lib/pgsql/data (line 275).
 
 Next we are going to create all the resources from the templates while passing in an additional parameter to override the default storage capacity requested from the PVC.
 
