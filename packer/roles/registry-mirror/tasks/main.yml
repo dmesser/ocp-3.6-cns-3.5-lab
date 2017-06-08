@@ -1,0 +1,67 @@
+---
+
+- name: install dependencies
+  yum: name=docker-python state=present
+
+
+- name: download ose container images
+  docker_image:
+    name: "{{ src_registry }}/{{ item }}"
+  with_items:
+    - "{{ ose_core_images }}"
+    - "{{ ose_infra_images }}"
+    - "{{ cns_core_images }}"
+
+- block:
+    - name: run a local registry
+      docker_container:
+        name: registry
+        image: docker.io/registry:2
+        restart_policy: always
+        volumes:
+          - registry:/var/lib/registry:z
+        published_ports:
+          - 5555:5000
+        detach: true
+        state: started
+
+    - name: push ose container images to local registry
+      docker_image:
+        name: "{{ item }}"
+        repository: "{{ dest_registry }}/{{ item }}"
+        push: yes
+      with_items:
+        - "{{ ose_core_images }}"
+        - "{{ ose_infra_images }}"
+        - "{{ cns_core_images }}"
+
+    - name: remove cached image copies
+      docker_image:
+        name: "{{ src_registry}}/{{ item }}"
+        state: absent
+      with_items:
+        - "{{ ose_core_images }}"
+        - "{{ ose_infra_images }}"
+        - "{{ cns_core_images }}"
+
+    - name: add insecure local registry mirror
+      lineinfile:
+        regexp: '^INSECURE_REGISTRY='
+        line: INSECURE_REGISTRY='--insecure-registry {{ dest_registry }}'
+        dest: /etc/sysconfig/docker
+        state: present
+
+    - name: enable local registry mirror
+      lineinfile:
+        regexp: '^ADD_REGISTRY='
+        line: ADD_REGISTRY='--add-registry {{ dest_registry }} --add-registry registry.access.redhat.com'
+        dest: /etc/sysconfig/docker
+        state: present
+
+    - name: restart docker
+      service: name=docker state=restarted
+  when:
+    - deploy_mirror is defined
+    - deploy_mirror
+
+...

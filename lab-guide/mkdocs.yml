@@ -7,21 +7,20 @@ extra:
 pages:
 - Overview: index.md
 - Modules:
-    - 'Module 1 - OpenShift 5-Minute Crash Course': module-1.md
-    - 'Module 2 - Deploying Container-Native Storage': module-1.md
-    - 'Module 3 - Using Persistent Storage': module-1.md
+    - 'Module 1 - OpenShift in 5 Minutes': module-1.md
+    - 'Module 2 - Deploying Container-Native Storage': module-2-deploy-cns.md
+    - 'Module 3 - Using Persistent Storage': module-3-using-cns.md
     - 'Module 4 - Cluster Operations': module-1.md
     - 'Module 5 - Advanced Topics': module-1.md
 
 markdown_extensions:
     - smarty
     - toc:
-        permalink: True
         permalink: '#'
     - sane_lists
     - footnotes
     - smart_strong
-    - codehilite
     - nl2br
-    - codehilite(css_class=code)
+    - codehilite:
+        guess_lang: False
     - admonition

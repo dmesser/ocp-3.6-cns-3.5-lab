@@ -1,0 +1,964 @@
+---
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Container-Native Storage Lab using OCP/CNS 3.5 for Storage SA Summit
+
+Parameters:
+
+  NodeInstanceType:
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m1.small
+      - m1.medium
+      - m1.large
+      - m1.xlarge
+      - m2.xlarge
+      - m2.2xlarge
+      - m2.4xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - c1.medium
+      - c1.xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge,
+      - c4.4xlarge
+      - c4.8xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - hi1.4xlarge
+      - hs1.8xlarge
+      - cr1.8xlarge
+      - cc2.8xlarge
+      - cg1.4xlarge
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+  MasterInstanceType:
+    Type: String
+    Default: t2.large
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m1.small
+      - m1.medium
+      - m1.large
+      - m1.xlarge
+      - m2.xlarge
+      - m2.2xlarge
+      - m2.4xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - c1.medium
+      - c1.xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge,
+      - c4.4xlarge
+      - c4.8xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - hi1.4xlarge
+      - hs1.8xlarge
+      - cr1.8xlarge
+      - cc2.8xlarge
+      - cg1.4xlarge
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: dmesser
+    ConstraintDescription: Must be the name of an existing EC2 key pair.
+
+Mappings:
+
+  AWSRegion2AMI:
+    us-east-1:
+      ami: ami-4ce0bc5a
+    us-east-2:
+      ami: NOT_SUPPORTED
+    us-west-1:
+      ami: NOT_SUPPORTED
+    us-west-2:
+      ami: ami-70e6e809
+    eu-west-1:
+      ami: ami-3855485e
+    eu-west-2:
+      ami: NOT_SUPPORTED
+    eu-central-1:
+      ami: NOT_SUPPORTED
+    ap-northeast-1:
+      ami: NOT_SUPPORTED
+    ap-northeast-2:
+      ami: NOT_SUPPORTED
+    ap-southeast-1:
+      ami: NOT_SUPPORTED
+    ap-southeast-2:
+      ami: NOT_SUPPORTED
+    ap-south-1:
+      ami: NOT_SUPPORTED
+    us-east-2:
+      ami: NOT_SUPPORTED
+    ca-central-1:
+      ami: NOT_SUPPORTED
+    sa-east-1:
+      ami: NOT_SUPPORTED
+    cn-north-1:
+      ami: NOT_SUPPORTED
+
+  Subnet2Cidr:
+    vpc:
+      cidr: 10.0.0.0/16
+    public1:
+      cidr: 10.0.1.0/24
+    private1:
+      cidr: 10.0.2.0/24
+    private2:
+      cidr: 10.0.3.0/24
+    private3:
+      cidr: 10.0.4.0/24
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - vpc
+        - cidr
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  InternetGatewayAttachement:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway
+
+  PublicRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PublicRouteTableDefaultRoute1:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachement
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - public1
+        - cidr
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PublicSubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PublicSubnet1
+      RouteTableId:
+        Ref: PublicRouteTable1
+
+  NatGatewayElasticIP:
+    DependsOn: VPC
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: 'vpc'
+
+  NatGateway:
+    DependsOn: InternetGatewayAttachement
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId:
+        Ref: PublicSubnet1
+      AllocationId:
+        Fn::GetAtt:
+          - NatGatewayElasticIP
+          - AllocationId
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateRouteTableDefaultRoute1:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachement
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - private1
+        - cidr
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateSubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet1
+      RouteTableId:
+        Ref: PrivateRouteTable1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateRouteTableDefaultRoute2:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachement
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - private2
+        - cidr
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateSubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet2
+      RouteTableId:
+        Ref: PrivateRouteTable2
+
+  PrivateRouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateRouteTableDefaultRoute3:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachement
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable3
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway
+
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - private3
+        - cidr
+      AvailabilityZone:
+        Fn::Select:
+          - 2
+          - Fn::GetAZs: ""
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateSubnetRouteTableAssociation3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet3
+      RouteTableId:
+        Ref: PrivateRouteTable3
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: VPC
+      GroupDescription: Enable SSH access via port 22, ICMP and nothing else
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: 10.0.0.0/16
+
+  NodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: VPC
+      GroupDescription: Firewall definition for OpenShift Node
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 4789
+        ToPort: 4789
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: udp
+        FromPort: 4789
+        ToPort: 4789
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 10250
+        ToPort: 10250
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 10250
+        ToPort: 10250
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 2222
+        ToPort: 2222
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 24007
+        ToPort: 24008
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 49152
+        ToPort: 49664
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+
+  MasterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: VPC
+      GroupDescription: Firewall definition for OpenShift Master and Heketi
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 4789
+        ToPort: 4789
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: udp
+        FromPort: 4789
+        ToPort: 4789
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: udp
+        FromPort: 2049
+        ToPort: 2049
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 8053
+        ToPort: 8053
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: udp
+        FromPort: 8053
+        ToPort: 8053
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 8443
+        ToPort: 8443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+
+  InstanceInPublicIF1:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: MasterSecurityGroup
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PublicSubnet1
+
+  InstanceInPublic1:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - InternetGatewayAttachement
+      - InstanceInPrivate1
+      - InstanceInPrivate2
+      - InstanceInPrivate3
+      - InstanceInPrivate4
+      - InstanceInPrivate5
+      - InstanceInPrivate6
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: MasterInstanceType
+      KeyName:
+        Ref: KeyName
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'master'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref InstanceInPublicIF1
+        DeviceIndex: '0'
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvdc
+        Ebs:
+          VolumeSize: '20'
+          VolumeType: 'gp2'
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #cloud-config
+
+            write_files:
+              - content: |
+                  127.0.0.1       localhost.localdomain      localhost
+                  ::1             localhost6.localdomain6    localhost6
+                  ${InstanceInPublicIF1.PrimaryPrivateIpAddress}       master.lab         master
+                  ${InstanceInPrivateIF1.PrimaryPrivateIpAddress}      node-1.lab         node-1
+                  ${InstanceInPrivateIF2.PrimaryPrivateIpAddress}      node-2.lab         node-2
+                  ${InstanceInPrivateIF3.PrimaryPrivateIpAddress}      node-3.lab         node-3
+                  ${InstanceInPrivateIF4.PrimaryPrivateIpAddress}      node-4.lab         node-4
+                  ${InstanceInPrivateIF5.PrimaryPrivateIpAddress}      node-5.lab         node-5
+                  ${InstanceInPrivateIF6.PrimaryPrivateIpAddress}      node-6.lab         node-6
+                path: /etc/hosts
+              - content: |
+                  [OSEv3:children]
+                  masters
+                  nodes
+
+                  [OSEv3:vars]
+                  ansible_ssh_user=ec2-user
+                  ansible_ssh_private_key_file=/home/ec2-user/.ssh/id_rsa
+                  ansible_ssh_extra_args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=false"
+                  ansible_become=true
+                  deployment_type=openshift-enterprise
+                  containerized=true
+                  openshift_image_tag=v3.5.5.15
+                  openshift_pkg_version=-3.5.5.15
+                  openshift_master_identity_providers=[{'name': 'htpasswd', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
+                  openshift_master_htpasswd_users={'admin': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/'}
+                  openshift_master_default_subdomain='cloudapps.${PublicEIP1}.nip.io'
+                  openshift_router_selector='region=infra'
+                  openshift_registry_selector='region=infra'
+                  osm_default_node_selector='region=apps'
+                  openshift_examples_modify_imagestreams=true
+                  openshift_metrics_install_metrics=false
+                  openshift_hosted_logging_deploy=false
+
+                  [masters]
+                  master.lab openshift_public_hostname=${PublicEIP1}.nip.io openshift_hostname=master.lab openshift_ip=${InstanceInPublicIF1.PrimaryPrivateIpAddress} openshift_public_ip=${PublicEIP1}
+
+                  [nodes]
+                  master.lab openshift_public_hostname=${PublicEIP1}.nip.io openshift_hostname=master.lab openshift_ip=${InstanceInPublicIF1.PrimaryPrivateIpAddress} openshift_public_ip=${PublicEIP1}
+                  node-1.lab openshift_hostname=node-1.lab openshift_ip=${InstanceInPrivateIF1.PrimaryPrivateIpAddress}
+                  node-2.lab openshift_hostname=node-2.lab openshift_ip=${InstanceInPrivateIF2.PrimaryPrivateIpAddress}
+                  node-3.lab openshift_hostname=node-3.lab openshift_ip=${InstanceInPrivateIF3.PrimaryPrivateIpAddress}
+                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${InstanceInPrivateIF4.PrimaryPrivateIpAddress}
+                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${InstanceInPrivateIF5.PrimaryPrivateIpAddress}
+                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${InstanceInPrivateIF6.PrimaryPrivateIpAddress}
+
+                  [masters:vars]
+                  openshift_schedulable=true
+                  openshift_node_labels="{'region':'infra'}"
+
+                  [cns-nodes]
+                  node-1.lab
+                  node-2.lab
+                  node-3.lab
+                  node-4.lab
+                  node-5.lab
+                  node-6.lab
+
+                  [cns-nodes:vars]
+                  openshift_node_labels="{'storagenode':'glusterfs', 'region':'apps'}"
+                path: /etc/ansible/hosts
+
+            runcmd:
+              - ansible nodes,masters -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
+              - ansible masters -m filesystem -a "fstype=xfs dev=/dev/xvdc"
+              - ansible masters -m mount -a "fstype=xfs src=/dev/xvdc path=/var/lib/origin state=mounted"
+              - ansible nodes -m wait_for -a "port=22 timeout=600"
+              - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
+              - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml ; /opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
+
+  WaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: InstanceInPublic1
+    Properties:
+      Handle: !Ref WaitHandle
+      Timeout: '1800'
+
+  PublicEIP1:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGateway
+    Properties:
+      Domain: 'vpc'
+
+  PublicEIPAttachment1:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref InstanceInPublic1
+      AllocationId: !GetAtt PublicEIP1.AllocationId
+
+  InstanceInPrivateIF1:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet1
+
+  InstanceInPrivate1:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: NodeInstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '50'
+            VolumeType: 'gp2'
+            DeleteOnTermination: 'true'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref InstanceInPrivateIF1
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'node-1'
+
+  InstanceInPrivateIF2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet2
+
+  InstanceInPrivate2:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: NodeInstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '50'
+            VolumeType: 'gp2'
+            DeleteOnTermination: 'true'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref InstanceInPrivateIF2
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'node-2'
+
+  InstanceInPrivateIF3:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet3
+
+  InstanceInPrivate3:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: NodeInstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '50'
+            VolumeType: 'gp2'
+            DeleteOnTermination: 'true'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref InstanceInPrivateIF3
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'node-3'
+
+  InstanceInPrivateIF4:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet1
+
+  InstanceInPrivate4:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: NodeInstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '500'
+            VolumeType: 'st1'
+            DeleteOnTermination: 'true'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref InstanceInPrivateIF4
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'node-4'
+
+  InstanceInPrivateIF5:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet2
+
+  InstanceInPrivate5:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: NodeInstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '500'
+            VolumeType: 'st1'
+            DeleteOnTermination: 'true'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref InstanceInPrivateIF5
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'node-5'
+
+  InstanceInPrivateIF6:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet3
+
+  InstanceInPrivate6:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: NodeInstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '500'
+            VolumeType: 'st1'
+            DeleteOnTermination: 'true'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref InstanceInPrivateIF6
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'node-6'
+
+Outputs:
+   MasterNodePublicIP:
+      Description: "OpenShift Master Node Public IP Address"
+      Value: !Ref PublicEIP1
+
+   UserName:
+      Description: "OpenShift Node Login"
+      Value: "admin"
+
+   Password:
+      Description: "OpenShift Node Login Password"
+      Value: "r3dh4t"
+
+   SSHLoginUser:
+      Description: "User name on the Master node to connect via SSH and PEM file"
+      Value: "ec2-user"
+
+   OpenShiftLoginURL:
+      Description: "OpenShift Master Node Public IP Address"
+      Value: !Sub "https://${PublicEIP1}.nip.io:8443/"
+...
