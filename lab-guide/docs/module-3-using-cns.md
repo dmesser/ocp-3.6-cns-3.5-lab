@@ -503,20 +503,30 @@ This is happen transparently to the application and looks like a normal local fi
 
     sh-4.2# exit
 
+---
+
 Providing shared storage to multiple application instances
 ----------------------------------------------------------
 
+In the previous example we provisioned an RWO PV - the volume is only usable with one pod at a time. RWO is what most of the OpenShift storage backends support.
 So far only very few options, like the basic NFS support existed, to provide a PersistentVolume to more than one container at once. The access mode used for this is **ReadWriteMany**.
 
-With CNS this capabilities is now available to all OpenShift deployments, no matter where they are deployed. To demonstrate this capability with an application we will deploy a PHP file uploader that has multiple front-end instances sharing a common storage repository.
+With CNS this capabilities is now available to all OpenShift deployments, no matter where they are deployed. To demonstrate this capability with an application we will deploy a PHP-based file uploader that has multiple front-end instances sharing a common storage repository.
 
-First log back in as `marina`
+&#x3009;First make sure you are still in the example project created earlier
 
-    [root@master ~]# oc login -u marina --insecure-skip-tls-verify --server=https://master.example.com:8443
+    oc project my-test-project
 
-Next deploy the example application:
+&#x3009;Next deploy the example application:
 
-    [root@master ~]# oc new-app openshift/php:7.0~https://github.com/christianh814/openshift-php-upload-demo --name=file-uploader
+    oc new-app openshift/php:7.0~https://github.com/christianh814/openshift-php-upload-demo --name=file-uploader
+
+!!! Note
+    This is yet another way to build and launch an application from source code in OpenShift. The content before the ~ is the name of a Source-to-Image builder (a container that knows how to build applications of a certain type from source, in this case PHP) and the URL following is a GitHub repository hosting the source code.
+    Feel free to check it out.
+
+Output:
+
     --> Found image a1ebebb (6 weeks old) in image stream "openshift/php" under tag "7.0" for "openshift/php:7.0"
 
         Apache 2.4 with PHP 7.0
@@ -541,9 +551,13 @@ Next deploy the example application:
         Build scheduled, use 'oc logs -f bc/file-uploader' to track its progress.
         Run 'oc status' to view your app.
 
-Wait for the application to be deployed with the suggest command:
+&#x3009;Wait for the application to be deployed with the suggest command:
 
-    [root@master ~]# oc logs -f bc/file-uploader
+    oc logs -f bc/file-uploader
+
+The follow-mode of the above command ends automatically when the build is successful and you return to your shell.
+
+    ...
     Cloning "https://github.com/christianh814/openshift-php-upload-demo" ...
             Commit: 7508da63d78b4abc8d03eac480ae930beec5d29d (Update index.html)
             Author: Christian Hernandez <christianh814@users.noreply.github.com>
@@ -555,24 +569,31 @@ Wait for the application to be deployed with the suggest command:
     Pushed 2/5 layers, 40% complete
     Push successful
 
-Again kbd:\[Ctrl + c\] out of the tail mode. When the build is completed ensure the pods are running:
+&#x3009;When the build is completed ensure the pods are running:
 
-    [root@master ~]# oc get pods
+    oc get pods
+
+Among your existing pods you should see two new pods running.
+
     NAME                             READY     STATUS      RESTARTS   AGE
     file-uploader-1-build            0/1       Completed   0          2m
     file-uploader-1-k2v0d            1/1       Running     0          1m
     ...
 
-Note the name of the single pod currently running the app: **file-uploader-1-k2v0d**. The container called `file-uploader-1-build` is the builder container and is not relevant for us. A service has been created for our app but not exposed yet. Let’s fix this:
+Note the name of the single pod currently running the app: **file-uploader-1-k2v0d**. The container called `file-uploader-1-build` is the builder container that deployed the application and it has already terminated. A service has been created for our app but not exposed yet.
 
-    [root@master ~]# oc expose svc/file-uploader
+&#x3009;Let’s fix this:
 
-Check the route that has been created:
+    oc expose svc/file-uploader
 
-    [root@master ~]# oc get route
+&#x3009;Check the route that has been created:
+
+    oc get route/file-uploader
+
+The route forwards all traffic to port 8080 of the container running the app.
+
     NAME                     HOST/PORT                                                      PATH      SERVICES                 PORT       TERMINATION   WILDCARD
     file-uploader            file-uploader-my-test-project.cloudapps.example.com                      file-uploader            8080-tcp                 None
-    ...
 
 Point your browser the the URL advertised by the route (<http://file-uploader-my-test-project.cloudapps.example.com>)
 
@@ -580,11 +601,15 @@ The application simply lists all file previously uploaded and offers the ability
 
 Select an arbitrary from your local system and upload it to the app.
 
-![A simple PHP-based file upload tool](uploader_screen_upload.png)
+[![A simple PHP-based file upload tool](img/uploader_screen_upload.png)](img/uploader_screen_upload.png)
 
-After uploading a file validate it has been stored locally in the container by following the link *List uploaded files* in the browser or logging into it via a remote session (using the name noted earlier):
+After uploading a file validate it has been stored locally in the container by following the link *List Uploaded Files* in the browser
 
-    [root@master ~]# oc rsh file-uploader-1-k2v0d
+&#x3009;Or logging into it via a remote session (using the name noted earlier):
+
+    oc rsh file-uploader-1-k2v0d
+
+In the container explore the directory in which the uploaded files will be stored.
 
     sh-4.2$ cd uploaded
     sh-4.2$ pwd
@@ -593,31 +618,34 @@ After uploading a file validate it has been stored locally in the container by f
     total 16K
     -rw-r--r--. 1 1000080000 root 16K May 26 09:32 cns-deploy-4.0.0-15.el7rhgs.x86_64.rpm.gz
 
-> **Note**
->
-> The exact name of the pod will be different in your environment.
+!!! Note
+    The exact name of the pod will be different in your environment.
 
 The app should also list the file in the overview:
 
-![The file has been uploaded and can be downloaded again](uploader_screen_list.png)
+[![The file has been uploaded and can be downloaded again](img/uploader_screen_list.png)](img/uploader_screen_list.png)
 
 This pod currently does not use any persistent storage. It stores the file locally.
 
-> **Caution**
->
-> Never store data in a pod. It’s ephemeral by definition and will be lost as soon as the pod terminates.
+!!! Danger "Important"
+    Never store data in a pod. It’s ephemeral by definition and will be lost as soon as the pod terminates.
 
-Let’s see when this become a problem. Exit out of the container shell:
+Let’s see when this become a problem.
+
+&#x3009;Exit out of the container shell:
 
     sh-4.2$ exit
 
-Let’s scale the deployment to 3 instances of the app:
+&#x3009;Let’s scale the deployment to 3 instances of the app:
 
-    [root@master ~]# oc scale dc/file-uploader --replicas=3
+    oc scale dc/file-uploader --replicas=3
 
-Watch the additional pods getting spawned:
+&#x3009;Watch the additional pods getting spawned:
 
-    [root@master ~]# oc get pods
+    oc get pods
+
+You will see 2 additional pods being spawned:
+
     NAME                             READY     STATUS      RESTARTS   AGE
     file-uploader-1-3cgh1            1/1       Running     0          20s
     file-uploader-1-3hckj            1/1       Running     0          20s
@@ -625,62 +653,75 @@ Watch the additional pods getting spawned:
     file-uploader-1-k2v0d            1/1       Running     0          3m
     ...
 
-> **Note**
->
-> The pod names will be different in your environment since they are automatically generated.
+!!! Note
+    The pod names will be different in your environment since they are automatically generated.
 
 When you log on to one of the new instances you will see they have no data.
 
-    [root@master ~]# oc rsh file-uploader-1-3cgh1
+&#x3009;Log on to one of the new containers:
+
+    oc rsh file-uploader-1-3cgh1
+
+&#x3009;Again check the upload directory:
+
     sh-4.2$ cd uploaded
     sh-4.2$ pwd
     /opt/app-root/src/uploaded
     sh-4.2$ ls -hl
     total 0
 
-Similarly, other users of the app will sometimes see your uploaded files and sometimes not - whenever the load balancing service in OpenShift points to the pod that has the file stored locally. You can simulate this with another instance of your browser in "Incognito mode" pointing to your app.
+Empty. Similarly, other users of the app will sometimes see your uploaded files and sometimes not. With the deployment scaled to 3 instances OpenShifts router will simply round-robin across them. Whenever the load balancing service in OpenShift points to the pod that has the file stored locally users will see it or not. You can simulate this with another instance of your browser in "Incognito mode" pointing to your app.
 
 The app is of course not usable like this. We can fix this by providing shared storage to this app.
 
-First create a PVC with the appropriate setting in a file called `cns-rwx-pvc.yml` with below contents:
+&#x3009;First create a PVC with the appropriate setting in a file called `cns-rwx-pvc.yml` with below contents:
 
-**cns-rwx-pvc.yml.**
+<kbd>cns-rwx-pvc.yml:</kbd>
 
-    kind: PersistentVolumeClaim
-    apiVersion: v1
-    metadata:
-      name: my-shared-storage
-      annotations:
-        volume.beta.kubernetes.io/storage-class: container-native-storage
-    spec:
-      accessModes:
-      - ReadWriteMany
-      resources:
-        requests:
-          storage: 10Gi
+```yaml hl_lines="9"
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: my-shared-storage
+  annotations:
+    volume.beta.kubernetes.io/storage-class: container-native-storage
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+```
+Notice the access mode explicitly requested to be `ReadWriteMany` (also referred to as RWX). Storage provisioned like this can be mounted by multiple containers on multiple hosts at the same time.
 
-Submit the request to the system:
+&#x3009;Submit the request to the system:
 
-    [root@master ~]# oc create -f cns-rwx-pvc.yml
+    oc create -f cns-rwx-pvc.yml
 
-Let’s look at the result:
+&#x3009;Let’s look at the result:
 
-    [root@master ~]# oc get pvc
+    oc get pvc
+
+Notice the ACCESSMODE being set to `RWX` (i.e. "shared storage").
+
     NAME                STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
     my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi       RWX           22s
     ...
 
-Notice the ACCESSMODE being set to **RWX** (short for *ReadWriteMany*, synonym for "shared storage").
-
 We can now update the *DeploymentConfig* of our application to use this PVC to provide the application with persistent, shared storage for uploads.
 
-    [root@master ~]# oc volume dc/file-uploader --add --name=shared-storage --type=persistentVolumeClaim --claim-name=my-shared-storage --mount-path=/opt/app-root/src/uploaded
+&#x3009;Update the configuration of the application by adding a volume claim like this:
+
+    oc volume dc/file-uploader --add --name=shared-storage --type=persistentVolumeClaim --claim-name=my-shared-storage --mount-path=/opt/app-root/src/uploaded
 
 Our app will now re-deploy (in a rolling fashion) with the new settings - all pods will mount the volume identified by the PVC under /opt/app-root/src/upload (the path is predictable so we can hard-code it here).
 
-You can watch it like this:
+&#x3009;You can watch it like this:
 
-    [root@master ~]# oc logs dc/file-uploader -f
+    oc logs dc/file-uploader -f
+
+The new `DeploymentConfig` will supersede the old one.
+
     --> Scaling up file-uploader-2 from 0 to 3, scaling down file-uploader-1 from 3 to 0 (keep 3 pods available, don't exceed 4 pods)
         Scaling file-uploader-2 up to 1
         Scaling file-uploader-1 down to 2
@@ -692,7 +733,12 @@ You can watch it like this:
 
 The new config `file-uploader-2` will have 3 pods all sharing the same storage.
 
-    [root@master ~]# oc get pods
+&#x3009;Get the names of the new pods:
+
+    oc get pods
+
+Output:
+
     NAME                             READY     STATUS      RESTARTS   AGE
     file-uploader-1-build            0/1       Completed   0          18m
     file-uploader-2-jd22b            1/1       Running     0          1m
