@@ -989,23 +989,28 @@ total 16K
 <p>The app should also list the file in the overview:</p>
 <p><a href="../img/uploader_screen_list.png"><img alt="The file has been uploaded and can be downloaded again" src="../img/uploader_screen_list.png" /></a></p>
 <p>This pod currently does not use any persistent storage. It stores the file locally.</p>
-<blockquote>
-<p><strong>Caution</strong></p>
+<div class="admonition danger">
+<p class="admonition-title">Important</p>
 <p>Never store data in a pod. It’s ephemeral by definition and will be lost as soon as the pod terminates.</p>
-</blockquote>
-<p>Let’s see when this become a problem. Exit out of the container shell:</p>
+</div>
+<p>Let’s see when this become a problem.</p>
+<p>&#x3009;Exit out of the container shell:</p>
 <div class="codehilite"><pre><span></span>sh-4.2$ exit
 </pre></div>
 
 
-<p>Let’s scale the deployment to 3 instances of the app:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc scale dc/file-uploader --replicas=3
+<p>&#x3009;Let’s scale the deployment to 3 instances of the app:</p>
+<div class="codehilite"><pre><span></span>oc scale dc/file-uploader --replicas=3
 </pre></div>
 
 
-<p>Watch the additional pods getting spawned:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc get pods
-NAME                             READY     STATUS      RESTARTS   AGE
+<p>&#x3009;Watch the additional pods getting spawned:</p>
+<div class="codehilite"><pre><span></span>oc get pods
+</pre></div>
+
+
+<p>You will see 2 additional pods being spawned:</p>
+<div class="codehilite"><pre><span></span>NAME                             READY     STATUS      RESTARTS   AGE
 file-uploader-1-3cgh1            1/1       Running     0          20s
 file-uploader-1-3hckj            1/1       Running     0          20s
 file-uploader-1-build            0/1       Completed   0          4m
@@ -1014,13 +1019,18 @@ file-uploader-1-k2v0d            1/1       Running     0          3m
 </pre></div>
 
 
-<blockquote>
-<p><strong>Note</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>The pod names will be different in your environment since they are automatically generated.</p>
-</blockquote>
+</div>
 <p>When you log on to one of the new instances you will see they have no data.</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc rsh file-uploader-1-3cgh1
-sh-4.2$ cd uploaded
+<p>&#x3009;Log on to one of the new containers:</p>
+<div class="codehilite"><pre><span></span>oc rsh file-uploader-1-3cgh1
+</pre></div>
+
+
+<p>&#x3009;Again check the upload directory:</p>
+<div class="codehilite"><pre><span></span>sh-4.2$ cd uploaded
 sh-4.2$ pwd
 /opt/app-root/src/uploaded
 sh-4.2$ ls -hl
@@ -1028,48 +1038,57 @@ total 0
 </pre></div>
 
 
-<p>Similarly, other users of the app will sometimes see your uploaded files and sometimes not - whenever the load balancing service in OpenShift points to the pod that has the file stored locally. You can simulate this with another instance of your browser in &ldquo;Incognito mode&rdquo; pointing to your app.</p>
+<p>Empty. Similarly, other users of the app will sometimes see your uploaded files and sometimes not. With the deployment scaled to 3 instances OpenShifts router will simply round-robin across them. Whenever the load balancing service in OpenShift points to the pod that has the file stored locally users will see it or not. You can simulate this with another instance of your browser in &ldquo;Incognito mode&rdquo; pointing to your app.</p>
 <p>The app is of course not usable like this. We can fix this by providing shared storage to this app.</p>
-<p>First create a PVC with the appropriate setting in a file called <code>cns-rwx-pvc.yml</code> with below contents:</p>
-<p><strong>cns-rwx-pvc.yml.</strong></p>
-<div class="codehilite"><pre><span></span>kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: my-shared-storage
-  annotations:
-    volume.beta.kubernetes.io/storage-class: container-native-storage
-spec:
-  accessModes:
-  - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Gi
+<p>&#x3009;First create a PVC with the appropriate setting in a file called <code>cns-rwx-pvc.yml</code> with below contents:</p>
+<p><kbd>cns-rwx-pvc.yml:</kbd></p>
+<div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">kind</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">PersistentVolumeClaim</span>
+<span class="l l-Scalar l-Scalar-Plain">apiVersion</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="l l-Scalar l-Scalar-Plain">metadata</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">my-shared-storage</span>
+  <span class="l l-Scalar l-Scalar-Plain">annotations</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">volume.beta.kubernetes.io/storage-class</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">container-native-storage</span>
+<span class="l l-Scalar l-Scalar-Plain">spec</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">accessModes</span><span class="p p-Indicator">:</span>
+<span class="hll">  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">ReadWriteMany</span>
+</span>  <span class="l l-Scalar l-Scalar-Plain">resources</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">requests</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">storage</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">10Gi</span>
 </pre></div>
 
 
-<p>Submit the request to the system:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc create -f cns-rwx-pvc.yml
+<p>Notice the access mode explicitly requested to be <code>ReadWriteMany</code> (also referred to as RWX). Storage provisioned like this can be mounted by multiple containers on multiple hosts at the same time.</p>
+<p>&#x3009;Submit the request to the system:</p>
+<div class="codehilite"><pre><span></span>oc create -f cns-rwx-pvc.yml
 </pre></div>
 
 
-<p>Let’s look at the result:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc get pvc
-NAME                STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
+<p>&#x3009;Let’s look at the result:</p>
+<div class="codehilite"><pre><span></span>oc get pvc
+</pre></div>
+
+
+<p>Notice the ACCESSMODE being set to <code>RWX</code> (i.e. &ldquo;shared storage&rdquo;).</p>
+<div class="codehilite"><pre><span></span>NAME                STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
 my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi       RWX           22s
 ...
 </pre></div>
 
 
-<p>Notice the ACCESSMODE being set to <strong>RWX</strong> (short for <em>ReadWriteMany</em>, synonym for &ldquo;shared storage&rdquo;).</p>
 <p>We can now update the <em>DeploymentConfig</em> of our application to use this PVC to provide the application with persistent, shared storage for uploads.</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc volume dc/file-uploader --add --name=shared-storage --type=persistentVolumeClaim --claim-name=my-shared-storage --mount-path=/opt/app-root/src/uploaded
+<p>&#x3009;Update the configuration of the application by adding a volume claim like this:</p>
+<div class="codehilite"><pre><span></span>oc volume dc/file-uploader --add --name=shared-storage --type=persistentVolumeClaim --claim-name=my-shared-storage --mount-path=/opt/app-root/src/uploaded
 </pre></div>
 
 
 <p>Our app will now re-deploy (in a rolling fashion) with the new settings - all pods will mount the volume identified by the PVC under /opt/app-root/src/upload (the path is predictable so we can hard-code it here).</p>
-<p>You can watch it like this:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc logs dc/file-uploader -f
---&gt; Scaling up file-uploader-2 from 0 to 3, scaling down file-uploader-1 from 3 to 0 (keep 3 pods available, don&#39;t exceed 4 pods)
+<p>&#x3009;You can watch it like this:</p>
+<div class="codehilite"><pre><span></span>oc logs dc/file-uploader -f
+</pre></div>
+
+
+<p>The new <code>DeploymentConfig</code> will supersede the old one.</p>
+<div class="codehilite"><pre><span></span>--&gt; Scaling up file-uploader-2 from 0 to 3, scaling down file-uploader-1 from 3 to 0 (keep 3 pods available, don&#39;t exceed 4 pods)
     Scaling file-uploader-2 up to 1
     Scaling file-uploader-1 down to 2
     Scaling file-uploader-2 up to 2
@@ -1081,8 +1100,13 @@ my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi   
 
 
 <p>The new config <code>file-uploader-2</code> will have 3 pods all sharing the same storage.</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc get pods
-NAME                             READY     STATUS      RESTARTS   AGE
+<p>&#x3009;Get the names of the new pods:</p>
+<div class="codehilite"><pre><span></span>oc get pods
+</pre></div>
+
+
+<p>Output:</p>
+<div class="codehilite"><pre><span></span>NAME                             READY     STATUS      RESTARTS   AGE
 file-uploader-1-build            0/1       Completed   0          18m
 file-uploader-2-jd22b            1/1       Running     0          1m
 file-uploader-2-kw9lq            1/1       Running     0          2m
