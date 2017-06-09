@@ -227,9 +227,75 @@
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
     
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Module 5 - Advanced Topics
+      </label>
+    
     <a href="./" title="Module 5 - Advanced Topics" class="md-nav__link md-nav__link--active">
       Module 5 - Advanced Topics
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#openshift-in-a-nutshell" title="OpenShift in a nutshell" class="md-nav__link">
+    OpenShift in a nutshell
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#application-lifecycle-with-openshift" title="Application Lifecycle with OpenShift" class="md-nav__link">
+    Application Lifecycle with OpenShift
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#logging-in" title="Logging in" class="md-nav__link">
+    Logging in
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exploring-the-environment" title="Exploring the environment" class="md-nav__link">
+    Exploring the environment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-project" title="Creating a Project" class="md-nav__link">
+    Creating a Project
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-an-application" title="Creating an Application" class="md-nav__link">
+    Creating an Application
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -254,6 +320,61 @@
   
   
   
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#openshift-in-a-nutshell" title="OpenShift in a nutshell" class="md-nav__link">
+    OpenShift in a nutshell
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#application-lifecycle-with-openshift" title="Application Lifecycle with OpenShift" class="md-nav__link">
+    Application Lifecycle with OpenShift
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#logging-in" title="Logging in" class="md-nav__link">
+    Logging in
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exploring-the-environment" title="Exploring the environment" class="md-nav__link">
+    Exploring the environment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-project" title="Creating a Project" class="md-nav__link">
+    Creating a Project
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-an-application" title="Creating an Application" class="md-nav__link">
+    Creating an Application
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -269,8 +390,155 @@
                 
                 <div class="admonition summary">
 <p class="admonition-title">Overview</p>
-<p>This module is a <em>crash course</em> intended for Storage Solution Architects </p>
+<p>This module is a <em>crash course</em> in OpenShift intended for Storage Solution Architects. You can safely skip this if you have existing working knowledge in OpenShift Container Platform</p>
 </div>
+<h2 id="openshift-in-a-nutshell">OpenShift in a nutshell<a class="headerlink" href="#openshift-in-a-nutshell" title="Permanent link">#</a></h2>
+<p><em>OpenShift Container Platform</em> (OCP) is Red Hat&rsquo;s productization of the Kubernetes project. 80% of OpenShift is based on it.<br />
+Kubernetes is a container orchestration engine for running docker-formatted containers at scale in a distributed environment.</p>
+<p>OpenShifts main purpose is to allow a developer to focus on writing applications. They can leave it to OpenShift how to schedule and run those.</p>
+<p>In the simplest form, a user supplies a URL to a source code repository. OCP takes it from there. It will know how to build the application, how to package it in a container image, run one or more instances of that image and make the application accessible to the outside world.</p>
+<hr />
+<h2 id="application-lifecycle-with-openshift">Application Lifecycle with OpenShift<a class="headerlink" href="#application-lifecycle-with-openshift" title="Permanent link">#</a></h2>
+<p>Let&rsquo;s walk through the basic workflow at an example.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>For each task we will provide instructions for the UI as well as the equivalent on the CLI.</p>
+</div>
+<h5 id="logging-in">Logging in<a class="headerlink" href="#logging-in" title="Permanent link">#</a></h5>
+<p>&#8680; Log on to the OpenShift User Interface with the URL and credentials provided in the <a href="../../">Overview section</a> section.</p>
+<p><a href="../img/openshift_login.png"><img alt="OpenShift UI Login" src="../img/openshift_login.png" /></a><br />
+<em>click on the screenshot for better resolution</em></p>
+<p>The UI focusses mainly on the tasks a developer / user would carry out. Administrative tasks are CLI only.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>oc</code> client is the primary CLI tool to access and manipulate entities in an OpenShift deployment.<br />
+Basic syntax is always <code>$ oc &lt;command&gt;</code></p>
+</div>
+<p>&#8680; In parallel log on to the master node with it&rsquo;s public IP provided in the <a href="../../">Overview section</a> section. For this you use the pre-installed <code>oc</code> tool (OpenShift Client).</p>
+<div class="codehilite"><pre><span></span>ssh -i ~/qwiklabs.pem -l ec2-user &lt;your-public-IP&gt;
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>oc login -u system:admin
+</pre></div>
+
+
+<hr />
+<h5 id="exploring-the-environment">Exploring the environment<a class="headerlink" href="#exploring-the-environment" title="Permanent link">#</a></h5>
+<p>&#8680; First, display all available nodes in the system</p>
+<div class="codehilite"><pre><span></span>oc get nodes
+</pre></div>
+
+
+<p>You should see 7 nodes in <strong>READY</strong> state:</p>
+<div class="codehilite"><pre><span></span>NAME         STATUS    AGE
+master.lab   Ready     1h
+node-1.lab   Ready     1h
+node-2.lab   Ready     1h
+node-3.lab   Ready     1h
+node-4.lab   Ready     1h
+node-5.lab   Ready     1h
+node-6.lab   Ready     1h
+</pre></div>
+
+
+<p>&#8680; A slight variant of that command will show us some tags (called <em>labels</em>):</p>
+<div class="codehilite"><pre><span></span>oc get nodes --show-labels
+</pre></div>
+
+
+<p>You should see that 1 node has the label <code>region=infra</code> applied whereas the other 6 have <code>region=apps</code> and additionally <code>storagenode=glusterfs</code> set:</p>
+<div class="codehilite"><pre><span></span>NAME         STATUS    AGE       LABELS
+master.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=master.lab,region=infra
+node-1.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-1.lab,region=apps,storagenode=glusterfs
+node-2.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-2.lab,region=apps,storagenode=glusterfs
+node-3.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-3.lab,region=apps,storagenode=glusterfs
+node-4.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-4.lab,region=apps,storagenode=glusterfs
+node-5.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-5.lab,region=apps,storagenode=glusterfs
+node-6.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-6.lab,region=apps,storagenode=glusterfs
+</pre></div>
+
+
+<p>These are the &ldquo;physical&rdquo; systems available to OpenShift. One of them is special: the master. It runs important system services like schedulers, container registries and a database. Labels on hosts are used as a selector for scheduling decisions.<br />
+Non-master nodes run containerized applications.</p>
+<p>&#8680; Display the current project context or namespace:</p>
+<div class="codehilite"><pre><span></span>oc project
+</pre></div>
+
+
+<p>You should be in the default namespace:</p>
+<div class="codehilite"><pre><span></span>Using project &quot;default&quot; on server &quot;https://master.lab:8443&quot;.
+</pre></div>
+
+
+<p>&#8680; Display the running containers in this namespace.</p>
+<div class="codehilite"><pre><span></span>oc get pods
+</pre></div>
+
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Containers are not the smallest entity OpenShift/Kubernetes knows about. <strong>Pods</strong> are. Pods typically run a single container only and are subject to scheduling, networking and storage configuration.<br />
+There are some corner cases in which multiple containers run in a single pod. Then they share a single IP address, all storage and are always scheduled together.</p>
+</div>
+<p>You should have the 3 default services running in pods that every OpenShift deployment has:</p>
+<div class="codehilite"><pre><span></span>NAME                       READY     STATUS    RESTARTS   AGE
+docker-registry-1-rktxs    1/1       Running   0          1h
+registry-console-1-28hlh   1/1       Running   0          1h
+router-1-0btlh             1/1       Running   0          1h
+</pre></div>
+
+
+<p>The registry is where images that get created in OpenShift are stored. The registry console is a Web UI for the container registry. The router is an HAproxy instance running internally in OpenShift, exposing applications to the external network.</p>
+<p>&#8680; Finally get more information about the deployment with this command:</p>
+<div class="codehilite"><pre><span></span>oc status
+</pre></div>
+
+
+<p>You see output similar to this:</p>
+<div class="codehilite"><pre><span></span>In project default on server https://master.lab:8443
+
+https://docker-registry-default.cloudapps.34.198.122.20.nip.io (passthrough) (svc/docker-registry)
+dc/docker-registry deploys docker.io/openshift3/ose-docker-registry:v3.5.5.15
+deployment #1 deployed 2 hours ago - 1 pod
+
+svc/kubernetes - 172.30.0.1 ports 443, 53-&gt;8053, 53-&gt;8053
+
+https://registry-console-default.cloudapps.34.198.122.20.nip.io (passthrough) (svc/registry-console)
+dc/registry-console deploys registry.access.redhat.com/openshift3/registry-console:3.5
+deployment #1 deployed 2 hours ago - 1 pod
+
+svc/router - 172.30.63.192 ports 80, 443, 1936
+dc/router deploys docker.io/openshift3/ose-haproxy-router:v3.5.5.15
+deployment #1 deployed 2 hours ago - 1 pod
+
+View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list everything with &#39;oc get all&#39;.
+</pre></div>
+
+
+<p>If these 3 pods are in place your environment is working.</p>
+<hr />
+<h5 id="creating-a-project">Creating a Project<a class="headerlink" href="#creating-a-project" title="Permanent link">#</a></h5>
+<p>Similar to OpenStack <em>Projects</em> exists in OpenShift. They group users, objects and quotas in the system. They are also called <em>namespaces</em>. Nothing can exist outside a project/namespace.</p>
+<p>&#8680; Select <em>Create Project</em> in the UI. Enter at least a system name, optionally a human-readable name (label) and a description.</p>
+<p><a href="../img/openshift_no_project.png"><img alt="OpenShift empty project list" src="../img/openshift_no_project.png" /></a></p>
+<p><a href="../img/openshift_new_project.png"><img alt="OpenShift new project list" src="../img/openshift_new_project.png" /></a></p>
+<p>&#8680; On the CLI create a project with the <code>oc</code> client.</p>
+<div class="codehilite"><pre><span></span>oc new-project my-first-application \
+  --display-name=&quot;My First Application&quot; \
+  --description=&quot;My first application on OpenShift Container Platform&quot;
+</pre></div>
+
+
+<hr />
+<h5 id="creating-an-application">Creating an Application<a class="headerlink" href="#creating-an-application" title="Permanent link">#</a></h5>
+<p>In the UI you should be looking at the following overview page:</p>
+<p><a href="../img/openshift_catalog.png"><img alt="OpenShift catalog" src="../img/openshift_catalog.png" /></a></p>
+<p>If not, click on the OpenShift Product Logo in the upper left hand corner, select your project again and select <em>Add to Project</em>.</p>
+<p>&#8680; From the catalog select the category <em>Ruby</em> from the group of available runtime environments.</p>
+<p><a href="../img/openshift_ruby.png"><img alt="OpenShift Ruby Example" src="../img/openshift_ruby.png" /></a></p>
+<p>OpenShift ships a number of useful example of simple and more complex application stacks in the form of templates. These are a great way to see how OpenShift does application development and deployment.</p>
+<p>&#8680; Select the example app template labeled <strong>Rails + PostgreSQL (Ephemeral)</strong></p>
                 
                   
                 
