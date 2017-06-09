@@ -286,6 +286,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#bonus-exploring-the-application-infrastructure" title="Bonus: Exploring the application infrastructure" class="md-nav__link">
+    Bonus: Exploring the application infrastructure
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -366,6 +373,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#bonus-exploring-the-application-infrastructure" title="Bonus: Exploring the application infrastructure" class="md-nav__link">
+    Bonus: Exploring the application infrastructure
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -405,7 +419,7 @@ Kubernetes is a container orchestration engine for running docker-formatted cont
 <p>For each task we will provide instructions for the UI as well as the equivalent on the CLI.</p>
 </div>
 <h5 id="logging-in">Logging in<a class="headerlink" href="#logging-in" title="Permanent link">#</a></h5>
-<p>&#8680; Log on to the OpenShift User Interface with the URL and credentials provided in the <a href="../../">Overview section</a> section.</p>
+<p>&#8680; Log on to the OpenShift User Interface with the URL provided in the <a href="../../">Overview section</a> section as user <code>developer</code> with password <code>r3dh4t</code>:</p>
 <p><a href="../img/openshift_login.png"><img alt="OpenShift UI Login" src="../img/openshift_login.png" /></a><br />
 <em>click on the screenshot for better resolution</em></p>
 <p>The UI focusses mainly on the tasks a developer / user would carry out. Administrative tasks are CLI only.</p>
@@ -414,18 +428,39 @@ Kubernetes is a container orchestration engine for running docker-formatted cont
 <p>The <code>oc</code> client is the primary CLI tool to access and manipulate entities in an OpenShift deployment.<br />
 Basic syntax is always <code>$ oc &lt;command&gt;</code></p>
 </div>
-<p>&#8680; In parallel log on to the master node with it&rsquo;s public IP provided in the <a href="../../">Overview section</a> section. For this you use the pre-installed <code>oc</code> tool (OpenShift Client).</p>
+<p>&#8680; On the CLI you use the pre-installed <code>oc</code> tool (OpenShift Client). Log on to the master node with it&rsquo;s public IP provided in the <a href="../../">Overview section</a> section:</p>
 <div class="codehilite"><pre><span></span>ssh -i ~/qwiklabs.pem -l ec2-user &lt;your-public-IP&gt;
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>oc login -u system:admin
+<div class="codehilite"><pre><span></span>oc login -u developer
+</pre></div>
+
+
+<p>Log on with the password <code>r3dh4t</code>:</p>
+<div class="codehilite"><pre><span></span>Authentication required for https://master.lab:8443 (openshift)
+Username: admin
+Password:
+Login successful.
+
+You don&#39;t have any projects. You can try to create a new project, by running
+
+    oc new-project &lt;projectname&gt;
 </pre></div>
 
 
 <hr />
 <h5 id="exploring-the-environment">Exploring the environment<a class="headerlink" href="#exploring-the-environment" title="Permanent link">#</a></h5>
-<p>&#8680; First, display all available nodes in the system</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The operations in this step can only be done on the command line and require cluster admin privileges in OpenShift.</p>
+</div>
+<p>&#8680; Log on as the default built-in system user, no password required:</p>
+<div class="codehilite"><pre><span></span>oc login -u system:admin
+</pre></div>
+
+
+<p>&#8680; Display all available nodes in the system</p>
 <div class="codehilite"><pre><span></span>oc get nodes
 </pre></div>
 
@@ -517,14 +552,24 @@ View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list ev
 
 
 <p>If these 3 pods are in place your environment is working.</p>
+<p>&#8680; Now log out from cluster admin:</p>
+<div class="codehilite"><pre><span></span>oc logout
+</pre></div>
+
+
 <hr />
 <h5 id="creating-a-project">Creating a Project<a class="headerlink" href="#creating-a-project" title="Permanent link">#</a></h5>
 <p>Similar to OpenStack <em>Projects</em> exists in OpenShift. They group users, objects and quotas in the system. They are also called <em>namespaces</em>. Nothing can exist outside a project/namespace.</p>
-<p>&#8680; Select <em>Create Project</em> in the UI. Enter at least a system name, optionally a human-readable name (label) and a description.</p>
+<p>&#8680; Select <strong>New Project</strong> in the UI. Enter at least a system name, optionally a human-readable name (label) and a description.</p>
 <p><a href="../img/openshift_no_project.png"><img alt="OpenShift empty project list" src="../img/openshift_no_project.png" /></a></p>
 <p><a href="../img/openshift_new_project.png"><img alt="OpenShift new project list" src="../img/openshift_new_project.png" /></a></p>
-<p>&#8680; On the CLI create a project with the <code>oc</code> client.</p>
-<div class="codehilite"><pre><span></span>oc new-project my-first-application \
+<p>&#8680; To do this on the CLI log back in as the <code>developer</code> user with the password <code>r3dh4t</code>:</p>
+<div class="codehilite"><pre><span></span>oc login -u developer
+</pre></div>
+
+
+<p>&#8680; Create a new project with the <code>oc</code> client:</p>
+<div class="codehilite"><pre><span></span>oc new-project my-first-app \
   --display-name=&quot;My First Application&quot; \
   --description=&quot;My first application on OpenShift Container Platform&quot;
 </pre></div>
@@ -534,11 +579,108 @@ View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list ev
 <h5 id="creating-an-application">Creating an Application<a class="headerlink" href="#creating-an-application" title="Permanent link">#</a></h5>
 <p>In the UI you should be looking at the following overview page:</p>
 <p><a href="../img/openshift_catalog.png"><img alt="OpenShift catalog" src="../img/openshift_catalog.png" /></a></p>
-<p>If not, click on the OpenShift Product Logo in the upper left hand corner, select your project again and select <em>Add to Project</em>.</p>
-<p>&#8680; From the catalog select the category <em>Ruby</em> from the group of available runtime environments.</p>
+<p>If not, click on the OpenShift Product Logo in the upper left hand corner, select your project again and select <strong>Add to Project</strong>.</p>
+<p>&#8680; From the catalog select the category <strong>Ruby</strong> from the group of available runtime environments.</p>
 <p><a href="../img/openshift_ruby.png"><img alt="OpenShift Ruby Example" src="../img/openshift_ruby.png" /></a></p>
-<p>OpenShift ships a number of useful example of simple and more complex application stacks in the form of templates. These are a great way to see how OpenShift does application development and deployment.</p>
+<p>OpenShift ships a number of useful example of simple and more complex application stacks in the form of templates. These are a great way to see how OpenShift supports application development and deployment.</p>
 <p>&#8680; Select the example app template labeled <strong>Rails + PostgreSQL (Ephemeral)</strong></p>
+<p><a href="../img/openshift_rails_1.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_1.png" /></a></p>
+<p>The template specifies various OpenShift resources, some of which are customizable via parameters. This page allows to override some.</p>
+<p><a href="../img/openshift_rails_2.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_2.png" /></a></p>
+<p>We will accept the defaults. Note the GitHub repository URL - this is where the code for this app will come from.</p>
+<p>&#8680; Click <strong>Create</strong> to start the app deployment:</p>
+<p><a href="../img/openshift_rails_3.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_3.png" /></a></p>
+<p>&#8680; Click <strong>Continue to Overview</strong> to follow the deployment process</p>
+<p><a href="../img/openshift_rails_4.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_4.png" /></a></p>
+<p>After a few minutes the deployment is done.</p>
+<p><a href="../img/openshift_rails_5.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_5.png" /></a></p>
+<p>&#8680; Click on the link provided starting with <strong>http://rails-postgresql-example-my-first-app.cloudapps&hellip;</strong> in the upper right hand corner to get to the application instances.</p>
+<p>On the CLI the process would have been kicked off with this command chain:</p>
+<div class="codehilite"><pre><span></span>oc export template/rails-postgresql-example -n openshift | oc process -f - | oc create -f -
+</pre></div>
+
+
+<p>Don&rsquo;t worry about the exact mechanics of this method - it will be explained in a later module.</p>
+<p>At this point you deployed an application stack consisting of a database pod and a pod running the ruby on rails app.<br />
+That&rsquo;s it. The application has been built from source and deployed from scratch.</p>
+<p>There is only one problem. The database stores it&rsquo;s data internally in the pod&rsquo;s ephemeral local filesystem.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At this point 5 minutes are probably over. For the curious reader there is an extra section below that explains what has happened in the background.</p>
+<p>It&rsquo;s not crucial for this lab - so feel free to skip it.</p>
+</div>
+<hr />
+<h5 id="bonus-exploring-the-application-infrastructure">Bonus: Exploring the application infrastructure<a class="headerlink" href="#bonus-exploring-the-application-infrastructure" title="Permanent link">#</a></h5>
+<p>What has happened behind the scenes in the previous step in a nutshell:</p>
+<ol>
+<li>
+<p>A Git repository with the applications source code was provided to OpenShift</p>
+</li>
+<li>
+<p>OpenShift was instructed to build a Ruby application from the source</p>
+</li>
+<li>
+<p>The Ruby application was packaged into a container image alongside the Ruby on Rails runtime</p>
+</li>
+<li>
+<p>A pointer to an existing container image containing a PostgresSQL database installation was provided</p>
+</li>
+<li>
+<p>An instance of postgres container image was started, with configuration supplied via environment variables</p>
+</li>
+<li>
+<p>An instance of the ruby app container image was started with connection data to the database container supplied via environment variables</p>
+</li>
+<li>
+<p>An internal forwarding mechanism was put in place based on a custom subdomain for the app below *.cloudapps.&lt;your-domain-name>.com</p>
+</li>
+</ol>
+<p>Let&rsquo;s look at the objects and resources in OpenShif that where created during this process.</p>
+<p>&#8680; In the OpenShift UI, click the link labeled <code>postgresql</code> in the right hand box</p>
+<p><a href="../img/openshift_rails_6.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_6.png" /></a></p>
+<p>What you will see is known as <code>DeploymentConfig</code> in OpenShift. It is an instruction how to run instances of a certain container image, i.e. how many instances, how much resources per container, whether to apply auto-scaling and what to do when the deployment config get&rsquo;s changed.</p>
+<p>Click on the <strong>Configuration</strong> tab in the <code>DeploymentConfig</code> to look at this.</p>
+<p><a href="../img/openshift_rails_dc.png"><img alt="OpenShift Ruby Example DeploymentConfig" src="../img/openshift_rails_dc.png" /></a></p>
+<p>When the config changes (e.g. increase number of container from 1 to 2) a new deployment will be triggered. The container(s) will be recreated from scratch. This follows the principle of <em>immutable infrastructre</em>.</p>
+<p>&#8680; Click on the <strong>History</strong> tab to see a list of all deployments of this config so far (should be only 1).</p>
+<p><a href="../img/openshift_rails_dc_history.png"><img alt="OpenShift Ruby Example DeploymentConfig" src="../img/openshift_rails_dc_history.png" /></a></p>
+<p>Deployments are versioned with simple integers.</p>
+<p>&#8680; Click on version <strong>#1</strong> which should be the latest version.</p>
+<p><a href="../img/openshift_rails_deployment.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_rails_deployment.png" /></a></p>
+<p>This deployment contains exactly one container instance of the postgres image. A container is handled in OpenShift/Kubernetes within the concept of a <strong>Pod</strong>.<br />
+A pod is a logical entity to abstract the fact that there could be multiple container instances scheduled as a single entity (with a single IP, single set of environment variables, storage etc.). In 90% of the case 1 pod = 1 container.</p>
+<p>&#8680; Scroll down to see the pods associated with this deployment. Click it.</p>
+<p><a href="../img/openshift_rails_dc_pod.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_rails_dc_pod.png" /></a></p>
+<p>This will show you the environment in which the pod runs. On which node, under what IP address etc. Explore the various tabs shown here. They will tell you the environment variables available to this pod, it&rsquo;s output so far and various events OpenShift recorded during it&rsquo;s lifetime.</p>
+<p>&#8680; On the CLI you can look at the DeploymentConfig like this:</p>
+<div class="codehilite"><pre><span></span>oc get deploymentconfig
+</pre></div>
+
+
+<p>You&rsquo;ll see there are actually two DeploymentConfig objects, the other one is for the ruby app container.</p>
+<div class="codehilite"><pre><span></span>NAME                       REVISION   DESIRED   CURRENT   TRIGGERED BY
+postgresql                 1          1         1         config,image(postgresql:9.5)
+rails-postgresql-example   1          1         1         config,image(rails-postgresql-example:latest)
+</pre></div>
+
+
+<p>&#8680; You can get more information on a specific object like this:</p>
+<div class="codehilite"><pre><span></span>oc describe dc/postgresql
+</pre></div>
+
+
+<p>The output will more or less show the same as the UI but in plain text.</p>
+<p>&#8680; In the UI go back to the <code>Overview</code>. Click on the link labeled <code>rails-postgresql-example</code> above the <code>DeploymentConfig</code> of the same name.</p>
+<p><a href="../img/openshift_overview_service.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_overview_service.png" /></a></p>
+<p>What you see is a <code>Service</code>. Think of it as a cluster virtual-IP for a set of containers. The <code>Service</code> IP will be constant while pod IPs can change with pods getting rescheduled, new instances spawned etc. The <code>Service</code> will also forward network traffic on a certain port to a certain port on the pods.<br />
+It will do this in a round-robin fashion.</p>
+<p><a href="../img/openshift_rails_service.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_rails_service.png" /></a></p>
+<p>However as you can tell even the <code>Service</code> IP is still internal to OpenShift. This is where <code>Routes</code> come in.</p>
+<p>&#8680; From the sidebar select <strong>Applications</strong> &gt; <strong>Routes</strong></p>
+<p><a href="../img/openshift_overview_routes.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_overview_routes.png" /></a></p>
+<p>&#8680; Click the entry labelled <code>rails-postgresql-example</code></p>
+<p><a href="../img/openshift_rails_route.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_rails_route.png" /></a></p>
+<p>A <code>Route</code> in OpenShift is a way of exposing a <code>Service</code> to the public. While a <code>Service</code> is what pods in OpenShift internally would use to talk to other pods, a <code>Route</code> is used by external clients like humans.</p>
                 
                   
                 
