@@ -1,9 +1,7 @@
 !!! Summary "Overview"
     In this module you will set up container-native storage (CNS) in your OpenShift environment. You will use this to dynamically provision storage to be available to workloads in OpenShift. It is provided by GlusterFS running in containers. GlusterFS in turn is backed by local storage available to the OpenShift nodes.
 
-    At the end of this module you will have 3 GlusterFS pods running together with the heketi API frontend properly integrated into OpenShift.
-
-&#x3009;Make sure you are logged on as the `ec2-user` to the master node:
+&#8680; Make sure you are logged on as the `ec2-user` to the master node:
 
     [ec2-user@master ~]$ hostname -f
     master.lab
@@ -13,7 +11,7 @@
 
     All files created can be stored in root’s home directory unless a particular path is specified.
 
-&#x3009;First ensure the CNS deployment tool is available (it should already be installed)
+&#8680; First ensure the CNS deployment tool is available (it should already be installed)
 
     sudo yum -y install cns-deploy
 
@@ -22,13 +20,9 @@ Configure the firewall with Ansible
 
 !!! Hint
     In the following we will use Ansible's configuration management capabilities in order to make sure all the OpenShift nodes have the right firewall settings. This is for your convenience.
-    Ansible is already present because the OpenShift installer makes heavy use of it.
-
-    Alternatively you can manually configure each nodes iptables configuration to open ports 2222/tcp, 24007-24008/tcp and 49152-49664/tcp.
-
 
 ---
-&#x3009;You should be able to ping all hosts using Ansible:
+&#8680; You should be able to ping all hosts using Ansible:
 
     ansible nodes -m ping
 
@@ -49,7 +43,7 @@ All 6 OpenShift application nodes should respond
     }
 
 
-&#x3009;Next, create a file called `configure-firewall.yml` and copy&paste the following contents:
+&#8680; Next, create a file called `configure-firewall.yml` and copy&paste the following contents:
 
 <kbd>configure-firewall.yml:</kbd>
 ```yaml
@@ -79,7 +73,7 @@ All 6 OpenShift application nodes should respond
 
 Done. This small playbook will save us some work in configuring the firewall top open required ports for CNS on each individual node.
 
-&#x3009;Run it with the following command:
+&#8680; Run it with the following command:
 
     ansible-playbook configure-firewall.yml
 
@@ -116,22 +110,22 @@ Prepare OpenShift for CNS
 
 Next we will create a namespace (also referred to as a *Project*) in OpenShift. It will be used to group the GlusterFS pods.
 
-&#x3009;For this you need to be logged as an admin user in OpenShift.
+&#8680; For this you need to be logged as an admin user in OpenShift.
 
     [ec2-user@master ~]# oc whoami
     system:admin
 
-&#x3009;If you are for some reason not an admin, login as system admin like this:
+&#8680; If you are for some reason not an admin, login as system admin like this:
 
     oc login -u system:admin -n default
 
-&#x3009;Create a namespace with a designation of your choice. In this example we will use `container-native-storage`.
+&#8680; Create a namespace with a designation of your choice. In this example we will use `container-native-storage`.
 
     oc new-project container-native-storage
 
 GlusterFS pods need access to the physical block devices on the host. Hence they need elevated permissions.
 
-&#x3009;Enable containers to run in privileged mode:
+&#8680; Enable containers to run in privileged mode:
 
     oadm policy add-scc-to-user privileged -z default
 
@@ -230,7 +224,7 @@ To protect the API from unauthorized access we will define passwords for the `ad
 |user        | mys3rs3cr3tpassw0rd |
 
 
-&#x3009;Next start the deployment routine with the following command:
+&#8680; Next start the deployment routine with the following command:
 
     cns-deploy -n container-native-storage -g topology.json --admin-key 'myS3cr3tpassw0rd' --user-key 'mys3rs3cr3tpassw0rd'
 
@@ -339,11 +333,11 @@ Verifying the deployment
 
 You now have deployed CNS. Let’s verify all components are in place.
 
-&#x3009;If not already there on the CLI change back to the `container-native-storage` namespace:
+&#8680; If not already there on the CLI change back to the `container-native-storage` namespace:
 
     oc project container-native-storage
 
-&#x3009;List all running pods:
+&#8680; List all running pods:
 
     oc get pods -o wide
 
@@ -370,7 +364,7 @@ The GlusterFS pods use the hosts network and disk devices to run the software-de
 
 To expose heketi’s API a `service` named *heketi* has been generated in OpenShift.
 
-&#x3009;Check the service with:
+&#8680; Check the service with:
 
     oc get service/heketi
 
@@ -381,7 +375,7 @@ The output should look similar to the below:
 
 To also use heketi outside of OpenShift in addition to the service a route has been deployed.
 
-&#x3009;Display the route with:
+&#8680; Display the route with:
 
     oc get route/heketi
 
@@ -394,7 +388,7 @@ The output should look similar to the below:
 Based on this *heketi* will be available on this URL:
 <http://heketi-container-native-storage.cloudapps.example.com>
 
-&#x3009;You may verify this with a trivial health check:
+&#8680; You may verify this with a trivial health check:
 
     curl http://heketi-container-native-storage.cloudapps.example.com/hello
 

@@ -1,8 +1,6 @@
 !!! Summary "Overview"
     In this module you will use CNS as a developer would do in OpenShift. For that purpose you will dynamically provision storage both in standalone fashion and in context of an application deployment.
 
-    At the end of this module you will have two application stacks running that consume persistent storage provided by CNS.
-
 Creating a StorageClass
 -----------------------
 
@@ -18,7 +16,7 @@ The storage is represented in OpenShift as a *PersistentVolume* which can direct
 
 With these basics defined we can configure our system for CNS. First we will set up the credentials for CNS in OpenShift.
 
-&#x3009;Create an encoded value for the CNS admin user like below:
+&#8680; Create an encoded value for the CNS admin user like below:
 
     echo -n "myS3cr3tpassw0rd" | base64
 
@@ -28,7 +26,7 @@ The encoded string looks like this:
 
 We will store this encoded value in an OpenShift secret.
 
-&#x3009;Create a file called `cns-secret.yml` with the as per below (highlight shows where to put encoded password):
+&#8680; Create a file called `cns-secret.yml` with the as per below (highlight shows where to put encoded password):
 
 <kbd>cns-secret.yml:</kbd>
 
@@ -45,7 +43,7 @@ type: kubernetes.io/glusterfs
 
 Create the secret in OpenShift with the following command:
 
-&#x3009;oc create -f cns-secret.yml
+&#8680; oc create -f cns-secret.yml
 
 To represent CNS as a storage provider in the system you first have to create a StorageClass. Define by creating a file called `cns-storageclass.yml` which references the secret and the heketi URL shown earlier with the contents as below:
 
@@ -67,7 +65,7 @@ parameters:
   secretName: "cns-secret"
 ```
 
-&#x3009;Create the StorageClass in OpenShift with the following command:
+&#8680; Create the StorageClass in OpenShift with the following command:
 
     oc create -f cns-storageclass.yml
 
@@ -81,7 +79,7 @@ Requesting Storage
 To get storage provisioned as a user you have to "claim" storage. The *PersistentVolumeClaim* (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.  
 Also the access mode is set here, where *ReadWriteOnce* allows one container at a time to mount this storage.
 
-&#x3009;Create a claim by specifying a file called `cns-pvc.yml` with the following contents:
+&#8680; Create a claim by specifying a file called `cns-pvc.yml` with the following contents:
 
 <kbd>cns-pvc.yml:</kbd>
 ```yaml
@@ -100,11 +98,11 @@ spec:
 ```
 With above PVC we are requesting 10 GiB of non-shared storage. Instead of *ReadWriteOnce* you could also have specified *ReadWriteOnly* (for read-only) and *ReadWriteMany* (for shared storage).
 
-&#x3009;Submit the PVC to the system like so:
+&#8680; Submit the PVC to the system like so:
 
     oc create -f cns-pvc.yml
 
-&#x3009;Look at the requests state with the following command:
+&#8680; Look at the requests state with the following command:
 
     oc get pvc
 
@@ -124,7 +122,7 @@ You should see the PVC listed and in *Bound* state.
 
 When the claim was fulfilled successfully it is in the *Bound* state. That means the system has successfully (via the StorageClass) reached out to the storage backend (in our case GlusterFS). The backend in turn provisioned the storage and provided a handle back OpenShift. In OpenShift the provisioned storage is then represented by a *PersistentVolume* (PV) which is *bound* to the PVC.
 
-&#x3009;Look at the PVC for these details:
+&#8680; Look at the PVC for these details:
 
     oc describe pvc/my-container-storage
 
@@ -145,7 +143,7 @@ No events.
 !!! Note
     The PV name will be different in your environment since it’s automatically generated.
 
-&#x3009;Look at the corresponding PV by it’s name:
+&#8680; Look at the corresponding PV by it’s name:
 
     oc describe pv/pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
 
@@ -180,7 +178,7 @@ Storage is freed up by deleting the **PVC**. The PVC controls the lifecycle of t
 !!! Caution "Important"
     Never delete PVs that are dynamically provided. They are only handles for pods mounting the storage. Storage lifecycle is entirely controlled via PVCs.
 
-&#x3009;Delete the storage by deleting the PVC like this:
+&#8680; Delete the storage by deleting the PVC like this:
 
     oc delete pvc/my-container-storage
 
@@ -216,13 +214,13 @@ Normally a user doesn’t request storage with a PVC directly. Rather the PVC is
 
 To create an application from the OpenShift Example templates on the CLI follow these steps.
 
-&#x3009;Create a new project with a name of your choice:
+&#8680; Create a new project with a name of your choice:
 
     oc new-project my-test-project
 
 To use the example applications that ship with OpenShift we can export and modify the template for a sample Ruby on Rails with PostgreSQL application. All these templates ship in pre-defined namespace called `openshift`.
 
-&#x3009;Export the template from the `openshift` namespace in YAML format:
+&#8680; Export the template from the `openshift` namespace in YAML format:
 
     oc export template/rails-pgsql-persistent -n openshift -o yaml > rails-app-template.yml
 
@@ -241,14 +239,14 @@ The template contains a couple of parameters which default values we can overrid
 
 There is a parameter in the template is called `VOLUME_CAPACITY`. It is used to customize the capacity in the PVC. We will process the template with the CLI client and override this parameter with a value of *15Gi* as follows:
 
-&#x3009;Render the template with the custom parameter value as follows:
+&#8680; Render the template with the custom parameter value as follows:
 
     oc process -f rails-app-template.yml -o yaml -p VOLUME_CAPACITY=15Gi > my-rails-app.yml
 
 
 The result `my-rails-app.yml` file contains all resources including our custom PVC for this application.
 
-&#x3009;Deploy these resources like so:
+&#8680; Deploy these resources like so:
 
     oc create -f my-rails-app.yml
 
@@ -268,7 +266,7 @@ deploymentconfig "postgresql" created
 
 You can now use the OpenShift UI (while being logged in the newly created project) to follow the deployment process.
 
-&#x3009;Alternatively watch the containers deploy like this:
+&#8680; Alternatively watch the containers deploy like this:
 
     oc get pods -w
 
@@ -317,7 +315,12 @@ Exit out of the watch mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd>
 
 You should also see a PVC being issued and in the *Bound* state.
 
-    [root@master ~]# oc get pvc
+&#8680; Look at the PVC created:
+
+    oc get pvc/postgresql
+
+Output:
+
     NAME         STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
     postgresql   Bound     pvc-9bb84d88-4ac6-11e7-b56f-2cc2602a6dc8   15Gi       RWO           4m
 
@@ -326,7 +329,7 @@ You should also see a PVC being issued and in the *Bound* state.
 
 Now go ahead and try out the application. The overview page in the OpenShift UI will tell you the `route` which has been deployed as well. Use it and append `/articles` to the URL to get to the actual app.
 
-&#x3009;Otherwise get it on the CLI like this:
+&#8680; Otherwise get it on the CLI like this:
 
     oc get route
 
@@ -341,7 +344,7 @@ When they are saved they are actually saved in the PostgreSQL database which sto
 
 Now let’s take a look at how this was actually achieved.
 
-&#x3009;Look at the PVC to determine the PV:
+&#8680; Look at the PVC to determine the PV:
 
     oc get pvc
 
@@ -353,7 +356,7 @@ Output:
 !!! Note
     Your volume (PV) name will be different as it’s dynamically generated.
 
-&#x3009;Look at the details of this PV:
+&#8680; Look at the details of this PV:
 
     oc describe pv/pvc-9bb84d88-4ac6-11e7-b56f-2cc2602a6dc8
 
@@ -379,11 +382,11 @@ No events.
 
 Note the GlusterFS volume name, in this case `vol_e8fe7f46fedf7af7628feda0dcbf2f60`.
 
-&#x3009;Now let’s switch to the namespace we used for CNS deployment:
+&#8680; Now let’s switch to the namespace we used for CNS deployment:
 
     oc project container-native-storage
 
-&#x3009;Look at the GlusterFS pods running
+&#8680; Look at the GlusterFS pods running
 
     oc get pods -o wide
 
@@ -397,7 +400,7 @@ Pick one of the GlusterFS pods by name (which one is not important):
 
 **Remember the IP address** of the pod you select. In this case `192.168.0.102`.
 
-&#x3009;Log on to GlusterFS pod with a remote terminal session like so:
+&#8680; Log on to GlusterFS pod with a remote terminal session like so:
 
     oc rsh glusterfs-37vn8
 
@@ -407,7 +410,7 @@ You will end up in shell session in the container with root privileges.
 
 You have now access to this container’s process and filesystem namespace which has the GlusterFS CLI utilities installed.
 
-&#x3009;Let’s list all known volumes:
+&#8680; Let’s list all known volumes:
 
     sh-4.2# gluster volume list
 
@@ -420,7 +423,7 @@ You will see two volumes:
 
 -   `vol_e8fe7f46fedf7af7628feda0dcbf2f60` is the volume backing the PV of the PostgreSQL database deployed earlier.
 
-&#x3009;Interrogate GlusterFS about the topology of this volume:
+&#8680; Interrogate GlusterFS about the topology of this volume:
 
     sh-4.2# gluster volume info vol_e8fe7f46fedf7af7628feda0dcbf2f60
 
@@ -449,7 +452,7 @@ nfs.disable: on
 
 GlusterFS created this volume as a 3-way replica set across all GlusterFS pods, therefore across all your OpenShift App nodes running CNS. This is currently the only supported volume type in production. Later you will see how can schedule (unsupported) volume types like dispersed or distributed.
 
-&#x3009;You can even look at the local brick:
+&#8680; You can even look at the local brick:
 
     sh-4.2# ls -ahl /var/lib/heketi/mounts/vg_0246fd563709384a3cbc3f3bbeeb87a9/brick_684a01f8993f241a92db02b117e0b912/brick
     total 16K
@@ -499,7 +502,7 @@ Clients, like the OpenShift nodes and their application pods talk to this storag
 When a pod starts that mounts storage from a PV backed by CNS the GlusterFS mount plugin in OpenShift will mount the GlusterFS volume on the right App Node and then *bind-mount* this directory to the right pod.  
 This is happen transparently to the application and looks like a normal local filesystem inside the pod.
 
-&#x3009;You may exit your remote session to the GlusterFS pod.
+&#8680; You may exit your remote session to the GlusterFS pod.
 
     sh-4.2# exit
 
@@ -513,11 +516,11 @@ So far only very few options, like the basic NFS support existed, to provide a P
 
 With CNS this capabilities is now available to all OpenShift deployments, no matter where they are deployed. To demonstrate this capability with an application we will deploy a PHP-based file uploader that has multiple front-end instances sharing a common storage repository.
 
-&#x3009;First make sure you are still in the example project created earlier
+&#8680; First make sure you are still in the example project created earlier
 
     oc project my-test-project
 
-&#x3009;Next deploy the example application:
+&#8680; Next deploy the example application:
 
     oc new-app openshift/php:7.0~https://github.com/christianh814/openshift-php-upload-demo --name=file-uploader
 
@@ -551,7 +554,7 @@ Output:
         Build scheduled, use 'oc logs -f bc/file-uploader' to track its progress.
         Run 'oc status' to view your app.
 
-&#x3009;Wait for the application to be deployed with the suggest command:
+&#8680; Wait for the application to be deployed with the suggest command:
 
     oc logs -f bc/file-uploader
 
@@ -569,7 +572,7 @@ The follow-mode of the above command ends automatically when the build is succes
     Pushed 2/5 layers, 40% complete
     Push successful
 
-&#x3009;When the build is completed ensure the pods are running:
+&#8680; When the build is completed ensure the pods are running:
 
     oc get pods
 
@@ -582,11 +585,11 @@ Among your existing pods you should see two new pods running.
 
 Note the name of the single pod currently running the app: **file-uploader-1-k2v0d**. The container called `file-uploader-1-build` is the builder container that deployed the application and it has already terminated. A service has been created for our app but not exposed yet.
 
-&#x3009;Let’s fix this:
+&#8680; Let’s fix this:
 
     oc expose svc/file-uploader
 
-&#x3009;Check the route that has been created:
+&#8680; Check the route that has been created:
 
     oc get route/file-uploader
 
@@ -605,7 +608,7 @@ Select an arbitrary from your local system and upload it to the app.
 
 After uploading a file validate it has been stored locally in the container by following the link *List Uploaded Files* in the browser
 
-&#x3009;Or logging into it via a remote session (using the name noted earlier):
+&#8680; Or logging into it via a remote session (using the name noted earlier):
 
     oc rsh file-uploader-1-k2v0d
 
@@ -632,15 +635,15 @@ This pod currently does not use any persistent storage. It stores the file local
 
 Let’s see when this become a problem.
 
-&#x3009;Exit out of the container shell:
+&#8680; Exit out of the container shell:
 
     sh-4.2$ exit
 
-&#x3009;Let’s scale the deployment to 3 instances of the app:
+&#8680; Let’s scale the deployment to 3 instances of the app:
 
     oc scale dc/file-uploader --replicas=3
 
-&#x3009;Watch the additional pods getting spawned:
+&#8680; Watch the additional pods getting spawned:
 
     oc get pods
 
@@ -658,11 +661,11 @@ You will see 2 additional pods being spawned:
 
 When you log on to one of the new instances you will see they have no data.
 
-&#x3009;Log on to one of the new containers:
+&#8680; Log on to one of the new containers:
 
     oc rsh file-uploader-1-3cgh1
 
-&#x3009;Again check the upload directory:
+&#8680; Again check the upload directory:
 
     sh-4.2$ cd uploaded
     sh-4.2$ pwd
@@ -674,7 +677,7 @@ Empty. Similarly, other users of the app will sometimes see your uploaded files 
 
 The app is of course not usable like this. We can fix this by providing shared storage to this app.
 
-&#x3009;First create a PVC with the appropriate setting in a file called `cns-rwx-pvc.yml` with below contents:
+&#8680; First create a PVC with the appropriate setting in a file called `cns-rwx-pvc.yml` with below contents:
 
 <kbd>cns-rwx-pvc.yml:</kbd>
 
@@ -694,15 +697,15 @@ spec:
 ```
 Notice the access mode explicitly requested to be `ReadWriteMany` (also referred to as RWX). Storage provisioned like this can be mounted by multiple containers on multiple hosts at the same time.
 
-&#x3009;Submit the request to the system:
+&#8680; Submit the request to the system:
 
     oc create -f cns-rwx-pvc.yml
 
-&#x3009;Let’s look at the result:
+&#8680; Let’s look at the result:
 
     oc get pvc
 
-Notice the ACCESSMODE being set to `RWX` (i.e. "shared storage").
+`ACCESSMODES` is set to `RWX`:
 
     NAME                STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
     my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi       RWX           22s
@@ -710,13 +713,13 @@ Notice the ACCESSMODE being set to `RWX` (i.e. "shared storage").
 
 We can now update the *DeploymentConfig* of our application to use this PVC to provide the application with persistent, shared storage for uploads.
 
-&#x3009;Update the configuration of the application by adding a volume claim like this:
+&#8680; Update the configuration of the application by adding a volume claim like this:
 
     oc volume dc/file-uploader --add --name=shared-storage --type=persistentVolumeClaim --claim-name=my-shared-storage --mount-path=/opt/app-root/src/uploaded
 
 Our app will now re-deploy (in a rolling fashion) with the new settings - all pods will mount the volume identified by the PVC under /opt/app-root/src/upload (the path is predictable so we can hard-code it here).
 
-&#x3009;You can watch it like this:
+&#8680; You can watch it like this:
 
     oc logs dc/file-uploader -f
 
@@ -733,7 +736,7 @@ The new `DeploymentConfig` will supersede the old one.
 
 The new config `file-uploader-2` will have 3 pods all sharing the same storage.
 
-&#x3009;Get the names of the new pods:
+&#8680; Get the names of the new pods:
 
     oc get pods
 
