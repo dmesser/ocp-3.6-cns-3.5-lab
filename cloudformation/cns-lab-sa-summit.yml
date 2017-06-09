@@ -947,11 +947,11 @@ Outputs:
       Value: !Ref PublicEIP1
 
    UserName:
-      Description: "OpenShift Node Login"
+      Description: "OpenShift User Login"
       Value: "developer"
 
    Password:
-      Description: "OpenShift Node Login Password"
+      Description: "OpenShift User Login Password"
       Value: "r3dh4t"
 
    SSHLoginUser:
