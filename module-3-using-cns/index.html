@@ -876,8 +876,17 @@ So far only very few options, like the basic NFS support existed, to provide a P
 
 
 <p>&#x3009;Next deploy the example application:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc new-app openshift/php:7.0~https://github.com/christianh814/openshift-php-upload-demo --name=file-uploader
---&gt; Found image a1ebebb (6 weeks old) in image stream &quot;openshift/php&quot; under tag &quot;7.0&quot; for &quot;openshift/php:7.0&quot;
+<div class="codehilite"><pre><span></span>oc new-app openshift/php:7.0~https://github.com/christianh814/openshift-php-upload-demo --name=file-uploader
+</pre></div>
+
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is yet another way to build and launch an application from source code in OpenShift. The content before the ~ is the name of a Source-to-Image builder (a container that knows how to build applications of a certain type from source, in this case PHP) and the URL following is a GitHub repository hosting the source code.<br />
+Feel free to check it out.</p>
+</div>
+<p>Output:</p>
+<div class="codehilite"><pre><span></span>--&gt; Found image a1ebebb (6 weeks old) in image stream &quot;openshift/php&quot; under tag &quot;7.0&quot; for &quot;openshift/php:7.0&quot;
 
     Apache 2.4 with PHP 7.0
     -----------------------
@@ -903,8 +912,13 @@ So far only very few options, like the basic NFS support existed, to provide a P
 </pre></div>
 
 
-<p>Wait for the application to be deployed with the suggest command:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc logs -f bc/file-uploader
+<p>&#x3009;Wait for the application to be deployed with the suggest command:</p>
+<div class="codehilite"><pre><span></span>oc logs -f bc/file-uploader
+</pre></div>
+
+
+<p>The follow-mode of the above command ends automatically when the build is successful and you return to your shell.</p>
+<div class="codehilite"><pre><span></span>...
 Cloning &quot;https://github.com/christianh814/openshift-php-upload-demo&quot; ...
         Commit: 7508da63d78b4abc8d03eac480ae930beec5d29d (Update index.html)
         Author: Christian Hernandez &lt;christianh814@users.noreply.github.com&gt;
@@ -918,36 +932,48 @@ Push successful
 </pre></div>
 
 
-<p>Again kbd:[Ctrl + c] out of the tail mode. When the build is completed ensure the pods are running:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc get pods
-NAME                             READY     STATUS      RESTARTS   AGE
+<p>&#x3009;When the build is completed ensure the pods are running:</p>
+<div class="codehilite"><pre><span></span>oc get pods
+</pre></div>
+
+
+<p>Among your existing pods you should see two new pods running.</p>
+<div class="codehilite"><pre><span></span>NAME                             READY     STATUS      RESTARTS   AGE
 file-uploader-1-build            0/1       Completed   0          2m
 file-uploader-1-k2v0d            1/1       Running     0          1m
 ...
 </pre></div>
 
 
-<p>Note the name of the single pod currently running the app: <strong>file-uploader-1-k2v0d</strong>. The container called <code>file-uploader-1-build</code> is the builder container and is not relevant for us. A service has been created for our app but not exposed yet. Let’s fix this:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc expose svc/file-uploader
+<p>Note the name of the single pod currently running the app: <strong>file-uploader-1-k2v0d</strong>. The container called <code>file-uploader-1-build</code> is the builder container that deployed the application and it has already terminated. A service has been created for our app but not exposed yet.</p>
+<p>&#x3009;Let’s fix this:</p>
+<div class="codehilite"><pre><span></span>oc expose svc/file-uploader
 </pre></div>
 
 
-<p>Check the route that has been created:</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc get route
-NAME                     HOST/PORT                                                      PATH      SERVICES                 PORT       TERMINATION   WILDCARD
+<p>&#x3009;Check the route that has been created:</p>
+<div class="codehilite"><pre><span></span>oc get route/file-uploader
+</pre></div>
+
+
+<p>The route forwards all traffic to port 8080 of the container running the app.</p>
+<div class="codehilite"><pre><span></span>NAME                     HOST/PORT                                                      PATH      SERVICES                 PORT       TERMINATION   WILDCARD
 file-uploader            file-uploader-my-test-project.cloudapps.example.com                      file-uploader            8080-tcp                 None
-...
 </pre></div>
 
 
 <p>Point your browser the the URL advertised by the route (<a href="http://file-uploader-my-test-project.cloudapps.example.com">http://file-uploader-my-test-project.cloudapps.example.com</a>)</p>
 <p>The application simply lists all file previously uploaded and offers the ability to upload new ones as well as download the existing data. Right now there is nothing.</p>
 <p>Select an arbitrary from your local system and upload it to the app.</p>
-<p><img alt="A simple PHP-based file upload tool" src="../uploader_screen_upload.png" /></p>
-<p>After uploading a file validate it has been stored locally in the container by following the link <em>List uploaded files</em> in the browser or logging into it via a remote session (using the name noted earlier):</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc rsh file-uploader-1-k2v0d
+<p><a href="../img/uploader_screen_upload.png"><img alt="A simple PHP-based file upload tool" src="../img/uploader_screen_upload.png" /></a></p>
+<p>After uploading a file validate it has been stored locally in the container by following the link <em>List Uploaded Files</em> in the browser</p>
+<p>&#x3009;Or logging into it via a remote session (using the name noted earlier):</p>
+<div class="codehilite"><pre><span></span>oc rsh file-uploader-1-k2v0d
+</pre></div>
 
-sh-4.2$ cd uploaded
+
+<p>In the container explore the directory in which the uploaded files will be stored.</p>
+<div class="codehilite"><pre><span></span>sh-4.2$ cd uploaded
 sh-4.2$ pwd
 /opt/app-root/src/uploaded
 sh-4.2$ ls -lh
@@ -956,12 +982,12 @@ total 16K
 </pre></div>
 
 
-<blockquote>
-<p><strong>Note</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>The exact name of the pod will be different in your environment.</p>
-</blockquote>
+</div>
 <p>The app should also list the file in the overview:</p>
-<p><img alt="The file has been uploaded and can be downloaded again" src="../uploader_screen_list.png" /></p>
+<p><a href="../img/uploader_screen_list.png"><img alt="The file has been uploaded and can be downloaded again" src="../img/uploader_screen_list.png" /></a></p>
 <p>This pod currently does not use any persistent storage. It stores the file locally.</p>
 <blockquote>
 <p><strong>Caution</strong></p>
