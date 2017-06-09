@@ -173,7 +173,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-1/" title="Module 1 - OpenShift in 5 Minutes" class="md-nav__link">
+    <a href="../module-1-ocp-in-5/" title="Module 1 - OpenShift in 5 Minutes" class="md-nav__link">
       Module 1 - OpenShift in 5 Minutes
     </a>
   </li>
@@ -208,8 +208,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configure-openshift-node-firewall-with-ansible" title="Configure OpenShift Node firewall with Ansible" class="md-nav__link">
-    Configure OpenShift Node firewall with Ansible
+  <a href="#configure-the-firewall-with-ansible" title="Configure the firewall with Ansible" class="md-nav__link">
+    Configure the firewall with Ansible
   </a>
   
 </li>
@@ -269,7 +269,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-1/" title="Module 4 - Cluster Operations" class="md-nav__link">
+    <a href="../module-1-ocp-in-5/" title="Module 4 - Cluster Operations" class="md-nav__link">
       Module 4 - Cluster Operations
     </a>
   </li>
@@ -281,7 +281,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-1/" title="Module 5 - Advanced Topics" class="md-nav__link">
+    <a href="../module-1-ocp-in-5/" title="Module 5 - Advanced Topics" class="md-nav__link">
       Module 5 - Advanced Topics
     </a>
   </li>
@@ -311,8 +311,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configure-openshift-node-firewall-with-ansible" title="Configure OpenShift Node firewall with Ansible" class="md-nav__link">
-    Configure OpenShift Node firewall with Ansible
+  <a href="#configure-the-firewall-with-ansible" title="Configure the firewall with Ansible" class="md-nav__link">
+    Configure the firewall with Ansible
   </a>
   
 </li>
@@ -367,7 +367,7 @@
 <p>In this module you will set up container-native storage (CNS) in your OpenShift environment. You will use this to dynamically provision storage to be available to workloads in OpenShift. It is provided by GlusterFS running in containers. GlusterFS in turn is backed by local storage available to the OpenShift nodes.</p>
 <p>At the end of this module you will have 3 GlusterFS pods running together with the heketi API frontend properly integrated into OpenShift.</p>
 </div>
-<p>&#x3009;Make sure you are logged on as the <code>ec2-user</code> to the master node:</p>
+<p>&#8680; Make sure you are logged on as the <code>ec2-user</code> to the master node:</p>
 <div class="codehilite"><pre><span></span>[ec2-user@master ~]$ hostname -f
 master.lab
 </pre></div>
@@ -378,20 +378,18 @@ master.lab
 <p>All of the following tasks are carried out as the ec2-user from the master node. For Copy &amp; Paste convenience we will omit the shell prompt unless necessary.</p>
 <p>All files created can be stored in root’s home directory unless a particular path is specified.</p>
 </div>
-<p>&#x3009;First install the CNS deployment tool:</p>
+<p>&#8680; First ensure the CNS deployment tool is available (it should already be installed)</p>
 <div class="codehilite"><pre><span></span>sudo yum -y install cns-deploy
 </pre></div>
 
 
-<h2 id="configure-openshift-node-firewall-with-ansible">Configure OpenShift Node firewall with Ansible<a class="headerlink" href="#configure-openshift-node-firewall-with-ansible" title="Permanent link">#</a></h2>
+<h2 id="configure-the-firewall-with-ansible">Configure the firewall with Ansible<a class="headerlink" href="#configure-the-firewall-with-ansible" title="Permanent link">#</a></h2>
 <div class="admonition hint">
 <p class="admonition-title">Hint</p>
-<p>In the following we will use Ansible&rsquo;s configuration management capabilities in order to make sure all the OpenShift nodes have the right firewall settings. This is for your convenience.<br />
-Ansible is already present because the OpenShift installer makes heavy use of it.</p>
-<p>Alternatively you can manually configure each nodes iptables configuration to open ports 2222/tcp, 24007-24008/tcp and 49152-49664/tcp.</p>
+<p>In the following we will use Ansible&rsquo;s configuration management capabilities in order to make sure all the OpenShift nodes have the right firewall settings. This is for your convenience.</p>
 </div>
 <hr />
-<p>&#x3009;You should be able to ping all hosts using Ansible:</p>
+<p>&#8680; You should be able to ping all hosts using Ansible:</p>
 <div class="codehilite"><pre><span></span>ansible nodes -m ping
 </pre></div>
 
@@ -412,7 +410,7 @@ node1.example.com | SUCCESS =&gt; {
 </pre></div>
 
 
-<p>&#x3009;Next, create a file called <code>configure-firewall.yml</code> and copy&amp;paste the following contents:</p>
+<p>&#8680; Next, create a file called <code>configure-firewall.yml</code> and copy&amp;paste the following contents:</p>
 <p><kbd>configure-firewall.yml:</kbd></p>
 <div class="codehilite"><pre><span></span><span class="nn">---</span>
 
@@ -440,7 +438,7 @@ node1.example.com | SUCCESS =&gt; {
 
 
 <p>Done. This small playbook will save us some work in configuring the firewall top open required ports for CNS on each individual node.</p>
-<p>&#x3009;Run it with the following command:</p>
+<p>&#8680; Run it with the following command:</p>
 <div class="codehilite"><pre><span></span>ansible-playbook configure-firewall.yml
 </pre></div>
 
@@ -474,24 +472,24 @@ node3.example.com          : ok=3    changed=2    unreachable=0    failed=0
 <hr />
 <h2 id="prepare-openshift-for-cns">Prepare OpenShift for CNS<a class="headerlink" href="#prepare-openshift-for-cns" title="Permanent link">#</a></h2>
 <p>Next we will create a namespace (also referred to as a <em>Project</em>) in OpenShift. It will be used to group the GlusterFS pods.</p>
-<p>&#x3009;For this you need to be logged as an admin user in OpenShift.</p>
+<p>&#8680; For this you need to be logged as an admin user in OpenShift.</p>
 <div class="codehilite"><pre><span></span>[ec2-user@master ~]# oc whoami
 system:admin
 </pre></div>
 
 
-<p>&#x3009;If you are for some reason not an admin, login as system admin like this:</p>
+<p>&#8680; If you are for some reason not an admin, login as system admin like this:</p>
 <div class="codehilite"><pre><span></span>oc login -u system:admin -n default
 </pre></div>
 
 
-<p>&#x3009;Create a namespace with a designation of your choice. In this example we will use <code>container-native-storage</code>.</p>
+<p>&#8680; Create a namespace with a designation of your choice. In this example we will use <code>container-native-storage</code>.</p>
 <div class="codehilite"><pre><span></span>oc new-project container-native-storage
 </pre></div>
 
 
 <p>GlusterFS pods need access to the physical block devices on the host. Hence they need elevated permissions.</p>
-<p>&#x3009;Enable containers to run in privileged mode:</p>
+<p>&#8680; Enable containers to run in privileged mode:</p>
 <div class="codehilite"><pre><span></span>oadm policy add-scc-to-user privileged -z default
 </pre></div>
 
@@ -593,7 +591,7 @@ To protect the API from unauthorized access we will define passwords for the <co
 </tr>
 </tbody>
 </table>
-<p>&#x3009;Next start the deployment routine with the following command:</p>
+<p>&#8680; Next start the deployment routine with the following command:</p>
 <div class="codehilite"><pre><span></span>cns-deploy -n container-native-storage -g topology.json --admin-key &#39;myS3cr3tpassw0rd&#39; --user-key &#39;mys3rs3cr3tpassw0rd&#39;
 </pre></div>
 
@@ -704,12 +702,12 @@ Ready to create and provide GlusterFS volumes.
 <hr />
 <h2 id="verifying-the-deployment">Verifying the deployment<a class="headerlink" href="#verifying-the-deployment" title="Permanent link">#</a></h2>
 <p>You now have deployed CNS. Let’s verify all components are in place.</p>
-<p>&#x3009;If not already there on the CLI change back to the <code>container-native-storage</code> namespace:</p>
+<p>&#8680; If not already there on the CLI change back to the <code>container-native-storage</code> namespace:</p>
 <div class="codehilite"><pre><span></span>oc project container-native-storage
 </pre></div>
 
 
-<p>&#x3009;List all running pods:</p>
+<p>&#8680; List all running pods:</p>
 <div class="codehilite"><pre><span></span>oc get pods -o wide
 </pre></div>
 
@@ -732,7 +730,7 @@ Ready to create and provide GlusterFS volumes.
 <p><em>heketi</em> is a component that will expose an API for GlusterFS to OpenShift. This allows OpenShift to dynamically allocate storage from CNS in a programmatic fashion. See below for a visualization. Note that for simplicity, in our example heketi runs on the OpenShift App nodes, not on the Infra node.</p>
 <p><a href="../img/cns_diagram_heketi.svg"><img alt="heketi pod running in CNS" src="../img/cns_diagram_heketi.svg" /></a></p>
 <p>To expose heketi’s API a <code>service</code> named <em>heketi</em> has been generated in OpenShift.</p>
-<p>&#x3009;Check the service with:</p>
+<p>&#8680; Check the service with:</p>
 <div class="codehilite"><pre><span></span>oc get service/heketi
 </pre></div>
 
@@ -744,7 +742,7 @@ heketi    172.30.5.231   &lt;none&gt;        8080/TCP   31m
 
 
 <p>To also use heketi outside of OpenShift in addition to the service a route has been deployed.</p>
-<p>&#x3009;Display the route with:</p>
+<p>&#8680; Display the route with:</p>
 <div class="codehilite"><pre><span></span>oc get route/heketi
 </pre></div>
 
@@ -758,7 +756,7 @@ heketi    heketi-container-native-storage.cloudapps.example.com             heke
 
 <p>Based on this <em>heketi</em> will be available on this URL:<br />
 <a href="http://heketi-container-native-storage.cloudapps.example.com">http://heketi-container-native-storage.cloudapps.example.com</a></p>
-<p>&#x3009;You may verify this with a trivial health check:</p>
+<p>&#8680; You may verify this with a trivial health check:</p>
 <div class="codehilite"><pre><span></span>curl http://heketi-container-native-storage.cloudapps.example.com/hello
 </pre></div>
 
@@ -787,7 +785,7 @@ heketi    heketi-container-native-storage.cloudapps.example.com             heke
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../module-1/" title="Module 1 - OpenShift in 5 Minutes" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../module-1-ocp-in-5/" title="Module 1 - OpenShift in 5 Minutes" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
