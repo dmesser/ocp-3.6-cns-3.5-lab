@@ -13,11 +13,11 @@
 
     All files created can be stored in root’s home directory unless a particular path is specified.
 
-&#x3009;First install the CNS deployment tool:
+&#x3009;First ensure the CNS deployment tool is available (it should already be installed)
 
     sudo yum -y install cns-deploy
 
-Configure OpenShift Node firewall with Ansible
+Configure the firewall with Ansible
 ----------------------------------------------
 
 !!! Hint
