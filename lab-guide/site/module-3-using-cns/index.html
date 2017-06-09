@@ -351,7 +351,6 @@
                 <div class="admonition summary">
 <p class="admonition-title">Overview</p>
 <p>In this module you will use CNS as a developer would do in OpenShift. For that purpose you will dynamically provision storage both in standalone fashion and in context of an application deployment.</p>
-<p>At the end of this module you will have two application stacks running that consume persistent storage provided by CNS.</p>
 </div>
 <h2 id="creating-a-storageclass">Creating a StorageClass<a class="headerlink" href="#creating-a-storageclass" title="Permanent link">#</a></h2>
 <p>OpenShift uses Kubernetes&rsquo; PersistentStorage facility to dynamically allocate storage of any kind for applications. This is a fairly simple framework in which only 3 components exists: the storage provider, the storage volume and the request for a storage volume.</p>
@@ -665,8 +664,13 @@ rails-pgsql-persistent-1-hook-pre   0/1       Terminating   0         1m
 <p>It may take up to 5 minutes for the deployment to complete.</p>
 </div>
 <p>You should also see a PVC being issued and in the <em>Bound</em> state.</p>
-<div class="codehilite"><pre><span></span>[root@master ~]# oc get pvc
-NAME         STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
+<p>&#8680; Look at the PVC created:</p>
+<div class="codehilite"><pre><span></span>oc get pvc/postgresql
+</pre></div>
+
+
+<p>Output:</p>
+<div class="codehilite"><pre><span></span>NAME         STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
 postgresql   Bound     pvc-9bb84d88-4ac6-11e7-b56f-2cc2602a6dc8   15Gi       RWO           4m
 </pre></div>
 
@@ -1068,7 +1072,7 @@ total 0
 </pre></div>
 
 
-<p>Notice the ACCESSMODE being set to <code>RWX</code> (i.e. &ldquo;shared storage&rdquo;).</p>
+<p><code>ACCESSMODES</code> is set to <code>RWX</code>:</p>
 <div class="codehilite"><pre><span></span>NAME                STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
 my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi       RWX           22s
 ...
