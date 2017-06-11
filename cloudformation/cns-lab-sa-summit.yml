@@ -664,11 +664,16 @@ Resources:
                 path: /etc/ansible/hosts
 
             runcmd:
-              - ansible nodes,masters -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - ansible masters -m filesystem -a "fstype=xfs dev=/dev/xvdc"
               - ansible masters -m mount -a "fstype=xfs src=/dev/xvdc path=/var/lib/origin state=mounted"
-              - ansible nodes -m wait_for -a "port=22 timeout=600"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-1.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-2.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-3.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-4.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-5.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-6.lab"
               - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
+              - ansible nodes,masters -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml ; /opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
 
   WaitHandle:
@@ -946,31 +951,31 @@ Resources:
         Value: 'node-6'
 
 Outputs:
-   MasterNodePublicIP:
-      Description: "OpenShift Master Node Public IP Address"
-      Value: !Ref PublicEIP1
-
-   UserName:
-      Description: "OpenShift User Login"
-      Value: "developer"
-
-   Password:
-      Description: "OpenShift User Login Password"
-      Value: "r3dh4t"
+  MasterNodePublicIP:
+    Description: "OpenShift Master Node Public IP Address"
+    Value: !Ref PublicEIP1
 
   UserName:
-     Description: "OpenShift Operator Login"
-     Value: "operator"
+    Description: "OpenShift User Login"
+    Value: "developer"
 
   Password:
-     Description: "OpenShift User Login Password"
-     Value: "r3dh4t"
+    Description: "OpenShift User Login Password"
+    Value: "r3dh4t"
 
-   SSHLoginUser:
-      Description: "User name on the Master node to connect via SSH and PEM file"
-      Value: "ec2-user"
+  UserName:
+   Description: "OpenShift Operator Login"
+   Value: "operator"
 
-   OpenShiftLoginURL:
-      Description: "OpenShift Master Node Public IP Address"
-      Value: !Sub "https://${PublicEIP1}.nip.io:8443/"
+  Password:
+   Description: "OpenShift User Login Password"
+   Value: "r3dh4t"
+
+  SSHLoginUser:
+    Description: "User name on the Master node to connect via SSH and PEM file"
+    Value: "ec2-user"
+
+  OpenShiftLoginURL:
+    Description: "OpenShift Master Node Public IP Address"
+    Value: !Sub "https://${PublicEIP1}.nip.io:8443/"
 ...
