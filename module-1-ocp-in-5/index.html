@@ -552,6 +552,11 @@ View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list ev
 
 
 <p>If these 3 pods are in place your environment is working.</p>
+<p>&#8680; Add cluster admin privileges to the <code>operator</code> user in order to have an admin user capable of logging into the UI:</p>
+<div class="codehilite"><pre><span></span>oadm policy add-cluster-role-to-user cluster-admin operator
+</pre></div>
+
+
 <p>&#8680; Now log out from cluster admin:</p>
 <div class="codehilite"><pre><span></span>oc logout
 </pre></div>
