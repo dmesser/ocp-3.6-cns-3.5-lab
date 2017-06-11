@@ -269,7 +269,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-1-ocp-in-5/" title="Module 4 - Cluster Operations" class="md-nav__link">
+    <a href="../module-4-cluster-ops/" title="Module 4 - Cluster Operations" class="md-nav__link">
       Module 4 - Cluster Operations
     </a>
   </li>
@@ -281,7 +281,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-1-ocp-in-5/" title="Module 5 - Advanced Topics" class="md-nav__link">
+    <a href="../module-5-advanced/" title="Module 5 - Advanced Topics" class="md-nav__link">
       Module 5 - Advanced Topics
     </a>
   </li>
@@ -503,14 +503,14 @@ node-6.lab                 : ok=3    changed=2    unreachable=0    failed=0
 <hr />
 <h2 id="prepare-openshift-for-cns">Prepare OpenShift for CNS<a class="headerlink" href="#prepare-openshift-for-cns" title="Permanent link">#</a></h2>
 <p>Next we will create a namespace (also referred to as a <em>Project</em>) in OpenShift. It will be used to group the GlusterFS pods.</p>
-<p>&#8680; For this you need to be logged as the cluster admin user in OpenShift.</p>
+<p>&#8680; For this you need to be logged as the <code>operator</code> user in OpenShift.</p>
 <div class="codehilite"><pre><span></span>[ec2-user@master ~]# oc whoami
-system:admin
+operator
 </pre></div>
 
 
-<p>&#8680; If you are for some reason not a cluster admin, login to this built-in admin account like this:</p>
-<div class="codehilite"><pre><span></span>oc login -u system:admin -n default
+<p>&#8680; If you are for some reason not the operator, login to the default namespace like this:</p>
+<div class="codehilite"><pre><span></span>oc login -u operator -n default
 </pre></div>
 
 
@@ -806,8 +806,9 @@ http://<em>heketi-container-native-storage.cloudapps.34.252.58.209.nip.io</em></
 
 <p>It appears heketi is running. To ensure it&rsquo;s functional and has been set up with authentication we are going to query it with the heketi CLI client.<br />
 The client needs to know the heketi service URL above and the password for the <code>admin</code> noted in the <a href="#deploy-container-native-storage">deployment step</a>.</p>
-<p>&#8680; Configure the heketi client with environment variables.</p>
-<div class="codehilite"><pre><span></span>export HEKETI_CLI_SERVER=heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
+<p><a name="heketi-env-setup"></a><br />
+&#8680; Configure the heketi client with environment variables.</p>
+<div class="codehilite"><pre><span></span>export HEKETI_CLI_SERVER=http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
 export HEKETI_CLI_USER=admin
 export HEKETI_CLI_KEY=myS3cr3tpassw0rd
 </pre></div>

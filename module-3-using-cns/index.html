@@ -262,7 +262,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-1-ocp-in-5/" title="Module 4 - Cluster Operations" class="md-nav__link">
+    <a href="../module-4-cluster-ops/" title="Module 4 - Cluster Operations" class="md-nav__link">
       Module 4 - Cluster Operations
     </a>
   </li>
@@ -274,7 +274,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-1-ocp-in-5/" title="Module 5 - Advanced Topics" class="md-nav__link">
+    <a href="../module-5-advanced/" title="Module 5 - Advanced Topics" class="md-nav__link">
       Module 5 - Advanced Topics
     </a>
   </li>
@@ -359,13 +359,13 @@
 <p>A storage provider in the system is represented by a <em>StorageClass</em> and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  </p>
 <p>The storage is represented in OpenShift as a <em>PersistentVolume</em> which can directly be used by pods to mount it.</p>
 <p>With these basics defined we can configure our system for CNS. First we will set up the credentials for CNS in OpenShift.</p>
-<p>&#8680; Make sure you are logged on as the cluster admin and you are in the <code>default</code> namespace:</p>
+<p>&#8680; Make sure you are logged on as <code>operator</code> and you are in the <code>default</code> namespace:</p>
 <div class="codehilite"><pre><span></span>oc whoami
 </pre></div>
 
 
-<p>&#8680; If you are not <code>system:admin</code> log in again to the default namespace</p>
-<div class="codehilite"><pre><span></span>oc login -u system:admin -n default
+<p>&#8680; If you are not <code>operator</code> log in again to the default namespace</p>
+<div class="codehilite"><pre><span></span>oc login -u operator -n default
 </pre></div>
 
 
@@ -403,6 +403,7 @@
 <p class="admonition-title">Important</p>
 <p>Replace the <code>resturl</code> parameter with your heketi URL.</p>
 </div>
+<p><a name="storageclass-setup"></a></p>
 <p><kbd>cns-storageclass.yml:</kbd></p>
 <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">apiVersion</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">storage.k8s.io/v1beta1</span>
 <span class="l l-Scalar l-Scalar-Plain">kind</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">StorageClass</span>
@@ -1234,7 +1235,7 @@ sh-4.2$ exit
           </a>
         
         
-          <a href="../module-1-ocp-in-5/" title="Module 4 - Cluster Operations" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../module-4-cluster-ops/" title="Module 4 - Cluster Operations" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
