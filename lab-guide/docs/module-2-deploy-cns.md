@@ -142,14 +142,14 @@ Prepare OpenShift for CNS
 
 Next we will create a namespace (also referred to as a *Project*) in OpenShift. It will be used to group the GlusterFS pods.
 
-&#8680; For this you need to be logged as the cluster admin user in OpenShift.
+&#8680; For this you need to be logged as the `operator` user in OpenShift.
 
     [ec2-user@master ~]# oc whoami
-    system:admin
+    operator
 
-&#8680; If you are for some reason not a cluster admin, login to this built-in admin account like this:
+&#8680; If you are for some reason not the operator, login to the default namespace like this:
 
-    oc login -u system:admin -n default
+    oc login -u operator -n default
 
 &#8680; Create a namespace with the designation `container-native-storage`:
 
@@ -440,9 +440,10 @@ This should say:
 It appears heketi is running. To ensure it's functional and has been set up with authentication we are going to query it with the heketi CLI client.
 The client needs to know the heketi service URL above and the password for the `admin` noted in the [deployment step](#deploy-container-native-storage).
 
+<a name="heketi-env-setup"></a>
 &#8680; Configure the heketi client with environment variables.
 
-    export HEKETI_CLI_SERVER=heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
+    export HEKETI_CLI_SERVER=http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
     export HEKETI_CLI_USER=admin
     export HEKETI_CLI_KEY=myS3cr3tpassw0rd
 

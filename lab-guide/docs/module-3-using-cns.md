@@ -16,13 +16,13 @@ The storage is represented in OpenShift as a *PersistentVolume* which can direct
 
 With these basics defined we can configure our system for CNS. First we will set up the credentials for CNS in OpenShift.
 
-&#8680; Make sure you are logged on as the cluster admin and you are in the `default` namespace:
+&#8680; Make sure you are logged on as `operator` and you are in the `default` namespace:
 
     oc whoami
 
-&#8680; If you are not `system:admin` log in again to the default namespace
+&#8680; If you are not `operator` log in again to the default namespace
 
-    oc login -u system:admin -n default
+    oc login -u operator -n default
 
 &#8680; Create an encoded value for the CNS admin user like below:
 
@@ -57,6 +57,8 @@ To represent CNS as a storage provider in the system you first have to create a 
 
 !!! Warning "Important"
     Replace the `resturl` parameter with your heketi URL.
+
+<a name="storageclass-setup"></a>
 
 <kbd>cns-storageclass.yml:</kbd>
 ```yaml

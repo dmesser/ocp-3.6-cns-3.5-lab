@@ -61,11 +61,23 @@ Log on with the password `r3dh4t`:
 ##### Exploring the environment
 
 !!! Note
-    The operations in this step can only be done on the command line and require cluster admin privileges in OpenShift.
+    The operations in this step can only be done on the command line and require cluster admin privileges in OpenShift. By default these are not available to anyone else than the built-in system admin.
 
-&#8680; Log on as the default built-in system user, no password required:
+&#8680; Log on with the built-in system admin (no password required)
 
     oc login -u system:admin
+
+&#8680; Add cluster admin privileges to the `operator` user in order to have an administrative user capable of logging into externally:
+
+    oadm policy add-cluster-role-to-user cluster-admin operator
+
+&#8680; Now log out
+
+    oc logout
+
+&#8680; ...and back in as `operator` to the `default` namespace
+
+    oc login -u operator -n default
 
 &#8680; Display all available nodes in the system
 
@@ -112,7 +124,6 @@ You should be in the default namespace:
 
     oc get pods
 
-
 !!! Note:
     Containers are not the smallest entity OpenShift/Kubernetes knows about. **Pods** are. Pods typically run a single container only and are subject to scheduling, networking and storage configuration.
     There are some corner cases in which multiple containers run in a single pod. Then they share a single IP address, all storage and are always scheduled together.
@@ -152,11 +163,7 @@ You see output similar to this:
 
 If these 3 pods are in place your environment is working.
 
-&#8680; Add cluster admin privileges to the `operator` user in order to have an admin user capable of logging into the UI:
-
-    oadm policy add-cluster-role-to-user cluster-admin operator
-
-&#8680; Now log out from cluster admin:
+&#8680; Now log out from the operator session:
 
     oc logout
 

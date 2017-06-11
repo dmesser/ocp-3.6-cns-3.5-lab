@@ -10,8 +10,8 @@ pages:
     - 'Module 1 - OpenShift in 5 Minutes': module-1-ocp-in-5.md
     - 'Module 2 - Deploying Container-Native Storage': module-2-deploy-cns.md
     - 'Module 3 - Using Persistent Storage': module-3-using-cns.md
-    - 'Module 4 - Cluster Operations': module-1-ocp-in-5.md
-    - 'Module 5 - Advanced Topics': module-1-ocp-in-5.md
+    - 'Module 4 - Cluster Operations': module-4-cluster-ops.md
+    - 'Module 5 - Advanced Topics': module-5-advanced.md
 
 markdown_extensions:
     - smarty
