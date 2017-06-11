@@ -747,3 +747,13 @@ The output indicated that the existing cluster was expanded, rather than creatin
 You should now have a GlusterFS consisting of 6 nodes:
 
 ---
+
+Adding a device to a node
+-------------------------
+
+---
+
+Replacing a failed device
+-------------------------
+
+---
