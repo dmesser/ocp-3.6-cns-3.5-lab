@@ -304,18 +304,6 @@ As expected this node only has 2 peers, evidence that it's running in it's own G
     Hostname: node-4.lab
     Uuid: 695b661d-2a55-4f94-b22e-40a9db79c01a
     State: Peer in Cluster (Connected)
-    sh-4.2# gluster peer status
-    Number of Peers: 2
-
-    Hostname: node-5.lab
-    Uuid: 0db9b5d0-7fa8-4d2f-8b9e-6664faf34606
-    State: Peer in Cluster (Connected)
-    Other names:
-    10.0.3.105
-
-    Hostname: node-4.lab
-    Uuid: 695b661d-2a55-4f94-b22e-40a9db79c01a
-    State: Peer in Cluster (Connected)
 
 Before you can use the second cluster two tasks have to be accomplished:
 
@@ -323,7 +311,7 @@ Before you can use the second cluster two tasks have to be accomplished:
 
 1. A second *StorageClass* for the second cluster has to be created, pointing to the same heketi
 
-!!! Tip "Why do we need to update the first *StorageClass*"?
+!!! Tip "Why do we need to update the first *StorageClass*?"
     By default, when no cluster UUID is specified, heketi serves volume creation requests from any cluster currently registered to it.
     In order to request a volume from specific cluster you have to supply the cluster's UUID to heketi. The first *StorageClass* has no UUID specified so far.
 
@@ -424,7 +412,7 @@ spec:
     oc create -f cns-pvc-fast.yml
     oc create -f cns-pvc-slow.yml
 
-&#8680; They should both be in bound state after a couple of seconds:
+They should both be in bound state after a couple of seconds:
 
     NAME                        STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
     my-container-storage        Bound     pvc-3e249fdd-4ec0-11e7-970e-0a9938370404   5Gi        RWO           32s
@@ -556,7 +544,7 @@ The pods formerly running the second GlusterFS pool are still there:
     glusterfs-rchtr   1/1       Running   0          4h       10.0.4.103   node-3.lab
     heketi-1-tn0s9    1/1       Running   0          4h       10.130.2.3   node-6.lab
 
-The can be stopped by removing the labels OpenShift uses to determine GlusterFS pod placement for CNS.
+They can be stopped by removing the labels OpenShift uses to determine GlusterFS pod placement for CNS.
 
 &#8680; Remove the labels from the last 3 OpenShift nodes like so:
 
