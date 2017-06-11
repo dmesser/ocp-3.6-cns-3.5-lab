@@ -561,6 +561,7 @@ Resources:
         - Ref: MasterSecurityGroup
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PublicSubnet1
+      PrivateIpAddress: 10.0.1.100
 
   InstanceInPublic1:
     Type: AWS::EC2::Instance
@@ -628,7 +629,7 @@ Resources:
                   openshift_image_tag=v3.5.5.15
                   openshift_pkg_version=-3.5.5.15
                   openshift_master_identity_providers=[{'name': 'htpasswd', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
-                  openshift_master_htpasswd_users={'developer': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/'}
+                  openshift_master_htpasswd_users={'developer': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/','operator': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/'}
                   openshift_master_default_subdomain='cloudapps.${PublicEIP1}.nip.io'
                   openshift_router_selector='region=infra'
                   openshift_registry_selector='region=infra'
@@ -660,9 +661,6 @@ Resources:
                   node-4.lab
                   node-5.lab
                   node-6.lab
-
-                  [cns-nodes:vars]
-                  openshift_node_labels="{'storagenode':'glusterfs', 'region':'apps'}"
                 path: /etc/ansible/hosts
 
             runcmd:
@@ -706,6 +704,7 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet1
+      PrivateIpAddress: 10.0.2.101
 
   InstanceInPrivate1:
     Type: AWS::EC2::Instance
@@ -747,6 +746,7 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet2
+      PrivateIpAddress: 10.0.3.102
 
   InstanceInPrivate2:
     Type: AWS::EC2::Instance
@@ -788,6 +788,7 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet3
+      PrivateIpAddress: 10.0.4.103
 
   InstanceInPrivate3:
     Type: AWS::EC2::Instance
@@ -829,6 +830,7 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet1
+      PrivateIpAddress: 10.0.2.104
 
   InstanceInPrivate4:
     Type: AWS::EC2::Instance
@@ -870,6 +872,7 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet2
+      PrivateIpAddress: 10.0.3.105
 
   InstanceInPrivate5:
     Type: AWS::EC2::Instance
@@ -911,6 +914,7 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet3
+      PrivateIpAddress: 10.0.4.106
 
   InstanceInPrivate6:
     Type: AWS::EC2::Instance
@@ -953,6 +957,14 @@ Outputs:
    Password:
       Description: "OpenShift User Login Password"
       Value: "r3dh4t"
+
+  UserName:
+     Description: "OpenShift Operator Login"
+     Value: "operator"
+
+  Password:
+     Description: "OpenShift User Login Password"
+     Value: "r3dh4t"
 
    SSHLoginUser:
       Description: "User name on the Master node to connect via SSH and PEM file"
