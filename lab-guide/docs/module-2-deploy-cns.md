@@ -13,7 +13,7 @@
 
 &#8680; First ensure the CNS deployment tool is available (it should already be installed)
 
-    sudo yum -y install cns-deploy
+    yum list installed cns-deploy
 
 Configure the firewall with Ansible
 ----------------------------------------------
@@ -29,15 +29,31 @@ Configure the firewall with Ansible
 All 6 OpenShift application nodes should respond
 
 
-    node3.example.com | SUCCESS => {
+    node-4.lab | SUCCESS => {
         "changed": false,
         "ping": "pong"
     }
-    node2.example.com | SUCCESS => {
+    node-1.lab | SUCCESS => {
         "changed": false,
         "ping": "pong"
     }
-    node1.example.com | SUCCESS => {
+    master.lab | SUCCESS => {
+        "changed": false,
+        "ping": "pong"
+    }
+    node-2.lab | SUCCESS => {
+        "changed": false,
+        "ping": "pong"
+    }
+    node-3.lab | SUCCESS => {
+        "changed": false,
+        "ping": "pong"
+    }
+    node-5.lab | SUCCESS => {
+        "changed": false,
+        "ping": "pong"
+    }
+    node-6.lab | SUCCESS => {
         "changed": false,
         "ping": "pong"
     }
@@ -79,27 +95,43 @@ Done. This small playbook will save us some work in configuring the firewall top
 
 Your output should look like this.
 
-    PLAY [nodes] *******************************************************************
+    PLAY [nodes]****************************************************************
 
-    TASK [setup] *******************************************************************
-    ok: [node2.example.com]
-    ok: [node1.example.com]
-    ok: [node3.example.com]
+    TASK [Gathering Facts]******************************************************
+    ok: [node-4.lab]
+    ok: [node-2.lab]
+    ok: [node-1.lab]
+    ok: [node-3.lab]
+    ok: [master.lab]
+    ok: [node-5.lab]
+    ok: [node-6.lab]
 
-    TASK [insert iptables rules required for GlusterFS] ****************************
-    changed: [node3.example.com]
-    changed: [node2.example.com]
-    changed: [node1.example.com]
+    TASK [insert iptables rules required for GlusterFS]*************************
+    changed: [node-1.lab]
+    changed: [node-4.lab]
+    changed: [node-2.lab]
+    changed: [node-3.lab]
+    changed: [master.lab]
+    changed: [node-5.lab]
+    changed: [node-6.lab]
 
-    TASK [reload iptables] *********************************************************
-    changed: [node2.example.com]
-    changed: [node1.example.com]
-    changed: [node3.example.com]
+    TASK [reload iptables]******************************************************
+    changed: [node-4.lab]
+    changed: [node-1.lab]
+    changed: [node-2.lab]
+    changed: [node-3.lab]
+    changed: [master.lab]
+    changed: [node-6.lab]
+    changed: [node-5.lab]
 
-    PLAY RECAP *********************************************************************
-    node1.example.com          : ok=3    changed=2    unreachable=0    failed=0
-    node2.example.com          : ok=3    changed=2    unreachable=0    failed=0
-    node3.example.com          : ok=3    changed=2    unreachable=0    failed=0
+    PLAY RECAP*****************************************************************
+    master.lab                 : ok=3    changed=2    unreachable=0    failed=0
+    node-1.lab                 : ok=3    changed=2    unreachable=0    failed=0
+    node-2.lab                 : ok=3    changed=2    unreachable=0    failed=0
+    node-3.lab                 : ok=3    changed=2    unreachable=0    failed=0
+    node-4.lab                 : ok=3    changed=2    unreachable=0    failed=0
+    node-5.lab                 : ok=3    changed=2    unreachable=0    failed=0
+    node-6.lab                 : ok=3    changed=2    unreachable=0    failed=0
 
 With this we checked the requirement for additional firewall ports to be opened on the OpenShift app nodes.
 
@@ -110,16 +142,16 @@ Prepare OpenShift for CNS
 
 Next we will create a namespace (also referred to as a *Project*) in OpenShift. It will be used to group the GlusterFS pods.
 
-&#8680; For this you need to be logged as an admin user in OpenShift.
+&#8680; For this you need to be logged as the cluster admin user in OpenShift.
 
     [ec2-user@master ~]# oc whoami
     system:admin
 
-&#8680; If you are for some reason not an admin, login as system admin like this:
+&#8680; If you are for some reason not a cluster admin, login to this built-in admin account like this:
 
     oc login -u system:admin -n default
 
-&#8680; Create a namespace with a designation of your choice. In this example we will use `container-native-storage`.
+&#8680; Create a namespace with the designation `container-native-storage`:
 
     oc new-project container-native-storage
 
@@ -135,10 +167,10 @@ Build Container-native Storage Topology
 CNS will virtualize locally attached block storage on the OpenShift App nodes. In order to deploy you will need to supply the installer with information about where to find these nodes and what network and which block devices to use.  
 This is done using JSON file describing the topology of your OpenShift deployment.
 
-For this purpose, create the file topology.json like the example below. The hostnames, device paths and zone IDs are already correct. Replace the IP addresses with the ones from your environment.
+We'll start with the first 3 OpenShift app nodes. For this purpose, create the file topology.json like the example below.
 
-!!! Warning
-    The IP addresses will be different in your environment as they are dynamically allocated. Please refer to `/etc/hosts` for the correct mapping.
+!!! Warning "Important"
+    The deployment tool always expects fully-qualified domains names for the `manage` property and always IP addresses for the `storage` property for the hostnames.
 
 <kbd>topology.json:</kbd>
 
@@ -154,13 +186,13 @@ For this purpose, create the file topology.json like the example below. The host
                                 "node-1.lab"
                             ],
                             "storage": [
-                                "192.168.0.102"
+                                "10.0.2.101"
                             ]
                         },
                         "zone": 1
                     },
                     "devices": [
-                        "/dev/vdc"
+                        "/dev/xvdc"
                     ]
                 },
                 {
@@ -170,13 +202,13 @@ For this purpose, create the file topology.json like the example below. The host
                                 "node-2.lab"
                             ],
                             "storage": [
-                                "192.168.0.103"
+                                "10.0.3.102"
                             ]
                         },
                         "zone": 2
                     },
                     "devices": [
-                        "/dev/vdc"
+                        "/dev/xvdc"
                     ]
                 },
                 {
@@ -186,13 +218,13 @@ For this purpose, create the file topology.json like the example below. The host
                                 "node-3.lab"
                             ],
                             "storage": [
-                                "192.168.0.104"
+                                "10.0.4.103"
                             ]
                         },
                         "zone": 3
                     },
                     "devices": [
-                        "/dev/vdc"
+                        "/dev/xvdc"
                     ]
                 }
             ]
@@ -231,7 +263,9 @@ To protect the API from unauthorized access we will define passwords for the `ad
 Answer the interactive prompt with **Y**.
 
 !!! Note:
-    The deployment will take several minutes to complete. You may want to monitor the progress in parallel also in the OpenShift UI in the `container-native-storage` project.
+    The deployment will take several minutes to complete. You may want to monitor the progress in parallel also in the OpenShift UI.
+
+    Log in as the `operator` user to the UI and select the `container-native-storage` project.
 
 On the command line the output should look like this:
 
@@ -325,6 +359,11 @@ In order of the appearance of the highlighted lines above in a nutshell what hap
 
 -   heketi is deployed in a pod as well.
 
+During the deployment the UI output will look like this:
+
+[![CNS Deployment](img/openshift_cns_deploy_1.png)](img/openshift_cns_deploy_1.png)
+
+[![CNS Deployment](img/openshift_cns_deploy_2.png)](img/openshift_cns_deploy_2.png)
 
 ---
 
@@ -344,11 +383,11 @@ You now have deployed CNS. Let’s verify all components are in place.
 You should see all pods up and running. Highlighted containerized gluster daemons on each pods carry the IP of the OpenShift node they are running on.
 
 ~~~~ hl_lines="2 3 4"
-NAME              READY     STATUS    RESTARTS   AGE       IP              NODE
-glusterfs-37vn8   1/1       Running   0          3m       192.168.0.102   node1.example.com
-glusterfs-cq68l   1/1       Running   0          3m       192.168.0.103   node2.example.com
-glusterfs-m9fvl   1/1       Running   0          3m       192.168.0.104   node3.example.com
-heketi-1-cd032    1/1       Running   0          1m       10.130.0.4      node3.example.com
+NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
+glusterfs-5rc2g   1/1       Running   0          3m        10.0.2.101   node-1.lab
+glusterfs-jbvdk   1/1       Running   0          3m        10.0.3.102   node-2.lab
+glusterfs-rchtr   1/1       Running   0          3m        10.0.4.103   node-3.lab
+heketi-1-tn0s9    1/1       Running   0          2m        10.130.2.3   node-6.lab
 ~~~~
 
 !!! Note
@@ -381,19 +420,131 @@ To also use heketi outside of OpenShift in addition to the service a route has b
 
 The output should look similar to the below:
 
-    [ec2-user@master ~]# oc get route/heketi
-    NAME      HOST/PORT                                               PATH      SERVICES   PORT      TERMINATION   WILDCARD
-    heketi    heketi-container-native-storage.cloudapps.example.com             heketi     <all>                   None
+    NAME      HOST/PORT                                                        PATH      SERVICES   PORT      TERMINATION   WILDCARD
+    heketi    heketi-container-native-storage.cloudapps.34.252.58.209.nip.io             heketi     <all>                   None
+
+!!! Note:
+    In your environment the URL will be slightly different. It will contain the public IPv4 address of your deployment, dynamically resolved by the nip.io service.
 
 Based on this *heketi* will be available on this URL:
-<http://heketi-container-native-storage.cloudapps.example.com>
+http://*heketi-container-native-storage.cloudapps.34.252.58.209.nip.io*
 
 &#8680; You may verify this with a trivial health check:
 
-    curl http://heketi-container-native-storage.cloudapps.example.com/hello
+    curl http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io/hello
 
 This should say:
 
     Hello from Heketi
 
-With this you have successfully verified the deployed components.
+It appears heketi is running. To ensure it's functional and has been set up with authentication we are going to query it with the heketi CLI client.
+The client needs to know the heketi service URL above and the password for the `admin` noted in the [deployment step](#deploy-container-native-storage).
+
+&#8680; Configure the heketi client with environment variables.
+
+    export HEKETI_CLI_SERVER=heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
+    export HEKETI_CLI_USER=admin
+    export HEKETI_CLI_KEY=myS3cr3tpassw0rd
+
+&#8680; You are now able to use the heketi CLI tool:
+
+    heketi-cli cluster list
+
+This should list at least one cluster by it's UUID:
+
+    Clusters:
+    fb67f97166c58f161b85201e1fd9b8ed
+
+!!! Note:
+    The UUID is auto-generated and will be different for you.
+
+&#8680; Use the UUID unique to your environment and obtain more information about it:
+
+    heketi-cli cluster info fb67f97166c58f161b85201e1fd9b8e
+
+There should be 3 nodes and 1 volume, again displayed with their UUIDs.
+
+    Cluster id: fb67f97166c58f161b85201e1fd9b8ed
+    Nodes:
+    22cbcd136fa40ffe766a13f305cc1e3b
+    bfc006b571e85a083118054233bfb16d
+    c5979019ac13b9fe02f4e4e2dc6d62cb
+    Volumes:
+    2415fba2b9364a65711da2a8311a663a
+
+&#8680; To display a comprehensive overview of everything heketi knows about query it's topology:
+
+    heketi-cli topology info
+
+You will get lengthy output that shows what nodes and disk devices CNS has used to deploy a containerised GlusterFS cluster.
+
+    Cluster Id: fb67f97166c58f161b85201e1fd9b8ed
+
+    Volumes:
+
+    Name: heketidbstorage
+    Size: 2
+    Id: 2415fba2b9364a65711da2a8311a663a
+    Cluster Id: fb67f97166c58f161b85201e1fd9b8ed
+    Mount: 10.0.2.101:heketidbstorage
+    Mount Options: backup-volfile-servers=10.0.3.102,10.0.4.103
+    Durability Type: replicate
+    Replica: 3
+    Snapshot: Disabled
+
+    Bricks:
+      Id: 55851d8ab270112c07ab7a38d55c8045
+      Path: /var/lib/heketi/mounts/vg_41b8a921f8e6d31cb04c7dd35b6b4cf2/brick_55851d8ab270112c07ab7a38d55c8045/brick
+      Size (GiB): 2
+      Node: bfc006b571e85a083118054233bfb16d
+      Device: 41b8a921f8e6d31cb04c7dd35b6b4cf2
+
+      Id: 67161e0e607c38677a0ef3f617b8dc1e
+      Path: /var/lib/heketi/mounts/vg_8ea71174529a35f41fc0d1b288da6299/brick_67161e0e607c38677a0ef3f617b8dc1e/brick
+      Size (GiB): 2
+      Node: 22cbcd136fa40ffe766a13f305cc1e3b
+      Device: 8ea71174529a35f41fc0d1b288da6299
+
+      Id: a8bf049dcea2d5245b64a792d4b85e6b
+      Path: /var/lib/heketi/mounts/vg_2a49883a5cb39c3b845477ff85a729ba/brick_a8bf049dcea2d5245b64a792d4b85e6b/brick
+      Size (GiB): 2
+      Node: c5979019ac13b9fe02f4e4e2dc6d62cb
+      Device: 2a49883a5cb39c3b845477ff85a729ba
+
+
+    Nodes:
+
+    Node Id: 22cbcd136fa40ffe766a13f305cc1e3b
+    State: online
+    Cluster Id: fb67f97166c58f161b85201e1fd9b8ed
+    Zone: 2
+    Management Hostname: node-2.lab
+    Storage Hostname: 10.0.3.102
+    Devices:
+    Id:8ea71174529a35f41fc0d1b288da6299   Name:/dev/xvdc           State:online    Size (GiB):49      Used (GiB):2       Free (GiB):47
+      Bricks:
+        Id:67161e0e607c38677a0ef3f617b8dc1e   Size (GiB):2       Path: /var/lib/heketi/mounts/vg_8ea71174529a35f41fc0d1b288da6299/brick_67161e0e607c38677a0ef3f617b8dc1e/brick
+
+    Node Id: bfc006b571e85a083118054233bfb16d
+    State: online
+    Cluster Id: fb67f97166c58f161b85201e1fd9b8ed
+    Zone: 3
+    Management Hostname: node-3.lab
+    Storage Hostname: 10.0.4.103
+    Devices:
+    Id:41b8a921f8e6d31cb04c7dd35b6b4cf2   Name:/dev/xvdc           State:online    Size (GiB):49      Used (GiB):2       Free (GiB):47
+      Bricks:
+        Id:55851d8ab270112c07ab7a38d55c8045   Size (GiB):2       Path: /var/lib/heketi/mounts/vg_41b8a921f8e6d31cb04c7dd35b6b4cf2/brick_55851d8ab270112c07ab7a38d55c8045/brick
+
+    Node Id: c5979019ac13b9fe02f4e4e2dc6d62cb
+    State: online
+    Cluster Id: fb67f97166c58f161b85201e1fd9b8ed
+    Zone: 1
+    Management Hostname: node-1.lab
+    Storage Hostname: 10.0.2.101
+    Devices:
+    Id:2a49883a5cb39c3b845477ff85a729ba   Name:/dev/xvdc           State:online    Size (GiB):49      Used (GiB):2       Free (GiB):47
+      Bricks:
+        Id:a8bf049dcea2d5245b64a792d4b85e6b   Size (GiB):2       Path: /var/lib/heketi/mounts/vg_2a49883a5cb39c3b845477ff85a729ba/brick_a8bf049dcea2d5245b64a792d4b85e6b/brick
+
+This information should correspond to the topology.json file you supplied to the installer. With this we successfully verified the CNS deployment.

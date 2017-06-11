@@ -152,6 +152,10 @@ You see output similar to this:
 
 If these 3 pods are in place your environment is working.
 
+&#8680; Add cluster admin privileges to the `operator` user in order to have an admin user capable of logging into the UI:
+
+    oadm policy add-cluster-role-to-user cluster-admin operator
+
 &#8680; Now log out from cluster admin:
 
     oc logout
