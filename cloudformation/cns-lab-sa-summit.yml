@@ -654,13 +654,8 @@ Resources:
                   openshift_schedulable=true
                   openshift_node_labels="{'region':'infra'}"
 
-                  [cns-nodes]
-                  node-1.lab
-                  node-2.lab
-                  node-3.lab
-                  node-4.lab
-                  node-5.lab
-                  node-6.lab
+                  [nodes:vars]
+                  openshift_node_labels="{'region':'apps'}"
                 path: /etc/ansible/hosts
 
             runcmd:
