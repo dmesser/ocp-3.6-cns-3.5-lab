@@ -854,7 +854,7 @@ The device is registered in heketi's database.
 Replacing a failed device
 -------------------------
 
-One heketi's advantages is the automation of otherwise tedious manual task, like replacing a faulty brick in GlusterFS to repair a degraded volume.
+One of heketi's advantages is the automation of otherwise tedious manual tasks, like replacing a faulty brick in GlusterFS to repair degraded volumes.
 We will simulate this use case now.
 
 &#8680; For convenience you can remain operator for now:
@@ -888,7 +888,6 @@ spec:
 &#8680; Create this request for a large volume:
 
     oc create -f cns-large-pvc.yml
-
 
 The requested capacity in this PVC is larger than any single brick on nodes `node-1.lab`, `node-2.lab` and `node-3.lab` so it will be created from the bricks of the other 3 nodes which have larger bricks (500 GiB).
 
@@ -937,13 +936,13 @@ The GlusterFS volume name as it used by GlusterFS:
     No events.
 ```
 
-&#8680; Get the volumes topology from directly from GlusterFS
+&#8680; Get the volumes topology directly from GlusterFS
 
     oc rsh glusterfs-52hkc
 
     gluster volume info vol_3ff9946ddafaabe9745f184e4235d4e1
 
-The output indicates this volume is indeed backed, among others, by `node-6.lab`
+The output indicates this volume is indeed backed by, among others, `node-6.lab`
 
 ``` hl_lines="11"
 Volume Name: vol_3ff9946ddafaabe9745f184e4235d4e1
@@ -963,7 +962,7 @@ performance.readdir-ahead: on
 nfs.disable: on
 ```
 
-&#8680; Using the full path of the brick we cross-check in heketi's topology on which device it is based on:
+&#8680; Using the full path of `Brick3` we cross-check with heketi's topology on which device it is based on:
 
     heketi-cli topology info | grep -B2 '/var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick'
 
@@ -975,7 +974,12 @@ Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    S
 				Id:a6c92b6a07983e9b8386871f5b82497f   Size (GiB):200     Path: /var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick
 ```
 
-In this case it's `/dev/vdd` of `node-6.lab`. Let's assume it has failed and needs to be replaced.
+In this case it's `/dev/vdd` of `node-6.lab`.
+
+!!! Note:
+    The device might be different for you. This is subject to heketi's dynamic scheduling.
+
+Let's assume `/dev/vdd` on `node-6.lab` has failed and needs to be replaced.
 
 In such a case you'll take the device's ID and go through the following steps:
 
@@ -992,5 +996,17 @@ This will take the device offline and exclude it from future volume creation req
 This will trigger a brick-replacement in GlusterFS. heketi will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.
 The new bricks, if possible, will automatically be created in zones different from the remaining bricks to maintain equal balancing and cross-zone availability.
 
+&#8680; Check again the volumes topology directly from GlusterFS
+
+    oc rsh glusterfs-52hkc
+
+    gluster volume info vol_3ff9946ddafaabe9745f184e4235d4e1
+
+You will notice that `Brick3` is now a different mount path, but on the same node.
+
+If you cross-check again the new bricks mount path with the heketi topology you will see it's indeed coming from a different device. The remaining device in `node-6.lab`, in this case `/dev/vdc`
+
+!!! Note
+    Device removal while maintaining volume health is possible in heketi as well. Simply delete all devices of the node in question as discussed above. Then the device can be deleted from heketi with `heketi-cli device delete <device-uuid>`
 
 ---
