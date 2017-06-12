@@ -142,7 +142,24 @@ Prepare OpenShift for CNS
 
 Next we will create a namespace (also referred to as a *Project*) in OpenShift. It will be used to group the GlusterFS pods.
 
-&#8680; For this you need to be logged as the `operator` user in OpenShift.
+
+!!! Warning "Important"
+
+    If you skipped Module 1 you need give the `operator` user cluster admin privileges first:
+
+    &#8680; Log in the built-in system admin
+
+    ```
+    oc login -u system:admin
+    ```
+
+    &#8680; Grant the user `operator` cluster admin privileges in OpenShift
+
+    ```
+    oadm policy add-cluster-role-to-user cluster-admin operator
+    ```
+
+&#8680; For the deployment you need to be logged as the `operator` user in OpenShift.
 
     [ec2-user@master ~]# oc whoami
     operator
