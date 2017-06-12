@@ -36,6 +36,9 @@ The label will be used to control GlusterFS pod placement and availability.
 
      oc get pods -o wide -n container-native-storage
 
+!!! Note:
+    It may take up to 3 minutes for the GlusterFS pods to transition into `READY` state.
+
 For bulk import of new nodes into a new cluster, the topology JSON file can be updated to include a second cluster with a separate set of nodes.
 
 &#8680; Create a new file named updated-topology.json with the content below:
@@ -699,6 +702,9 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
 
      oc get pods -o wide -n container-native-storage
 
+!!! Note:
+    It may take up to 3 minutes for the GlusterFS pods to transition into `READY` state.
+
 This confirms all GlusterFS pods are ready to receive remote commands:
 
     NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
@@ -746,14 +752,245 @@ The output indicated that the existing cluster was expanded, rather than creatin
 
 You should now have a GlusterFS consisting of 6 nodes:
 
+    Number of Peers: 5
+
+    Hostname: 10.0.3.102
+    Uuid: c6a6d571-fd9b-4bd8-aade-e480ec2f8eed
+    State: Peer in Cluster (Connected)
+
+    Hostname: 10.0.4.103
+    Uuid: 46044d06-a928-49c6-8427-a7ab37268fed
+    State: Peer in Cluster (Connected)
+
+    Hostname: 10.0.2.104
+    Uuid: 62abb8b9-7a68-4658-ac84-8098a1460703
+    State: Peer in Cluster (Connected)
+
+    Hostname: 10.0.3.105
+    Uuid: 5b44b6ea-6fb5-4ea9-a6f7-328179dc6dda
+    State: Peer in Cluster (Connected)
+
+    Hostname: 10.0.4.106
+    Uuid: ed39ecf7-1f5c-4934-a89d-ee1dda9a8f98
+    State: Peer in Cluster (Connected)
+
+
+With this you have expanded the existing pool. New PVCs will start to use capacity from the additional nodes.
+
+!!! Important
+    You now have a GlusterFS pool with mixed media types (both size and speed). It is recommended to have the same media type per pool.
+    If you like to offer multiple media types for CNS in OpenShift, use separate pools and separate `StorageClass` objects as described in the [previous section](#running-multiple-glusterfs-pools).
+
 ---
 
 Adding a device to a node
 -------------------------
 
+Instead of adding entirely new nodes you can also add new storage devices for CNS to use on existing nodes.
+
+It is again possible to do this by loading an updated topology file. Alternatively to bulk-loading via JSON you are also able to do this directly with the `heketi-cli` utility. This also applies to the previous sections in this module.
+
+For this purpose `node-6.lab` has an additional, so far unused block device `/dev/xvdd`.
+
+&#8680; To use the heketi-cli make sure the environment variables are still set:
+
+    export HEKETI_CLI_SERVER=http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
+    export HEKETI_CLI_USER=admin
+    export HEKETI_CLI_KEY=myS3cr3tpassw0rd
+
+&#8680; Determine the UUUI heketi uses to identify `node-6.lab` in it's database:
+
+    heketi-cli topology info | grep -B4 node-6.lab
+
+**Note the UUID**:
+
+``` hl_lines="1"
+Node Id: ae03d2c5de5cdbd44ba27ff5320d3438
+State: online
+Cluster Id: eb909a08c8e8fd0bf80499fbbb8a8545
+Zone: 3
+Management Hostname: node-6.lab
+```
+
+&#8680; Query the node's available devices:
+
+    heketi-cli node info ae03d2c5de5cdbd44ba27ff5320d343
+
+The node has one device available:
+
+    Node Id: ae03d2c5de5cdbd44ba27ff5320d3438
+    State: online
+    Cluster Id: eb909a08c8e8fd0bf80499fbbb8a8545
+    Zone: 3
+    Management Hostname: node-6.lab
+    Storage Hostname: 10.0.4.106
+    Devices:
+    Id:cc594d7f5ce59ab2a991c70572a0852f   Name:/dev/xvdc           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
+
+&#8680; Add the device `/dev/xvdd` to the node using the UUID noted earlier.
+
+    heketi-cli device add --node=ae03d2c5de5cdbd44ba27ff5320d3438 --name=/dev/xvdd
+
+The device is registered in heketi's database.
+
+    Device added successfully
+
+&#8680; Query the node's available devices again and you'll see a second device.
+
+    heketi-cli node info ae03d2c5de5cdbd44ba27ff5320d343
+
+    Node Id: ae03d2c5de5cdbd44ba27ff5320d3438
+    State: online
+    Cluster Id: eb909a08c8e8fd0bf80499fbbb8a8545
+    Zone: 3
+    Management Hostname: node-6.lab
+    Storage Hostname: 10.0.4.106
+    Devices:
+    Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
+    Id:cc594d7f5ce59ab2a991c70572a0852f   Name:/dev/xvdc           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
+
 ---
 
 Replacing a failed device
 -------------------------
+
+One heketi's advantages is the automation of otherwise tedious manual task, like replacing a faulty brick in GlusterFS to repair a degraded volume.
+We will simulate this use case now.
+
+&#8680; For convenience you can remain operator for now:
+
+    [ec2-user@master ~]$ oc whoami
+    operator
+
+&#8680; Use any available project to submit some PVCs.
+
+    oc project playground
+
+&#8680; Create the file `cns-large-pvc.yml` with content below:
+
+<kbd>cns-large-pvc.yml:</kbd>
+
+```yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: my-large-container-store
+  annotations:
+    volume.beta.kubernetes.io/storage-class: container-native-storage
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+```
+
+&#8680; Create this request for a large volume:
+
+    oc create -f cns-large-pvc.yml
+
+
+The requested capacity in this PVC is larger than any single brick on nodes `node-1.lab`, `node-2.lab` and `node-3.lab` so it will be created from the bricks of the other 3 nodes which have larger bricks (500 GiB).
+
+Where are now going to determine a PVCs physical backing device on CNS. This is done with the following relationships between the various entities of GlusterFS, heketi and OpenShift in mind:
+
+PVC -> PV -> heketi volume -> GlusterFS volume -> GlusterFS brick -> Physical Device
+
+&#8680; Get the PV
+
+    oc describe pvc/my-large-container-store
+
+Note the PVs name:
+``` hl_lines="5"
+    Name:		my-large-container-store
+    Namespace:	container-native-storage
+    StorageClass:	container-native-storage
+    Status:		Bound
+    Volume:		pvc-078a1698-4f5b-11e7-ac96-1221f6b873f8
+    Labels:		<none>
+    Capacity:	200Gi
+    Access Modes:	RWO
+    No events.
+```
+
+&#8680; Get the GlusterFS volume name of this PV
+
+    oc describe pv/pvc-078a1698-4f5b-11e7-ac96-1221f6b873f8
+
+The GlusterFS volume name as it used by GlusterFS:
+
+``` hl_lines="13"
+    Name:		pvc-078a1698-4f5b-11e7-ac96-1221f6b873f8
+    Labels:		<none>
+    StorageClass:	container-native-storage
+    Status:		Bound
+    Claim:		container-native-storage/my-large-container-store
+    Reclaim Policy:	Delete
+    Access Modes:	RWO
+    Capacity:	200Gi
+    Message:
+    Source:
+        Type:		Glusterfs (a Glusterfs mount on the host that shares a pod's lifetime)
+        EndpointsName:	glusterfs-dynamic-my-large-container-store
+        Path:		vol_3ff9946ddafaabe9745f184e4235d4e1
+        ReadOnly:		false
+    No events.
+```
+
+&#8680; Get the volumes topology from directly from GlusterFS
+
+    oc rsh glusterfs-52hkc
+
+    gluster volume info vol_3ff9946ddafaabe9745f184e4235d4e1
+
+The output indicates this volume is indeed backed, among others, by `node-6.lab`
+
+``` hl_lines="11"
+Volume Name: vol_3ff9946ddafaabe9745f184e4235d4e1
+Type: Replicate
+Volume ID: 774ae26f-bd3f-4c06-990b-57012cc5974b
+Status: Started
+Snapshot Count: 0
+Number of Bricks: 1 x 3 = 3
+Transport-type: tcp
+Bricks:
+Brick1: 10.0.3.105:/var/lib/heketi/mounts/vg_e1b93823a2906c6758aeec13930a0919/brick_b3d5867d2f86ac93fce6967128643f85/brick
+Brick2: 10.0.2.104:/var/lib/heketi/mounts/vg_3c3489a5779c1c840a82a26e0117a415/brick_6323bd816f17c8347b3a68e432501e96/brick
+Brick3: 10.0.4.106:/var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick
+Options Reconfigured:
+transport.address-family: inet
+performance.readdir-ahead: on
+nfs.disable: on
+```
+
+&#8680; Using the full path of the brick we cross-check in heketi's topology on which device it is based on:
+
+    heketi-cli topology info | grep -B2 '/var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick'
+
+Among other results grep will show the physical backing device of this brick's mount path:
+
+``` hl_lines="1"
+Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):499     Used (GiB):201     Free (GiB):298
+			Bricks:
+				Id:a6c92b6a07983e9b8386871f5b82497f   Size (GiB):200     Path: /var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick
+```
+
+In this case it's `/dev/vdd` of `node-6.lab`. Let's assume it has failed and needs to be replaced.
+
+In such a case you'll take the device's ID and go through the following steps:
+
+&#8680; First, disable the device in heketi
+
+    heketi-cli device disable 62cbae7a3f6faac38a551a614419cca3
+
+This will take the device offline and exclude it from future volume creation requests.
+
+&#8680; Now delete the device in heketi
+
+    heketi-cli device delete 62cbae7a3f6faac38a551a614419cca3
+
+This will trigger a brick-replacement in GlusterFS. heketi will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.
+The new bricks, if possible, will automatically be created in zones different from the remaining bricks to maintain equal balancing and cross-zone availability.
+
 
 ---
