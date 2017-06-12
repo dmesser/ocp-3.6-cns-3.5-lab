@@ -503,7 +503,15 @@ node-6.lab                 : ok=3    changed=2    unreachable=0    failed=0
 <hr />
 <h2 id="prepare-openshift-for-cns">Prepare OpenShift for CNS<a class="headerlink" href="#prepare-openshift-for-cns" title="Permanent link">#</a></h2>
 <p>Next we will create a namespace (also referred to as a <em>Project</em>) in OpenShift. It will be used to group the GlusterFS pods.</p>
-<p>&#8680; For this you need to be logged as the <code>operator</code> user in OpenShift.</p>
+<div class="admonition warning">
+<p class="admonition-title">Important</p>
+<p>If you skipped Module 1 you need give the <code>operator</code> user cluster admin privileges first:</p>
+<p>&#8680; Log in the built-in system admin</p>
+<p><code>oc login -u system:admin</code></p>
+<p>&#8680; Grant the user <code>operator</code> cluster admin privileges in OpenShift</p>
+<p><code>oadm policy add-cluster-role-to-user cluster-admin operator</code></p>
+</div>
+<p>&#8680; For the deployment you need to be logged as the <code>operator</code> user in OpenShift.</p>
 <div class="codehilite"><pre><span></span>[ec2-user@master ~]# oc whoami
 operator
 </pre></div>
