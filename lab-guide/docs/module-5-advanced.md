@@ -87,7 +87,7 @@ The registry will now redeploy.
 &#8680; Observe the registry deployment get updated:
 
 
-
+With this the OpenShift Registry is based on persistent storage provided by CNS. Since this is shared storage this also allows to scale out the registry pods. 
 
 
 ---
