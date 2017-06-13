@@ -464,6 +464,9 @@ The client needs to know the heketi service URL above and the password for the `
     export HEKETI_CLI_USER=admin
     export HEKETI_CLI_KEY=myS3cr3tpassw0rd
 
+!!! Caution "Important"
+    It's probably a good idea to copy&paste this information somewhere for the duration of the lab. You'll need this info again later multiple times.
+
 &#8680; You are now able to use the heketi CLI tool:
 
     heketi-cli cluster list
