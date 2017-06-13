@@ -1,5 +1,5 @@
 !!! Summary "Overview"
-    In this module a couple of advanced topics are discussed. Some of them are in *Technology Preview* state at the moment and not supported in production.
+    In this module a couple of advanced topics are discussed. Note that other volume types are currently not supported in production.
 
 CNS with other volumes types
 ----------------------------
