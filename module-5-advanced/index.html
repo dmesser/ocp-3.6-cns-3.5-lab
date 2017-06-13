@@ -339,10 +339,94 @@
 <p>In this module a couple of advanced topics are discussed. Some of them are in <em>Technology Preview</em> state at the moment and not supported in production.</p>
 </div>
 <h2 id="cns-with-other-volumes-types">CNS with other volumes types<a class="headerlink" href="#cns-with-other-volumes-types" title="Permanent link">#</a></h2>
+<p>The only volume type supported with CNS in production is 3-way replicated.<br />
+For demonstration purposes you however can also created distributed volumes (no replication) and dispersed volume (4:2 erasure-coding).</p>
+<p>Currently volume type is implemented as a parameter in the <em>StorageClass</em>, not the PVC. All volumes of this <em>StorageClass</em> will be of the specified type.</p>
+<p>&#8680; Create a file called <code>cns-storageclass-dispersed.yml</code> with the following content:</p>
+<p><kbd>cns-storageclass-dispersed.yml:</kbd></p>
+<div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">apiVersion</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">storage.k8s.io/v1beta1</span>
+<span class="l l-Scalar l-Scalar-Plain">kind</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">StorageClass</span>
+<span class="l l-Scalar l-Scalar-Plain">metadata</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">container-native-storage-dispersed</span>
+<span class="l l-Scalar l-Scalar-Plain">provisioner</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">kubernetes.io/glusterfs</span>
+<span class="l l-Scalar l-Scalar-Plain">parameters</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">resturl</span><span class="p p-Indicator">:</span> <span class="s">&quot;http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">restauthenabled</span><span class="p p-Indicator">:</span> <span class="s">&quot;true&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">restuser</span><span class="p p-Indicator">:</span> <span class="s">&quot;admin&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">volumetype</span><span class="p p-Indicator">:</span> <span class="s">&quot;dispersed:4:2&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">secretNamespace</span><span class="p p-Indicator">:</span> <span class="s">&quot;default&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">secretName</span><span class="p p-Indicator">:</span> <span class="s">&quot;cns-secret&quot;</span>
+</pre></div>
+
+
+<p>This <em>StorageClass</em> called <code>container-native-storage-dispersed</code> uses the same GlusterFS pool and the same heketi credentials to create volumes, with the difference of the <code>volumetype</code> parameter. It will cause the GlusterFS Dynamic Provisioner (the driver in OpenShift calling heketi&rsquo;s API) to request dispersed volumes.</p>
+<div class="admonition caution">
+<p class="admonition-title">Important</p>
+<p>For a 4:2 erasure-coding volume to be healthy at minimum 6 nodes are needed.</p>
+</div>
 <hr />
 <h2 id="openshift-registry-on-cns">OpenShift Registry on CNS<a class="headerlink" href="#openshift-registry-on-cns" title="Permanent link">#</a></h2>
+<p>The Registry in OpenShift is used to store all images that result of Source-to-Image deployments as well as general purpose container image storage.<br />
+It runs as one or more containers in specific Infrastructure Nodes or Master Nodes in OpenShift.</p>
+<p>By default the registry uses a hosts local storage which makes it prone to outages. Also, multiple registry pods need shared storage.</p>
+<p>This can be achieved with CNS simply by making the registry pods refer to a PVC in access mode <em>RWX</em> based on CNS.</p>
+<div class="admonition caution">
+<p class="admonition-title">Important</p>
+<p>This method will be disruptive. All data stored in the registry so far will become unavailable.<br />
+Migration scenarios exist but are beyond the scope of this lab.</p>
+</div>
+<p>&#8680; Make sure you are logged in as <code>operator</code> in the <code>default</code> namespace:</p>
+<div class="codehilite"><pre><span></span>oc login -u operator -n default
+</pre></div>
+
+
+<p>&#8680; Create a PVC for shared storage like the file <code>cns-registry-pvc.yml</code> below:</p>
+<p><kbd>cns-registry-pvc.yml:</kbd></p>
+<div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">kind</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">PersistentVolumeClaim</span>
+<span class="l l-Scalar l-Scalar-Plain">apiVersion</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="l l-Scalar l-Scalar-Plain">metadata</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">registry-storage</span>
+  <span class="l l-Scalar l-Scalar-Plain">annotations</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">volume.beta.kubernetes.io/storage-class</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">container-native-storage</span>
+<span class="l l-Scalar l-Scalar-Plain">spec</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">accessModes</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">ReadWriteMany</span>
+  <span class="l l-Scalar l-Scalar-Plain">resources</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">requests</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">storage</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">20Gi</span>
+</pre></div>
+
+
+<p>Create the PVC and ensure it&rsquo;s <em>BOUND</em></p>
+<div class="codehilite"><pre><span></span>oc create -f cns-registry-pvc.yml
+</pre></div>
+
+
+<p>In your environment a registry is already running. This will be the case for most environments. So the existing registry configuration needs to be adjusted to include a PVC and make the pods mount it&rsquo;s volume.<br />
+This is done by modifying the <code>DeploymentConfig</code> of the registry.</p>
+<p>&#8680; Update the registry&rsquo;s <code>DeploymentConfig</code> to refer to the PVC created before:</p>
+<p>The registry will now redeploy.</p>
+<p>&#8680; Observe the registry deployment get updated:</p>
+<p>With this the OpenShift Registry is based on persistent storage provided by CNS. Since this is shared storage this also allows to scale out the registry pods. </p>
 <hr />
 <h2 id="running-heketi-on-the-master">Running heketi on the Master<a class="headerlink" href="#running-heketi-on-the-master" title="Permanent link">#</a></h2>
+<p>In this exercise, and by default, the heketi pod runs on OpenShift Application Nodes, co-located with the GlusterFS pods and application pods.</p>
+<p>In production deployments facilities like the OpenShift Registry or the OpenShift Router are running in pods on special nodes called <code>Infrastructure Nodes</code>. It is a good practice to do the same with heketi.</p>
+<p>&#8680; Make sure you are logged in as <code>operator</code> in the <code>default</code> namespace:</p>
+<div class="codehilite"><pre><span></span>oc login -u operator -n container-native-storage
+</pre></div>
+
+
+<p>&#8680; Display all pods in this namespace</p>
+<div class="codehilite"><pre><span></span>oc get pods -o wide
+</pre></div>
+
+
+<p>You will notice the heketi pod running among the GlusterFS pods:</p>
+<p>&#8680; Modify the registry&rsquo;s <code>DeploymentConfig</code> as follows:</p>
+<p>The <code>nodeSelector</code> is basically a search predicate applied when making scheduling decision for pods among nodes.<br />
+In this environment the master node also acts as an infra node and therefore carries the label &ldquo;region=infra&rdquo;.</p>
+<p>By modifying the <code>DeploymentConfig</code> the heketi pod will be recreated and scheduled on the Master. It&rsquo;s data is persisted in a BoltDB instance hosted outside of the pod on a GlusterFS volume from the first cluster in CNS.</p>
                 
                   
                 
