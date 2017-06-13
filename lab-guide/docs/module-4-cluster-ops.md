@@ -179,7 +179,7 @@ Example output:
 
 &#8680; Load the new topology with the heketi client
 
-    heketi-cli topology load --json=updated-topology.jso
+    heketi-cli topology load --json=updated-topology.json
 
 You should see output similar to the following:
 
