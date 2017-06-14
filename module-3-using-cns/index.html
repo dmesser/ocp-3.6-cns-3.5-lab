@@ -361,7 +361,7 @@
 <p><a href="../img/cns_diagram_pvc.svg"><img alt="OpenShift Storage Lifecycle" src="../img/cns_diagram_pvc.svg" /></a></p>
 <p>OpenShift knows non-ephemeral storage as &ldquo;persistent&rdquo; volumes. This is storage that is decoupled from pod lifecycles. Users can request such storage by submitting a <em>PersistentVolumeClaim</em> to the system, which carries aspects like desired capacity or access mode (shared, single, read-only).</p>
 <p>A storage provider in the system is represented by a <em>StorageClass</em> and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  </p>
-<p>The storage is represented in OpenShift as a <em>PersistentVolume</em> which can directly be used by pods to mount it.</p>
+<p>The provisioned storage is represented in OpenShift as a <em>PersistentVolume</em> which can directly be used by pods to mount it.</p>
 <p>With these basics defined we can configure our system for CNS. First we will set up the credentials for CNS in OpenShift.</p>
 <p>&#8680; Make sure you are logged on as <code>operator</code> and you are in the <code>default</code> namespace:</p>
 <div class="codehilite"><pre><span></span>oc whoami
@@ -384,7 +384,7 @@
 
 
 <p>We will store this encoded value in an OpenShift secret.</p>
-<p>&#8680; Create a file called <code>cns-secret.yml</code> with the as per below (highlight shows where to put encoded password):</p>
+<p>&#8680; Create a file called <code>cns-secret.yml</code> with contents like below (highlight shows where to put encoded password):</p>
 <p><kbd>cns-secret.yml:</kbd></p>
 <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">apiVersion</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">v1</span>
 <span class="l l-Scalar l-Scalar-Plain">kind</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Secret</span>
@@ -402,7 +402,7 @@
 </pre></div>
 
 
-<p>To represent CNS as a storage provider in the system you first have to create a StorageClass. Define by creating a file called <code>cns-storageclass.yml</code> which references the secret and the heketi URL shown earlier with the contents as below:</p>
+<p>To represent CNS as a storage provider in the system you first have to create a <code>StorageClass</code>. Define it by creating a file called <code>cns-storageclass.yml</code> which references the secret and the heketi URL shown earlier with the contents as below:</p>
 <div class="admonition warning">
 <p class="admonition-title">Important</p>
 <p>Replace the <code>resturl</code> parameter with your heketi URL.</p>
@@ -434,14 +434,14 @@
 <p>With these components in place the system is ready to dynamically provision storage capacity from Container-native Storage.</p>
 <hr />
 <h2 id="requesting-storage">Requesting Storage<a class="headerlink" href="#requesting-storage" title="Permanent link">#</a></h2>
-<p>To get storage provisioned as a user you have to &ldquo;claim&rdquo; storage. The <em>PersistentVolumeClaim</em> (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.<br />
-Also the access mode is set here, where <em>ReadWriteOnce</em> allows one container at a time to mount this storage.</p>
-<p>&#8680; Where are going to do this as a user. Login in as user <code>developer</code>:</p>
+<p>To get storage provisioned as a user you have to &ldquo;claim&rdquo; storage. The <code>PersistentVolumeClaim</code> (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.<br />
+Also the access mode is set here, where <em>ReadWriteOnce</em> allows one container at a time to mount and access this storage.</p>
+<p>&#8680; Where are going to do this as a regular OpenShift user. Login in as <code>developer</code>:</p>
 <div class="codehilite"><pre><span></span>oc login -u developer
 </pre></div>
 
 
-<p>&#8680; If you no projects, create one:</p>
+<p>&#8680; If you have no projects, create one:</p>
 <div class="codehilite"><pre><span></span>oc new-project playground
 </pre></div>
 
@@ -493,15 +493,15 @@ my-container-storage   Bound     pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8   10Gi
 <p>You can also do this step with the UI. Log on as <code>developer</code> and select or create a Project. Then go to the &ldquo;Storage&rdquo; tab. Select &ldquo;Create&rdquo; storage and make selections accordingly to the PVC described before.</p>
 <p><a href="../img/openshift_pvc_create.png"><img alt="Creating a PersistentVolumeClaim" src="../img/openshift_pvc_create.png" /></a></p>
 </div>
-<p>When the claim was fulfilled successfully it is in the <em>Bound</em> state. That means the system has successfully (via the StorageClass) reached out to the storage backend (in our case GlusterFS). The backend in turn provisioned the storage and provided a handle back OpenShift. In OpenShift the provisioned storage is then represented by a <em>PersistentVolume</em> (PV) which is <em>bound</em> to the PVC.</p>
+<p>When the claim was fulfilled successfully it is in the <em>Bound</em> state. That means the system has successfully (via the <code>StorageClass</code>) reached out to the storage backend (in our case GlusterFS). The backend in turn provisioned the storage and provided a handle back OpenShift. In OpenShift the provisioned storage is then represented by a <code>PersistentVolume</code> (PV) which is <em>bound</em> to the PVC.</p>
 <p>&#8680; Look at the PVC for these details:</p>
 <div class="codehilite"><pre><span></span>oc describe pvc/my-container-storage
 </pre></div>
 
 
-<p>The details of the PVC show against which <em>StorageClass</em> it has been submitted and the name of the <em>PersistentVolume</em> which was generated to fulfill the claim.</p>
+<p>The details of the PVC show against which <code>StorageClass</code> it has been submitted and the name of the <code>PersistentVolume</code> which was generated to fulfill the claim.</p>
 <div class="codehilite"><pre><span></span><span class="hll">Name:           my-container-storage
-</span>Namespace:      container-native-storage
+</span>Namespace:      playground
 StorageClass:   container-native-storage
 Status:         Bound
 <span class="hll">Volume:         pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
@@ -516,6 +516,12 @@ No events.
 <p class="admonition-title">Note</p>
 <p>The PV name will be different in your environment since it’s automatically generated.</p>
 </div>
+<p>In order to look at a the details of a PV in a default setup like this you need more privileges.</p>
+<p>&#8680; For convenience just log in as <code>operator</code> to this project:</p>
+<div class="codehilite"><pre><span></span>oc login -u operator -n playground
+</pre></div>
+
+
 <p>&#8680; Look at the corresponding PV by it’s name:</p>
 <div class="codehilite"><pre><span></span>oc describe pv/pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
 </pre></div>
@@ -597,6 +603,11 @@ Storage is freed up by deleting the <strong>PVC</strong>. The PVC controls the l
 </div>
 <hr />
 <p>To create an application from the OpenShift Example templates on the CLI follow these steps.</p>
+<p>&#8680; Log in as <code>developer</code></p>
+<div class="codehilite"><pre><span></span>oc login -u developer
+</pre></div>
+
+
 <p>&#8680; Create a new project with a name of your choice:</p>
 <div class="codehilite"><pre><span></span>oc new-project my-test-project
 </pre></div>
@@ -694,7 +705,7 @@ rails-pgsql-persistent-1-hook-pre   0/1       Terminating   0         1m
 <p>Exit out of the watch mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>It may take up to 5 minutes for the deployment to complete.</p>
+<p>It may take up to 7 minutes for the deployment to complete.</p>
 <p>If you did it via the UI the deployment is finished when both, rails app and postgres database are up and running:</p>
 <p><a href="../img/openshift_rails_deploy.png"><img alt="OpenShift Rails Example Deployment" src="../img/openshift_rails_deploy.png" /></a></p>
 </div>
@@ -712,9 +723,9 @@ postgresql   Bound     pvc-6c348fbb-4e9d-11e7-970e-0a9938370404   15Gi       RWO
 
 <div class="admonition tip">
 <p class="admonition-title">Why did this even work?</p>
-<p>If you paid close attention you likely noticed that the PVC in the template does not specify a particular <em>StorageClass</em>. This still yields a PV deployed because our <em>StorageClass</em> has actually been defined as the system-wide default. PVCs that don&rsquo;t specify a <em>StorageClass</em> will use the default class.</p>
+<p>If you paid close attention you likely noticed that the PVC in the template does not specify a particular <code>StorageClass</code>. This still yields a PV deployed because our <code>StorageClass</code> has actually been defined as the system-wide default. PVCs that don&rsquo;t specify a <code>StorageClass</code> will use the default class.</p>
 </div>
-<p>Now go ahead and try out the application. The overview page in the OpenShift UI will tell you the <code>route</code> which has been deployed as well. Use it and append <code>/articles</code> to the URL to get to the actual app.</p>
+<p>Now go ahead and try out the application. The overview page in the OpenShift UI will tell you the <code>route</code> which has been deployed as well (the http://&hellip; link in the upper right hand corner). Use it and append <code>/articles</code> to the URL to get to the actual app.</p>
 <p>&#8680; Otherwise get it on the CLI like this:</p>
 <div class="codehilite"><pre><span></span>oc get route
 </pre></div>

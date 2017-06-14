@@ -456,8 +456,8 @@ node-6.lab | SUCCESS =&gt; {
 </pre></div>
 
 
-<p>Done. This small playbook will save us some work in configuring the firewall top open required ports for CNS on each individual node.</p>
-<p>&#8680; Run it with the following command:</p>
+<p>This small playbook will save us some work in configuring the firewall to open required ports for CNS on each individual node.</p>
+<p>&#8680; Execute it with the following command:</p>
 <div class="codehilite"><pre><span></span>ansible-playbook configure-firewall.yml
 </pre></div>
 
@@ -539,8 +539,8 @@ operator
 
 <h2 id="build-container-native-storage-topology">Build Container-native Storage Topology<a class="headerlink" href="#build-container-native-storage-topology" title="Permanent link">#</a></h2>
 <p>CNS will virtualize locally attached block storage on the OpenShift App nodes. In order to deploy you will need to supply the installer with information about where to find these nodes and what network and which block devices to use.<br />
-This is done using JSON file describing the topology of your OpenShift deployment.</p>
-<p>We&rsquo;ll start with the first 3 OpenShift app nodes. For this purpose, create the file topology.json like the example below.</p>
+This is done using a JSON file describing the topology of your OpenShift deployment.</p>
+<p>We&rsquo;ll start with the first 3 OpenShift app nodes. For this purpose, create the file topology.json like below.</p>
 <div class="admonition warning">
 <p class="admonition-title">Important</p>
 <p>The deployment tool always expects fully-qualified domains names for the <code>manage</code> property and always IP addresses for the <code>storage</code> property for the hostnames.</p>
@@ -728,10 +728,10 @@ Ready to create and provide GlusterFS volumes.
 <p>Enter <strong>Y</strong> and press Enter.</p>
 </li>
 <li>
-<p>OpenShift nodes are labeled. Label is referred to in a DaemonSet.</p>
+<p>OpenShift nodes are labeled. Labels are used as a selector in a <code>DaemonSet</code>.</p>
 </li>
 <li>
-<p>GlusterFS daemonset is started. DaemonSet means: start exactly <strong>one</strong> pod per node.</p>
+<p>GlusterFS <code>DaemonSet</code> is started. <code>DaemonSet</code> means: start exactly <strong>one</strong> pod per node.</p>
 </li>
 <li>
 <p>All nodes will be referenced in heketi’s database by a UUID. Node block devices are formatted for mounting by GlusterFS.</p>
@@ -745,6 +745,7 @@ Ready to create and provide GlusterFS volumes.
 </ul>
 <p>During the deployment the UI output will look like this:</p>
 <p><a href="../img/openshift_cns_deploy_1.png"><img alt="CNS Deployment" src="../img/openshift_cns_deploy_1.png" /></a></p>
+<p>When done it should look like this:</p>
 <p><a href="../img/openshift_cns_deploy_2.png"><img alt="CNS Deployment" src="../img/openshift_cns_deploy_2.png" /></a></p>
 <hr />
 <h2 id="verifying-the-deployment">Verifying the deployment<a class="headerlink" href="#verifying-the-deployment" title="Permanent link">#</a></h2>
@@ -759,7 +760,7 @@ Ready to create and provide GlusterFS volumes.
 </pre></div>
 
 
-<p>You should see all pods up and running. Highlighted containerized gluster daemons on each pods carry the IP of the OpenShift node they are running on.</p>
+<p>You should see all pods up and running. Highlighted below are pods that run GlusterFS containerized sharing the IP of the OpenShift node they are running on.</p>
 <div class="codehilite"><pre><span></span>NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
 <span class="hll">glusterfs-5rc2g   1/1       Running   0          3m        10.0.2.101   node-1.lab
 </span><span class="hll">glusterfs-jbvdk   1/1       Running   0          3m        10.0.3.102   node-2.lab
@@ -774,7 +775,7 @@ Ready to create and provide GlusterFS volumes.
 </div>
 <p>The GlusterFS pods use the hosts network and disk devices to run the software-defined storage system. Hence they attached to the host’s network. See schematic below for a visualization.</p>
 <p><a href="../img/cns_diagram_pod.svg"><img alt="GlusterFS pods in CNS in detail." src="../img/cns_diagram_pod.svg" /></a></p>
-<p><em>heketi</em> is a component that will expose an API for GlusterFS to OpenShift. This allows OpenShift to dynamically allocate storage from CNS in a programmatic fashion. See below for a visualization. Note that for simplicity, in our example heketi runs on the OpenShift App nodes, not on the Infra node.</p>
+<p><em>heketi</em> is a component that will expose an API for GlusterFS to OpenShift. This allows OpenShift to dynamically allocate storage from CNS in a programmatic fashion. See below for a visualization. Note that for simplicity, in our lab environment heketi runs on the OpenShift App nodes, not on the Infra node.</p>
 <p><a href="../img/cns_diagram_heketi.svg"><img alt="heketi pod running in CNS" src="../img/cns_diagram_heketi.svg" /></a></p>
 <p>To expose heketi’s API a <code>service</code> named <em>heketi</em> has been generated in OpenShift.</p>
 <p>&#8680; Check the service with:</p>
@@ -828,6 +829,10 @@ export HEKETI_CLI_KEY=myS3cr3tpassw0rd
 
 <div class="admonition caution">
 <p class="admonition-title">Important</p>
+<p>Replace the FQDN in the <code>HEKETI_CLI_SERVER</code> variable above with the one specific to your environment obtained via the <code>oc get route/heketi</code> command.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
 <p>It&rsquo;s probably a good idea to copy&amp;paste this information somewhere for the duration of the lab. You&rsquo;ll need this info again later multiple times.</p>
 </div>
 <p>&#8680; You are now able to use the heketi CLI tool:</p>

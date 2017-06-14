@@ -413,17 +413,18 @@
 <h2 id="openshift-in-a-nutshell">OpenShift in a nutshell<a class="headerlink" href="#openshift-in-a-nutshell" title="Permanent link">#</a></h2>
 <p><em>OpenShift Container Platform</em> (OCP) is Red Hat&rsquo;s productization of the Kubernetes project. 80% of OpenShift is based on it.<br />
 Kubernetes is a container orchestration engine for running docker-formatted containers at scale in a distributed environment.</p>
-<p>OpenShifts main purpose is to allow a developer to focus on writing applications. They can leave it to OpenShift how to schedule and run those.</p>
+<p>OpenShifts main purpose is to allow a developer to focus on writing applications. They can leave it to OpenShift how to build and run those.</p>
 <p>In the simplest form, a user supplies a URL to a source code repository. OCP takes it from there. It will know how to build the application, how to package it in a container image, run one or more instances of that image and make the application accessible to the outside world.</p>
 <hr />
 <h2 id="application-lifecycle-with-openshift">Application Lifecycle with OpenShift<a class="headerlink" href="#application-lifecycle-with-openshift" title="Permanent link">#</a></h2>
 <p>Let&rsquo;s walk through the basic workflow at an example.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>For each task we will provide instructions for the UI as well as the equivalent on the CLI.</p>
+<p>For each task we will provide instructions for the UI as well as the equivalent on the CLI.<br />
+You can choose either method depending on your preference.</p>
 </div>
 <h5 id="logging-in">Logging in<a class="headerlink" href="#logging-in" title="Permanent link">#</a></h5>
-<p>&#8680; Log on to the OpenShift User Interface with the URL provided in the <a href="../../">Overview section</a> section as user <code>developer</code> with password <code>r3dh4t</code>:</p>
+<p>&#8680; To log on to the OpenShift User Interface point your browser to the URL provided in the <a href="../../">Overview section</a> section as user <code>developer</code> with password <code>r3dh4t</code>:</p>
 <p><a href="../img/openshift_login.png"><img alt="OpenShift UI Login" src="../img/openshift_login.png" /></a><br />
 <em>click on the screenshot for better resolution</em></p>
 <p>The UI focusses mainly on the tasks a developer / user would carry out. Administrative tasks are CLI only.</p>
@@ -433,7 +434,7 @@ Kubernetes is a container orchestration engine for running docker-formatted cont
 Basic syntax is always <code>$ oc &lt;command&gt;</code></p>
 </div>
 <p>&#8680; On the CLI you use the pre-installed <code>oc</code> tool (OpenShift Client). Log on to the master node with it&rsquo;s public IP provided in the <a href="../../">Overview section</a> section:</p>
-<div class="codehilite"><pre><span></span>ssh -i ~/qwiklabs.pem -l ec2-user &lt;your-public-IP&gt;
+<div class="codehilite"><pre><span></span>ssh -i ~/Downloads/&lt;pem-file-name&gt; -l ec2-user &lt;MasterNodePublicIP&gt;
 </pre></div>
 
 
@@ -496,15 +497,15 @@ node-6.lab   Ready     1h
 </pre></div>
 
 
-<p>You should see that 1 node has the label <code>region=infra</code> applied whereas the other 6 have <code>region=apps</code> and additionally <code>storagenode=glusterfs</code> set:</p>
+<p>You should see that 1 node has the label <code>region=infra</code> applied whereas the other 6 have <code>region=apps</code> set:</p>
 <div class="codehilite"><pre><span></span>NAME         STATUS    AGE       LABELS
 master.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=master.lab,region=infra
-node-1.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-1.lab,region=apps,storagenode=glusterfs
-node-2.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-2.lab,region=apps,storagenode=glusterfs
-node-3.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-3.lab,region=apps,storagenode=glusterfs
-node-4.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-4.lab,region=apps,storagenode=glusterfs
-node-5.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-5.lab,region=apps,storagenode=glusterfs
-node-6.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-6.lab,region=apps,storagenode=glusterfs
+node-1.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-1.lab,region=apps
+node-2.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-2.lab,region=apps
+node-3.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-3.lab,region=apps
+node-4.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-4.lab,region=apps
+node-5.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-5.lab,region=apps
+node-6.lab   Ready     1h        beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-6.lab,region=apps
 </pre></div>
 
 
@@ -538,7 +539,7 @@ router-1-0btlh             1/1       Running   0          1h
 </pre></div>
 
 
-<p>The registry is where images that get created in OpenShift are stored. The registry console is a Web UI for the container registry. The router is an HAproxy instance running internally in OpenShift, exposing applications to the external network.</p>
+<p>The registry is where images that get created in OpenShift are stored. The registry console is a Web UI for the container registry. The router is an HAproxy instance running internally in OpenShift, exposing applications to the external network. It is used by CNS as well to expose the API service of CNS (heketi).</p>
 <p>&#8680; Finally get more information about the deployment with this command:</p>
 <div class="codehilite"><pre><span></span>oc status
 </pre></div>
@@ -573,8 +574,8 @@ View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list ev
 
 <hr />
 <h5 id="creating-a-project">Creating a Project<a class="headerlink" href="#creating-a-project" title="Permanent link">#</a></h5>
-<p>Similar to OpenStack <em>Projects</em> exists in OpenShift. They group users, objects and quotas in the system. They are also called <em>namespaces</em>. Nothing can exist outside a project/namespace.</p>
-<p>&#8680; Select <strong>New Project</strong> in the UI. Enter at least a system name, optionally a human-readable name (label) and a description.</p>
+<p>Similar to OpenStack <em>Projects</em> exists in OpenShift. They group users, objects and quotas in the system. They are also referred to as <em>namespaces</em>. Nothing can exist outside a project/namespace.</p>
+<p>&#8680; To create a new project in the UI, select <strong>New Project</strong> in the overview page. Enter a short name (no spaces), optionally a human-readable name (Display Name) and a description.</p>
 <p><a href="../img/openshift_no_project.png"><img alt="OpenShift empty project list" src="../img/openshift_no_project.png" /></a></p>
 <p><a href="../img/openshift_new_project.png"><img alt="OpenShift new project list" src="../img/openshift_new_project.png" /></a></p>
 <p>&#8680; To do this on the CLI log back in as the <code>developer</code> user with the password <code>r3dh4t</code>:</p>
@@ -606,7 +607,7 @@ View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list ev
 <p><a href="../img/openshift_rails_3.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_3.png" /></a></p>
 <p>&#8680; Click <strong>Continue to Overview</strong> to follow the deployment process</p>
 <p><a href="../img/openshift_rails_4.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_4.png" /></a></p>
-<p>After a few minutes the deployment is done.</p>
+<p>After 5-7 minutes the deployment is done.</p>
 <p><a href="../img/openshift_rails_5.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_5.png" /></a></p>
 <p>&#8680; Click on the link provided starting with <strong>http://rails-postgresql-example-my-first-app.cloudapps&hellip;</strong> in the upper right hand corner to get to the application instances.</p>
 <div class="admonition note">
@@ -657,7 +658,7 @@ That&rsquo;s it. The application has been built from source and deployed from sc
 <p>Let&rsquo;s look at the objects and resources in OpenShif that where created during this process.</p>
 <p>&#8680; In the OpenShift UI, click the link labeled <code>postgresql</code> in the right hand box</p>
 <p><a href="../img/openshift_rails_6.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_6.png" /></a></p>
-<p>What you will see is known as <code>DeploymentConfig</code> in OpenShift. It is an instruction how to run instances of a certain container image, i.e. how many instances, how much resources per container, whether to apply auto-scaling and what to do when the deployment config get&rsquo;s changed.</p>
+<p>What you will see is known as <code>DeploymentConfig</code> in OpenShift. It is a blueprint of how to run instances of a certain container image, i.e. how many instances, how much resources per container, whether to apply auto-scaling and what to do when the deployment config get&rsquo;s changed.</p>
 <p>Click on the <strong>Configuration</strong> tab in the <code>DeploymentConfig</code> to look at this.</p>
 <p><a href="../img/openshift_rails_dc.png"><img alt="OpenShift Ruby Example DeploymentConfig" src="../img/openshift_rails_dc.png" /></a></p>
 <p>When the config changes (e.g. increase number of container from 1 to 2) a new deployment will be triggered. The container(s) will be recreated from scratch. This follows the principle of <em>immutable infrastructre</em>.</p>
@@ -667,16 +668,16 @@ That&rsquo;s it. The application has been built from source and deployed from sc
 <p>&#8680; Click on version <strong>#1</strong> which should be the latest version.</p>
 <p><a href="../img/openshift_rails_deployment.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_rails_deployment.png" /></a></p>
 <p>This deployment contains exactly one container instance of the postgres image. A container is handled in OpenShift/Kubernetes within the concept of a <strong>Pod</strong>.<br />
-A pod is a logical entity to abstract the fact that there could be multiple container instances scheduled as a single entity (with a single IP, single set of environment variables, storage etc.). In 90% of the case 1 pod = 1 container.</p>
+A pod is a logical entity to abstract the fact that there could be multiple container instances scheduled as a single entity (with a single IP, single set of environment variables, storage etc.). Most of the time 1 pod = 1 container.</p>
 <p>&#8680; Scroll down to see the pods associated with this deployment. Click it.</p>
 <p><a href="../img/openshift_rails_dc_pod.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_rails_dc_pod.png" /></a></p>
 <p>This will show you the environment in which the pod runs. On which node, under what IP address etc. Explore the various tabs shown here. They will tell you the environment variables available to this pod, it&rsquo;s output so far and various events OpenShift recorded during it&rsquo;s lifetime.</p>
-<p>&#8680; On the CLI you can look at the DeploymentConfig like this:</p>
+<p>&#8680; On the CLI you can look at the <code>DeploymentConfig</code> like this:</p>
 <div class="codehilite"><pre><span></span>oc get deploymentconfig
 </pre></div>
 
 
-<p>You&rsquo;ll see there are actually two DeploymentConfig objects, the other one is for the ruby app container.</p>
+<p>You&rsquo;ll see there are actually two <code>DeploymentConfig</code> objects, the other one is for the ruby app container.</p>
 <div class="codehilite"><pre><span></span>NAME                       REVISION   DESIRED   CURRENT   TRIGGERED BY
 postgresql                 1          1         1         config,image(postgresql:9.5)
 rails-postgresql-example   1          1         1         config,image(rails-postgresql-example:latest)
@@ -691,8 +692,8 @@ rails-postgresql-example   1          1         1         config,image(rails-pos
 <p>The output will more or less show the same as the UI but in plain text.</p>
 <p>&#8680; In the UI go back to the <code>Overview</code>. Click on the link labeled <code>rails-postgresql-example</code> above the <code>DeploymentConfig</code> of the same name.</p>
 <p><a href="../img/openshift_overview_service.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_overview_service.png" /></a></p>
-<p>What you see is a <code>Service</code>. Think of it as a cluster virtual-IP for a set of containers. The <code>Service</code> IP will be constant while pod IPs can change with pods getting rescheduled, new instances spawned etc. The <code>Service</code> will also forward network traffic on a certain port to a certain port on the pods.<br />
-It will do this in a round-robin fashion.</p>
+<p>What you see is a <code>Service</code>. Think of it as a virtual-IP for a cluster of containers/pods. The <code>Service</code> IP will be constant while pod IPs can change when pods are getting rescheduled, new instances are spawned etc. The <code>Service</code> will  forward network traffic on a certain port on the virtual IP to a specified port on the pods. It will do this in a round-robin fashion.<br />
+Pods never directly communicate via their IPs, but always via a <code>Service</code>.</p>
 <p><a href="../img/openshift_rails_service.png"><img alt="OpenShift Ruby Example Deployment" src="../img/openshift_rails_service.png" /></a></p>
 <p>However as you can tell even the <code>Service</code> IP is still internal to OpenShift. This is where <code>Routes</code> come in.</p>
 <p>&#8680; From the sidebar select <strong>Applications</strong> &gt; <strong>Routes</strong></p>
