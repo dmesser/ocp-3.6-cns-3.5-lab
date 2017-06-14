@@ -75,7 +75,7 @@ Log on with the password `r3dh4t`:
 
     oc logout
 
-&#8680; ...and back in as `operator` to the `default` namespace
+&#8680; ...and back in as `operator` to the `default` namespace with password `r3dh4t`
 
     oc login -u operator -n default
 
@@ -211,7 +211,7 @@ OpenShift ships a number of useful example of simple and more complex applicatio
 
 [![OpenShift Ruby Example](img/openshift_rails_1.png)](img/openshift_rails_1.png)
 
-The template specifies various OpenShift resources, some of which are customizable via parameters. This page allows to override some.
+The template specifies various OpenShift resources, some of which are customizable via parameters. This page allows to override these parameters with custom values.
 
 [![OpenShift Ruby Example](img/openshift_rails_2.png)](img/openshift_rails_2.png)
 
@@ -231,16 +231,21 @@ After a few minutes the deployment is done.
 
 &#8680; Click on the link provided starting with **http://rails-postgresql-example-my-first-app.cloudapps...** in the upper right hand corner to get to the application instances.
 
+!!! Note
+    The URL will be slightly different for you as it contains the public IP address of your environment.
+
 On the CLI the process would have been kicked off with this command chain:
 
     oc export template/rails-postgresql-example -n openshift | oc process -f - | oc create -f -
 
 Don't worry about the exact mechanics of this method - it will be explained in a later module.
 
-At this point you deployed an application stack consisting of a database pod and a pod running the ruby on rails app.
+At this point you deployed an application stack consisting of a database pod and a pod running the Ruby on Rails app.
 That's it. The application has been built from source and deployed from scratch.
 
-There is only one problem. The database stores it's data internally in the pod's ephemeral local filesystem.
+There is only one problem. The database stores it's data internally in the pod's ephemeral local filesystem. This data would be lost as soon as the pod terminates or gets rescheduled.
+
+In OpenShift infrastructure is considered immutable. So any configuration changes will actually redeploy application infrastructure like pods. That's why pods must not store any data locally.
 
 
 !!! Note

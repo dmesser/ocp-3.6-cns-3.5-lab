@@ -79,6 +79,9 @@ performance.readdir-ahead: on
 nfs.disable: on
 ```
 
+!!! Note
+    For distributed volumes you would set the `volumetype` property in the *StorageClass* to `none`.
+
 ---
 
 OpenShift Registry on CNS

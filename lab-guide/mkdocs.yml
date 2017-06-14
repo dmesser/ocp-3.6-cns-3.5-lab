@@ -1,4 +1,7 @@
 site_name: Container-Native Storage Hands-on Lab - Storage SA Summit 2017
+site_url: 'https://dmesser.github.io/cns-lab-sa-summit/'
+site_favicon: 'img/favicon.ico'
+copyright: 'Copyright ©2017 Red Hat, Inc.'
 
 theme: 'material'
 extra:
