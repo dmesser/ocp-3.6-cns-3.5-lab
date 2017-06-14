@@ -71,11 +71,7 @@ Log on with the password `r3dh4t`:
 
     oadm policy add-cluster-role-to-user cluster-admin operator
 
-&#8680; Now log out
-
-    oc logout
-
-&#8680; ...and back in as `operator` to the `default` namespace with password `r3dh4t`
+&#8680; Now login in as `operator` to the `default` namespace with password `r3dh4t`
 
     oc login -u operator -n default
 
