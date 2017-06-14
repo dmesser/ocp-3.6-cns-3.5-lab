@@ -8,7 +8,7 @@ OpenShift in a nutshell
 *OpenShift Container Platform* (OCP) is Red Hat's productization of the Kubernetes project. 80% of OpenShift is based on it.
 Kubernetes is a container orchestration engine for running docker-formatted containers at scale in a distributed environment.
 
-OpenShifts main purpose is to allow a developer to focus on writing applications. They can leave it to OpenShift how to schedule and run those.
+OpenShifts main purpose is to allow a developer to focus on writing applications. They can leave it to OpenShift how to build and run those.
 
 In the simplest form, a user supplies a URL to a source code repository. OCP takes it from there. It will know how to build the application, how to package it in a container image, run one or more instances of that image and make the application accessible to the outside world.
 
@@ -21,10 +21,11 @@ Let's walk through the basic workflow at an example.
 
 !!! Tip
     For each task we will provide instructions for the UI as well as the equivalent on the CLI.
+    You can choose either method depending on your preference.
 
 ##### Logging in
 
-&#8680; Log on to the OpenShift User Interface with the URL provided in the [Overview section](../) section as user `developer` with password `r3dh4t`:
+&#8680; To log on to the OpenShift User Interface point your browser to the URL provided in the [Overview section](../) section as user `developer` with password `r3dh4t`:
 
 [![OpenShift UI Login](img/openshift_login.png)](img/openshift_login.png)
 *click on the screenshot for better resolution*
@@ -38,7 +39,7 @@ The UI focusses mainly on the tasks a developer / user would carry out. Administ
 &#8680; On the CLI you use the pre-installed `oc` tool (OpenShift Client). Log on to the master node with it's public IP provided in the [Overview section](../) section:
 
 ~~~~
-ssh -i ~/qwiklabs.pem -l ec2-user <your-public-IP>
+ssh -i ~/Downloads/<pem-file-name> -l ec2-user <MasterNodePublicIP>
 ~~~~
 
 ~~~~
@@ -131,7 +132,7 @@ You should have the 3 default services running in pods that every OpenShift depl
     registry-console-1-28hlh   1/1       Running   0          1h
     router-1-0btlh             1/1       Running   0          1h
 
-The registry is where images that get created in OpenShift are stored. The registry console is a Web UI for the container registry. The router is an HAproxy instance running internally in OpenShift, exposing applications to the external network.
+The registry is where images that get created in OpenShift are stored. The registry console is a Web UI for the container registry. The router is an HAproxy instance running internally in OpenShift, exposing applications to the external network. It is used by CNS as well to expose the API service of CNS (heketi).
 
 &#8680; Finally get more information about the deployment with this command:
 
@@ -167,9 +168,9 @@ If these 3 pods are in place your environment is working.
 
 ##### Creating a Project
 
-Similar to OpenStack *Projects* exists in OpenShift. They group users, objects and quotas in the system. They are also called *namespaces*. Nothing can exist outside a project/namespace.
+Similar to OpenStack *Projects* exists in OpenShift. They group users, objects and quotas in the system. They are also referred to as *namespaces*. Nothing can exist outside a project/namespace.
 
-&#8680; Select **New Project** in the UI. Enter at least a system name, optionally a human-readable name (label) and a description.
+&#8680; To create a new project in the UI, select **New Project** in the overview page. Enter a short name (no spaces), optionally a human-readable name (Display Name) and a description.
 
 [![OpenShift empty project list](img/openshift_no_project.png)](img/openshift_no_project.png)
 
@@ -221,7 +222,7 @@ We will accept the defaults. Note the GitHub repository URL - this is where the 
 
 [![OpenShift Ruby Example](img/openshift_rails_4.png)](img/openshift_rails_4.png)
 
-After a few minutes the deployment is done.
+After 5-7 minutes the deployment is done.
 
 [![OpenShift Ruby Example](img/openshift_rails_5.png)](img/openshift_rails_5.png)
 
@@ -275,7 +276,7 @@ Let's look at the objects and resources in OpenShif that where created during th
 
 [![OpenShift Ruby Example](img/openshift_rails_6.png)](img/openshift_rails_6.png)
 
-What you will see is known as `DeploymentConfig` in OpenShift. It is an instruction how to run instances of a certain container image, i.e. how many instances, how much resources per container, whether to apply auto-scaling and what to do when the deployment config get's changed.
+What you will see is known as `DeploymentConfig` in OpenShift. It is a blueprint of how to run instances of a certain container image, i.e. how many instances, how much resources per container, whether to apply auto-scaling and what to do when the deployment config get's changed.
 
 Click on the **Configuration** tab in the `DeploymentConfig` to look at this.
 
@@ -294,7 +295,7 @@ Deployments are versioned with simple integers.
 [![OpenShift Ruby Example Deployment](img/openshift_rails_deployment.png)](img/openshift_rails_deployment.png)
 
 This deployment contains exactly one container instance of the postgres image. A container is handled in OpenShift/Kubernetes within the concept of a **Pod**.
-A pod is a logical entity to abstract the fact that there could be multiple container instances scheduled as a single entity (with a single IP, single set of environment variables, storage etc.). In 90% of the case 1 pod = 1 container.
+A pod is a logical entity to abstract the fact that there could be multiple container instances scheduled as a single entity (with a single IP, single set of environment variables, storage etc.). Most of the time 1 pod = 1 container.
 
 &#8680; Scroll down to see the pods associated with this deployment. Click it.
 
@@ -302,11 +303,11 @@ A pod is a logical entity to abstract the fact that there could be multiple cont
 
 This will show you the environment in which the pod runs. On which node, under what IP address etc. Explore the various tabs shown here. They will tell you the environment variables available to this pod, it's output so far and various events OpenShift recorded during it's lifetime.
 
-&#8680; On the CLI you can look at the DeploymentConfig like this:
+&#8680; On the CLI you can look at the `DeploymentConfig` like this:
 
     oc get deploymentconfig
 
-You'll see there are actually two DeploymentConfig objects, the other one is for the ruby app container.
+You'll see there are actually two `DeploymentConfig` objects, the other one is for the ruby app container.
 
     NAME                       REVISION   DESIRED   CURRENT   TRIGGERED BY
     postgresql                 1          1         1         config,image(postgresql:9.5)
@@ -322,8 +323,8 @@ The output will more or less show the same as the UI but in plain text.
 
 [![OpenShift Ruby Example Deployment](img/openshift_overview_service.png)](img/openshift_overview_service.png)
 
-What you see is a `Service`. Think of it as a cluster virtual-IP for a set of containers. The `Service` IP will be constant while pod IPs can change with pods getting rescheduled, new instances spawned etc. The `Service` will also forward network traffic on a certain port to a certain port on the pods.
-It will do this in a round-robin fashion.
+What you see is a `Service`. Think of it as a virtual-IP for a cluster of containers/pods. The `Service` IP will be constant while pod IPs can change when pods are getting rescheduled, new instances are spawned etc. The `Service` will  forward network traffic on a certain port on the virtual IP to a specified port on the pods. It will do this in a round-robin fashion.
+Pods never directly communicate via their IPs, but always via a `Service`.
 
 [![OpenShift Ruby Example Deployment](img/openshift_rails_service.png)](img/openshift_rails_service.png)
 

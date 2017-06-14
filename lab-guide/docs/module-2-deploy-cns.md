@@ -87,9 +87,9 @@ All 6 OpenShift application nodes should respond
 ...
 ```
 
-Done. This small playbook will save us some work in configuring the firewall top open required ports for CNS on each individual node.
+This small playbook will save us some work in configuring the firewall to open required ports for CNS on each individual node.
 
-&#8680; Run it with the following command:
+&#8680; Execute it with the following command:
 
     ansible-playbook configure-firewall.yml
 
@@ -182,9 +182,9 @@ Build Container-native Storage Topology
 ---------------------------------------
 
 CNS will virtualize locally attached block storage on the OpenShift App nodes. In order to deploy you will need to supply the installer with information about where to find these nodes and what network and which block devices to use.  
-This is done using JSON file describing the topology of your OpenShift deployment.
+This is done using a JSON file describing the topology of your OpenShift deployment.
 
-We'll start with the first 3 OpenShift app nodes. For this purpose, create the file topology.json like the example below.
+We'll start with the first 3 OpenShift app nodes. For this purpose, create the file topology.json like below.
 
 !!! Warning "Important"
     The deployment tool always expects fully-qualified domains names for the `manage` property and always IP addresses for the `storage` property for the hostnames.
@@ -366,9 +366,9 @@ In order of the appearance of the highlighted lines above in a nutshell what hap
 
 -   Enter **Y** and press Enter.
 
--   OpenShift nodes are labeled. Label is referred to in a DaemonSet.
+-   OpenShift nodes are labeled. Labels are used as a selector in a `DaemonSet`.
 
--   GlusterFS daemonset is started. DaemonSet means: start exactly **one** pod per node.
+-   GlusterFS `DaemonSet` is started. `DaemonSet` means: start exactly **one** pod per node.
 
 -   All nodes will be referenced in heketi’s database by a UUID. Node block devices are formatted for mounting by GlusterFS.
 
@@ -379,6 +379,8 @@ In order of the appearance of the highlighted lines above in a nutshell what hap
 During the deployment the UI output will look like this:
 
 [![CNS Deployment](img/openshift_cns_deploy_1.png)](img/openshift_cns_deploy_1.png)
+
+When done it should look like this:
 
 [![CNS Deployment](img/openshift_cns_deploy_2.png)](img/openshift_cns_deploy_2.png)
 
@@ -397,7 +399,7 @@ You now have deployed CNS. Let’s verify all components are in place.
 
     oc get pods -o wide
 
-You should see all pods up and running. Highlighted containerized gluster daemons on each pods carry the IP of the OpenShift node they are running on.
+You should see all pods up and running. Highlighted below are pods that run GlusterFS containerized sharing the IP of the OpenShift node they are running on.
 
 ~~~~ hl_lines="2 3 4"
 NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
@@ -414,7 +416,7 @@ The GlusterFS pods use the hosts network and disk devices to run the software-de
 
 [![GlusterFS pods in CNS in detail.](img/cns_diagram_pod.svg)](img/cns_diagram_pod.svg)
 
-*heketi* is a component that will expose an API for GlusterFS to OpenShift. This allows OpenShift to dynamically allocate storage from CNS in a programmatic fashion. See below for a visualization. Note that for simplicity, in our example heketi runs on the OpenShift App nodes, not on the Infra node.
+*heketi* is a component that will expose an API for GlusterFS to OpenShift. This allows OpenShift to dynamically allocate storage from CNS in a programmatic fashion. See below for a visualization. Note that for simplicity, in our lab environment heketi runs on the OpenShift App nodes, not on the Infra node.
 
 [![heketi pod running in CNS](img/cns_diagram_heketi.svg)](img/cns_diagram_heketi.svg)
 
@@ -465,6 +467,9 @@ The client needs to know the heketi service URL above and the password for the `
     export HEKETI_CLI_KEY=myS3cr3tpassw0rd
 
 !!! Caution "Important"
+    Replace the FQDN in the `HEKETI_CLI_SERVER` variable above with the one specific to your environment obtained via the `oc get route/heketi` command.
+
+!!! Tip
     It's probably a good idea to copy&paste this information somewhere for the duration of the lab. You'll need this info again later multiple times.
 
 &#8680; You are now able to use the heketi CLI tool:

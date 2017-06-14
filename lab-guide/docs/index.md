@@ -19,7 +19,7 @@ Your lab should be pre-provisioned. If that's for some reason not the case you'l
 
 [![CNS Lab Infrastructure](img/qwiklab_progress_bar.png)](img/qwiklab_progress_bar.png)
 
-If you don't see that your lab infrastructure is ready. When this is the case you will see buttons on the right.
+If you don't see that your lab infrastructure is ready. When this is the case you will additional blue buttons (3 in total) on the right.
 
 In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> (will be visible when the lab is readily provisioned) on the right side of the screen to obtain the following access information:
 
@@ -29,7 +29,7 @@ In order to access the lab infrastructure click the <span style="background-colo
 |URL to OpenShift UI| OpenShiftLoginURL |e.g. *https://34.226.81.9.nip.io:8443/* |
 |IP to Lab Environment | MasterNodePublicIP |e.g. *34.226.81.9* |
 
-The lab has a number of user account definitions
+The lab has a number of user account definitions:
 
 |Type | Username | Password | notes |
 |------------| -------- |-------- |-------- |
@@ -45,25 +45,25 @@ The lab will provision a readily installed OpenShift environment.
 
 You access the lab environment in two ways:
 
-- via the web-based UI using your browser pointing to the *OpenShiftLoginURL* using either of the two OpenShift users defined above
+- via the web-based OpenShift UI using your browser pointing to the *OpenShiftLoginURL* using either of the two OpenShift users defined above
 
-- via SSH to the Master node with the *MasterNodePublicIP* using the `ec2-user` and the PEM file
+- via SSH to the OpenShift Master node with the *MasterNodePublicIP* using the `ec2-user` and the PEM file
 
 &#8680; To login via SSH download the PEM file to your machine and change the permissions:
 
     chmod 0400 ~/Downloads/<pem-file-name>
 
-&#8680; Then login with the ssh client like this
+&#8680; Then login with the ssh client like this:
 
     ssh -i ~/Downloads/<pem-file-name> -l ec2-user <MasterNodePublicIP>
 
-The Master node also functions as your *jumpserver*. Once you are logged in to it you have access to all systems with the ec2-user who has passwordless authentication and passwordless sudo capabilities set up.
+The Master node also functions as your *jumpserver*. Once you are logged on to it you have access to all systems with the `ec2-user` who has passwordless authentication and passwordless sudo capabilities set up everywhere.
 
 ---
 
 #### Lab Environment IP addresses
 
-The lab environment has 7 nodes in total with stable IP addresses and `/etc/hosts`-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet however.
+The lab environment has 7 nodes in total with stable, internal IP addresses and `/etc/hosts`-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet via it's public IP however.
 
 |Host | FQDN | IP address |
 |------------| -------- |-------- |

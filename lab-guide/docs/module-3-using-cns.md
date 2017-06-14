@@ -12,7 +12,7 @@ OpenShift knows non-ephemeral storage as "persistent" volumes. This is storage t
 
 A storage provider in the system is represented by a *StorageClass* and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  
 
-The storage is represented in OpenShift as a *PersistentVolume* which can directly be used by pods to mount it.
+The provisioned storage is represented in OpenShift as a *PersistentVolume* which can directly be used by pods to mount it.
 
 With these basics defined we can configure our system for CNS. First we will set up the credentials for CNS in OpenShift.
 
@@ -34,7 +34,7 @@ The encoded string looks like this:
 
 We will store this encoded value in an OpenShift secret.
 
-&#8680; Create a file called `cns-secret.yml` with the as per below (highlight shows where to put encoded password):
+&#8680; Create a file called `cns-secret.yml` with contents like below (highlight shows where to put encoded password):
 
 <kbd>cns-secret.yml:</kbd>
 
@@ -53,7 +53,7 @@ type: kubernetes.io/glusterfs
 
     oc create -f cns-secret.yml
 
-To represent CNS as a storage provider in the system you first have to create a StorageClass. Define by creating a file called `cns-storageclass.yml` which references the secret and the heketi URL shown earlier with the contents as below:
+To represent CNS as a storage provider in the system you first have to create a `StorageClass`. Define it by creating a file called `cns-storageclass.yml` which references the secret and the heketi URL shown earlier with the contents as below:
 
 !!! Warning "Important"
     Replace the `resturl` parameter with your heketi URL.
@@ -89,14 +89,14 @@ With these components in place the system is ready to dynamically provision stor
 Requesting Storage
 ------------------
 
-To get storage provisioned as a user you have to "claim" storage. The *PersistentVolumeClaim* (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.  
-Also the access mode is set here, where *ReadWriteOnce* allows one container at a time to mount this storage.
+To get storage provisioned as a user you have to "claim" storage. The `PersistentVolumeClaim` (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.  
+Also the access mode is set here, where *ReadWriteOnce* allows one container at a time to mount and access this storage.
 
-&#8680; Where are going to do this as a user. Login in as user `developer`:
+&#8680; Where are going to do this as a regular OpenShift user. Login in as `developer`:
 
     oc login -u developer
 
-&#8680; If you no projects, create one:
+&#8680; If you have no projects, create one:
 
     oc new-project playground
 
@@ -143,17 +143,17 @@ You should see the PVC listed and in *Bound* state.
 
     [![Creating a PersistentVolumeClaim](img/openshift_pvc_create.png)](img/openshift_pvc_create.png)
 
-When the claim was fulfilled successfully it is in the *Bound* state. That means the system has successfully (via the StorageClass) reached out to the storage backend (in our case GlusterFS). The backend in turn provisioned the storage and provided a handle back OpenShift. In OpenShift the provisioned storage is then represented by a *PersistentVolume* (PV) which is *bound* to the PVC.
+When the claim was fulfilled successfully it is in the *Bound* state. That means the system has successfully (via the `StorageClass`) reached out to the storage backend (in our case GlusterFS). The backend in turn provisioned the storage and provided a handle back OpenShift. In OpenShift the provisioned storage is then represented by a `PersistentVolume` (PV) which is *bound* to the PVC.
 
 &#8680; Look at the PVC for these details:
 
     oc describe pvc/my-container-storage
 
-The details of the PVC show against which *StorageClass* it has been submitted and the name of the *PersistentVolume* which was generated to fulfill the claim.
+The details of the PVC show against which `StorageClass` it has been submitted and the name of the `PersistentVolume` which was generated to fulfill the claim.
 
 ``` hl_lines="1 5"
 Name:           my-container-storage
-Namespace:      container-native-storage
+Namespace:      playground
 StorageClass:   container-native-storage
 Status:         Bound
 Volume:         pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
@@ -165,6 +165,12 @@ No events.
 
 !!! Note
     The PV name will be different in your environment since it’s automatically generated.
+
+In order to look at a the details of a PV in a default setup like this you need more privileges.
+
+&#8680; For convenience just log in as `operator` to this project:
+
+    oc login -u operator -n playground
 
 &#8680; Look at the corresponding PV by it’s name:
 
@@ -236,6 +242,10 @@ Normally a user doesn’t request storage with a PVC directly. Rather the PVC is
 ---
 
 To create an application from the OpenShift Example templates on the CLI follow these steps.
+
+&#8680; Log in as `developer`
+
+    oc login -u developer
 
 &#8680; Create a new project with a name of your choice:
 
@@ -334,7 +344,7 @@ The complete output should look like this:
 Exit out of the watch mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd>
 
 !!! Note:
-    It may take up to 5 minutes for the deployment to complete.
+    It may take up to 7 minutes for the deployment to complete.
 
     If you did it via the UI the deployment is finished when both, rails app and postgres database are up and running:
 
@@ -352,9 +362,9 @@ Output:
     postgresql   Bound     pvc-6c348fbb-4e9d-11e7-970e-0a9938370404   15Gi       RWO           4m
 
 !!! Tip "Why did this even work?"
-    If you paid close attention you likely noticed that the PVC in the template does not specify a particular *StorageClass*. This still yields a PV deployed because our *StorageClass* has actually been defined as the system-wide default. PVCs that don't specify a *StorageClass* will use the default class.
+    If you paid close attention you likely noticed that the PVC in the template does not specify a particular `StorageClass`. This still yields a PV deployed because our `StorageClass` has actually been defined as the system-wide default. PVCs that don't specify a `StorageClass` will use the default class.
 
-Now go ahead and try out the application. The overview page in the OpenShift UI will tell you the `route` which has been deployed as well. Use it and append `/articles` to the URL to get to the actual app.
+Now go ahead and try out the application. The overview page in the OpenShift UI will tell you the `route` which has been deployed as well (the http://... link in the upper right hand corner). Use it and append `/articles` to the URL to get to the actual app.
 
 &#8680; Otherwise get it on the CLI like this:
 
