@@ -5,7 +5,10 @@ copyright: 'Copyright ©2017 Red Hat, Inc.'
 
 theme: 'material'
 extra:
-  logo: 'img/RedHat.svg'
+  logo: 'img/shadowman_rgb.png'
+  palette:
+    primary: 'red'
+    accent: 'light blue'
 
 pages:
 - Overview: index.md
