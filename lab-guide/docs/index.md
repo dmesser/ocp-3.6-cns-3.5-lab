@@ -2,6 +2,7 @@
 
 This lab guide is designed for self-paced walk-through of the "Container-Native Storage on OpenShift 3.5" hosted on [redhat.qwkilab.com](https://redhat.qwiklab.com). This lab gives you access to a fully functional OpenShift Container Platform 3.5 environment hosted on AWS.
 
+
 #### Pre-requisites
 
 For this lab you need to fulfill the following pre-requisites:
@@ -10,6 +11,7 @@ For this lab you need to fulfill the following pre-requisites:
 
 - SSH client supporting authentication with a private key
 
+---
 
 #### Get Lab Access Credentials
 
@@ -17,9 +19,9 @@ Your lab should be pre-provisioned. If that's for some reason not the case you'l
 
 [![CNS Lab Infrastructure](img/qwiklab_progress_bar.png)](img/qwiklab_progress_bar.png)
 
-If you don't see that your lab infrastructure is ready.
+If you don't see that your lab infrastructure is ready. When this is the case you will see buttons on the right.
 
-In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> on the right side of the screen to obtain the following access information:
+In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> (will be visible when the lab is readily provisioned) on the right side of the screen to obtain the following access information:
 
 |Type | Name | |
 |------------| -------- |-------- |
@@ -34,6 +36,8 @@ The lab has a number of user account definitions
 |Linux user on Master node  | ec2-user | *authenticated via SSH by PEM file*| passwordless sudo access on all systems |
 |OpenShift Admin-persona User | operator | `r3dh4t` | will get cluster-admin privileges in the lab |
 |OpenShift Developer-persona User | developer | `r3dh4t` | no special permissions |
+
+---
 
 #### Access the Lab environment
 
@@ -55,6 +59,8 @@ You access the lab environment in two ways:
 
 The Master node also functions as your *jumpserver*. Once you are logged in to it you have access to all systems with the ec2-user who has passwordless authentication and passwordless sudo capabilities set up.
 
+---
+
 #### Lab Environment IP addresses
 
 The lab environment has 7 nodes in total with stable IP addresses and `/etc/hosts`-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet however.
@@ -72,6 +78,8 @@ The lab environment has 7 nodes in total with stable IP addresses and `/etc/host
 This lab topology roughly looks like this:
 
 [![CNS Lab Infrastructure](img/cns_infrastructure_aws.svg)](img/cns_infrastructure_aws.svg)
+
+---
 
 #### Get Started
 
