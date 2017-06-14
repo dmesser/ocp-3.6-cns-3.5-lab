@@ -19,7 +19,7 @@ Your lab should be pre-provisioned. If that's for some reason not the case you'l
 
 If you don't see that your lab infrastructure is ready.
 
-In order to access the lab infrastructure <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> on the right side of the screen to obtain the following access information:
+In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> on the right side of the screen to obtain the following access information:
 
 |Type | Name | |
 |------------| -------- |-------- |
