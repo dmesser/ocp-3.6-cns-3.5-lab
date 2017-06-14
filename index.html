@@ -376,11 +376,12 @@
 <p>SSH client supporting authentication with a private key</p>
 </li>
 </ul>
+<hr />
 <h4 id="get-lab-access-credentials">Get Lab Access Credentials<a class="headerlink" href="#get-lab-access-credentials" title="Permanent link">#</a></h4>
 <p>Your lab should be pre-provisioned. If that&rsquo;s for some reason not the case you&rsquo;ll see this progress bar:</p>
 <p><a href="./img/qwiklab_progress_bar.png"><img alt="CNS Lab Infrastructure" src="./img/qwiklab_progress_bar.png" /></a></p>
-<p>If you don&rsquo;t see that your lab infrastructure is ready.</p>
-<p>In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> on the right side of the screen to obtain the following access information:</p>
+<p>If you don&rsquo;t see that your lab infrastructure is ready. When this is the case you will see buttons on the right.</p>
+<p>In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> (will be visible when the lab is readily provisioned) on the right side of the screen to obtain the following access information:</p>
 <table>
 <thead>
 <tr>
@@ -438,6 +439,7 @@
 </tr>
 </tbody>
 </table>
+<hr />
 <h4 id="access-the-lab-environment">Access the Lab environment<a class="headerlink" href="#access-the-lab-environment" title="Permanent link">#</a></h4>
 <p>The lab will provision a readily installed OpenShift environment.</p>
 <p>You access the lab environment in two ways:</p>
@@ -460,6 +462,7 @@
 
 
 <p>The Master node also functions as your <em>jumpserver</em>. Once you are logged in to it you have access to all systems with the ec2-user who has passwordless authentication and passwordless sudo capabilities set up.</p>
+<hr />
 <h4 id="lab-environment-ip-addresses">Lab Environment IP addresses<a class="headerlink" href="#lab-environment-ip-addresses" title="Permanent link">#</a></h4>
 <p>The lab environment has 7 nodes in total with stable IP addresses and <code>/etc/hosts</code>-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet however.</p>
 <table>
@@ -510,6 +513,7 @@
 </table>
 <p>This lab topology roughly looks like this:</p>
 <p><a href="./img/cns_infrastructure_aws.svg"><img alt="CNS Lab Infrastructure" src="./img/cns_infrastructure_aws.svg" /></a></p>
+<hr />
 <h4 id="get-started">Get Started<a class="headerlink" href="#get-started" title="Permanent link">#</a></h4>
 <p>Once you are on the Master node you are ready to start the lab with Module 1.</p>
 <p>You might these hints useful:</p>
