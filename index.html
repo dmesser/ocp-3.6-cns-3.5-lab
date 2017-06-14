@@ -7,9 +7,11 @@
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
       
+        <link rel="canonical" href="https://dmesser.github.io/cns-lab-sa-summit/">
       
       
-        <link rel="shortcut icon" href="./assets/images/favicon.png">
+      
+        <link rel="shortcut icon" href="./img/favicon.ico">
       
       <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.7.3">
     
@@ -59,7 +61,7 @@
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
         
-          <a href="." title="Container-Native Storage Hands-on Lab - Storage SA Summit 2017" class="md-logo md-header-nav__button">
+          <a href="https://dmesser.github.io/cns-lab-sa-summit/" title="Container-Native Storage Hands-on Lab - Storage SA Summit 2017" class="md-logo md-header-nav__button">
             <img src="./img/RedHat.svg" width="24" height="24">
           </a>
         
@@ -144,9 +146,64 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Overview
+      </label>
+    
     <a href="." title="Overview" class="md-nav__link md-nav__link--active">
       Overview
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pre-requisites" title="Pre-requisites" class="md-nav__link">
+    Pre-requisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-lab-access-credentials" title="Get Lab Access Credentials" class="md-nav__link">
+    Get Lab Access Credentials
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#access-the-lab-environment" title="Access the Lab environment" class="md-nav__link">
+    Access the Lab environment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-environment-ip-addresses" title="Lab Environment IP addresses" class="md-nav__link">
+    Lab Environment IP addresses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-started" title="Get Started" class="md-nav__link">
+    Get Started
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -252,6 +309,48 @@
     
   
   
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pre-requisites" title="Pre-requisites" class="md-nav__link">
+    Pre-requisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-lab-access-credentials" title="Get Lab Access Credentials" class="md-nav__link">
+    Get Lab Access Credentials
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#access-the-lab-environment" title="Access the Lab environment" class="md-nav__link">
+    Access the Lab environment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-environment-ip-addresses" title="Lab Environment IP addresses" class="md-nav__link">
+    Lab Environment IP addresses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-started" title="Get Started" class="md-nav__link">
+    Get Started
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -264,6 +363,157 @@
                 
                 
                 <h1 id="welcome-to-container-native-storage-hands-on-lab">Welcome to Container-Native Storage Hands-on Lab<a class="headerlink" href="#welcome-to-container-native-storage-hands-on-lab" title="Permanent link">#</a></h1>
+<p>This lab guide is designed for self-paced walk-through of the &ldquo;Container-Native Storage on OpenShift 3.5&rdquo; hosted on <a href="https://redhat.qwiklab.com">redhat.qwkilab.com</a>. This lab gives you access to a fully functional OpenShift Container Platform 3.5 environment hosted on AWS.</p>
+<h4 id="pre-requisites">Pre-requisites<a class="headerlink" href="#pre-requisites" title="Permanent link">#</a></h4>
+<p>For this lab you need to fulfill the following pre-requisites:</p>
+<ul>
+<li>
+<p>Workstation with Internet access</p>
+</li>
+<li>
+<p>SSH client supporting authentication with a private key</p>
+</li>
+</ul>
+<h4 id="get-lab-access-credentials">Get Lab Access Credentials<a class="headerlink" href="#get-lab-access-credentials" title="Permanent link">#</a></h4>
+<p>In order to access the lab infrastructure <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button on the right side of the screen to obtain the following access information:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Name</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSH Key</td>
+<td>PEM File</td>
+<td><em>download this file by clicking <kbd>PEM file</kbb></em></td>
+</tr>
+<tr>
+<td>URL to OpenShift UI</td>
+<td>OpenShiftLoginURL</td>
+<td>e.g. <em>https://34.226.81.9.nip.io:8443/</em></td>
+</tr>
+<tr>
+<td>IP to Lab Environment</td>
+<td>MasterNodePublicIP</td>
+<td>e.g. <em>34.226.81.9</em></td>
+</tr>
+</tbody>
+</table>
+<p>The lab has a number of user account definitions</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Username</th>
+<th>Password</th>
+<th>notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux user on Master node</td>
+<td>ec2-user</td>
+<td><em>authenticated via SSH by PEM file</em></td>
+<td>passwordless sudo access on all systems</td>
+</tr>
+<tr>
+<td>OpenShift Admin-persona User</td>
+<td>operator</td>
+<td><code>r3dh4t</code></td>
+<td>will get cluster-admin privileges in the lab</td>
+</tr>
+<tr>
+<td>OpenShift Developer-persona User</td>
+<td>developer</td>
+<td><code>r3dh4t</code></td>
+<td>no special permissions</td>
+</tr>
+</tbody>
+</table>
+<h4 id="access-the-lab-environment">Access the Lab environment<a class="headerlink" href="#access-the-lab-environment" title="Permanent link">#</a></h4>
+<p>The lab will provision a readily installed OpenShift environment.</p>
+<p>You access the lab environment in two ways:</p>
+<ul>
+<li>
+<p>via the web-based UI using your browser pointing to the <em>OpenShiftLoginURL</em> using either of the two OpenShift users defined above</p>
+</li>
+<li>
+<p>via SSH to the Master node with the <em>MasterNodePublicIP</em> using the <code>ec2-user</code> and the PEM file</p>
+</li>
+</ul>
+<p>&#8680; To login via SSH download the PEM file to your machine and change the permissions:</p>
+<div class="codehilite"><pre><span></span>chmod 0400 ~/Downloads/&lt;pem-file-name&gt;
+</pre></div>
+
+
+<p>&#8680; Then login with the ssh client like this</p>
+<div class="codehilite"><pre><span></span>ssh -i ~/Downloads/&lt;pem-file-name&gt; -l ec2-user &lt;MasterNodePublicIP&gt;
+</pre></div>
+
+
+<p>The Master node also functions as your <em>jumpserver</em>. Once you are logged in to it you have access to all systems with the ec2-user who has passwordless authentication and passwordless sudo capabilities set up.</p>
+<h4 id="lab-environment-ip-addresses">Lab Environment IP addresses<a class="headerlink" href="#lab-environment-ip-addresses" title="Permanent link">#</a></h4>
+<p>The lab environment has 7 nodes in total with stable IP addresses and <code>/etc/hosts</code>-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet however.</p>
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>FQDN</th>
+<th>IP address</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenShift Master</td>
+<td>master.lab</td>
+<td>10.0.1.100</td>
+</tr>
+<tr>
+<td>OpenShift App Node 1</td>
+<td>node-1.lab</td>
+<td>10.0.2.101</td>
+</tr>
+<tr>
+<td>OpenShift App Node 2</td>
+<td>node-2.lab</td>
+<td>10.0.3.102</td>
+</tr>
+<tr>
+<td>OpenShift App Node 3</td>
+<td>node-3.lab</td>
+<td>10.0.4.103</td>
+</tr>
+<tr>
+<td>OpenShift App Node 4</td>
+<td>node-4.lab</td>
+<td>10.0.2.104</td>
+</tr>
+<tr>
+<td>OpenShift App Node 5</td>
+<td>node-5.lab</td>
+<td>10.0.3.105</td>
+</tr>
+<tr>
+<td>OpenShift App Node 6</td>
+<td>node-6.lab</td>
+<td>10.0.4.106</td>
+</tr>
+</tbody>
+</table>
+<p>This lab topology roughly looks like this:</p>
+<p><a href="./img/cns_infrastructure_aws.svg"><img alt="CNS Lab Infrastructure" src="./img/cns_infrastructure_aws.svg" /></a></p>
+<h4 id="get-started">Get Started<a class="headerlink" href="#get-started" title="Permanent link">#</a></h4>
+<p>Once you are on the Master node you are ready to start the lab with Module 1.</p>
+<p>You might these hints useful:</p>
+<ul>
+<li>many of the commands/files don&rsquo;t contain environment-specific content, there is a <kbd>copy-to-clipboard</kbd> button on the right end of every code block for your convenience</li>
+<li>keep a text editor open to store some outputs that are specific to your environment</li>
+<li>this lab uses nip.io for DNS resolution of the public IP specific to your lab, keep that in mind when working with URLs in the lab</li>
+<li>if you want to look at this lab guide in a separate window: this documentation is hosted at <a href="https://dmesser.github.io/cns-lab-sa-summit/" target="_blank">https://dmesser.github.io/cns-lab-sa-summit/</a></li>
+</ul>
                 
                   
                 
@@ -303,6 +553,10 @@
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright ©2017 Red Hat, Inc.
+          </div>
         
         powered by
         <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>

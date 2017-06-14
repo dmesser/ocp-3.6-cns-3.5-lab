@@ -7,9 +7,11 @@
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
       
+        <link rel="canonical" href="https://dmesser.github.io/cns-lab-sa-summit/module-1-ocp-in-5/">
       
       
-        <link rel="shortcut icon" href="../assets/images/favicon.png">
+      
+        <link rel="shortcut icon" href="../img/favicon.ico">
       
       <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.7.3">
     
@@ -59,7 +61,7 @@
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
         
-          <a href=".." title="Container-Native Storage Hands-on Lab - Storage SA Summit 2017" class="md-logo md-header-nav__button">
+          <a href="https://dmesser.github.io/cns-lab-sa-summit/" title="Container-Native Storage Hands-on Lab - Storage SA Summit 2017" class="md-logo md-header-nav__button">
             <img src="../img/RedHat.svg" width="24" height="24">
           </a>
         
@@ -470,7 +472,7 @@ You don&#39;t have any projects. You can try to create a new project, by running
 </pre></div>
 
 
-<p>&#8680; &hellip;and back in as <code>operator</code> to the <code>default</code> namespace</p>
+<p>&#8680; &hellip;and back in as <code>operator</code> to the <code>default</code> namespace with password <code>r3dh4t</code></p>
 <div class="codehilite"><pre><span></span>oc login -u operator -n default
 </pre></div>
 
@@ -600,7 +602,7 @@ View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list ev
 <p>OpenShift ships a number of useful example of simple and more complex application stacks in the form of templates. These are a great way to see how OpenShift supports application development and deployment.</p>
 <p>&#8680; Select the example app template labeled <strong>Rails + PostgreSQL (Ephemeral)</strong></p>
 <p><a href="../img/openshift_rails_1.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_1.png" /></a></p>
-<p>The template specifies various OpenShift resources, some of which are customizable via parameters. This page allows to override some.</p>
+<p>The template specifies various OpenShift resources, some of which are customizable via parameters. This page allows to override these parameters with custom values.</p>
 <p><a href="../img/openshift_rails_2.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_2.png" /></a></p>
 <p>We will accept the defaults. Note the GitHub repository URL - this is where the code for this app will come from.</p>
 <p>&#8680; Click <strong>Create</strong> to start the app deployment:</p>
@@ -610,15 +612,20 @@ View details with &#39;oc describe &lt;resource&gt;/&lt;name&gt;&#39; or list ev
 <p>After a few minutes the deployment is done.</p>
 <p><a href="../img/openshift_rails_5.png"><img alt="OpenShift Ruby Example" src="../img/openshift_rails_5.png" /></a></p>
 <p>&#8680; Click on the link provided starting with <strong>http://rails-postgresql-example-my-first-app.cloudapps&hellip;</strong> in the upper right hand corner to get to the application instances.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The URL will be slightly different for you as it contains the public IP address of your environment.</p>
+</div>
 <p>On the CLI the process would have been kicked off with this command chain:</p>
 <div class="codehilite"><pre><span></span>oc export template/rails-postgresql-example -n openshift | oc process -f - | oc create -f -
 </pre></div>
 
 
 <p>Don&rsquo;t worry about the exact mechanics of this method - it will be explained in a later module.</p>
-<p>At this point you deployed an application stack consisting of a database pod and a pod running the ruby on rails app.<br />
+<p>At this point you deployed an application stack consisting of a database pod and a pod running the Ruby on Rails app.<br />
 That&rsquo;s it. The application has been built from source and deployed from scratch.</p>
-<p>There is only one problem. The database stores it&rsquo;s data internally in the pod&rsquo;s ephemeral local filesystem.</p>
+<p>There is only one problem. The database stores it&rsquo;s data internally in the pod&rsquo;s ephemeral local filesystem. This data would be lost as soon as the pod terminates or gets rescheduled.</p>
+<p>In OpenShift infrastructure is considered immutable. So any configuration changes will actually redeploy application infrastructure like pods. That&rsquo;s why pods must not store any data locally.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>At this point 5 minutes are probably over. For the curious reader there is an extra section below that explains what has happened in the background.</p>
@@ -749,6 +756,10 @@ It will do this in a round-robin fashion.</p>
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright ©2017 Red Hat, Inc.
+          </div>
         
         powered by
         <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
