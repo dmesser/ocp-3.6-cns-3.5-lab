@@ -661,7 +661,7 @@ Resources:
                   node-4.lab
                   node-5.lab
                   node-6.lab
-                  
+
                   [cns-nodes:vars]
                   openshift_node_labels="{'region':'apps'}"
                 path: /etc/ansible/hosts
@@ -939,6 +939,11 @@ Resources:
         Ref: KeyName
       BlockDeviceMappings:
         - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '500'
+            VolumeType: 'st1'
+            DeleteOnTermination: 'true'
+        - DeviceName: /dev/xvdd
           Ebs:
             VolumeSize: '500'
             VolumeType: 'st1'
