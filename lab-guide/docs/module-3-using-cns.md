@@ -96,7 +96,7 @@ Also the access mode is set here, where *ReadWriteOnce* allows one container at 
 
     oc login -u developer
 
-&#8680; If you have no projects, create one:
+&#8680; Create a new project called `playground` for this exercise:
 
     oc new-project playground
 
