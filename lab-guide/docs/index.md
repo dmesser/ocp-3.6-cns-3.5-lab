@@ -11,6 +11,8 @@ For this lab you need to fulfill the following pre-requisites:
 
 - SSH client supporting authentication with a private key
 
+To start the lab press  <b><span style="background-color:#909e33; color:white; font-size: 120%">&nbsp;&nbsp;Start Lab&nbsp;&nbsp;</span></b> button in the top bar.
+
 ---
 
 #### Get Lab Access Credentials
