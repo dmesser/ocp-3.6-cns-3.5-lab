@@ -9,6 +9,10 @@ For demonstration purposes you however can also created distributed volumes (no 
 
 Currently volume type is implemented as a parameter in the *StorageClass*, not the PVC. All volumes of this *StorageClass* will be of the specified type.
 
+&#8680; Make sure you are logged in as `operator` in the `default` namespace:
+
+    oc login -u operator -n default
+
 &#8680; Create a file called `cns-storageclass-dispersed.yml` with the following content:
 
 <kbd>cns-storageclass-dispersed.yml:</kbd>

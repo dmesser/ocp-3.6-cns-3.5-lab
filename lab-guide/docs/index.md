@@ -25,7 +25,7 @@ In order to access the lab infrastructure click the <span style="background-colo
 
 |Type | Name | |
 |------------| -------- |-------- |
-|SSH Key  | PEM File | *download this file by clicking <kbd>Download PEM/PPK</kbb>* in the "Connect" pane|
+|SSH Key  | PEM File | *download this file by clicking <kbd>Download PEM/PPK</kbd> > <kbd>Download PEM</kbd>* in the "Connect" pane|
 |URL to OpenShift UI| OpenShiftLoginURL |e.g. *https://34.226.81.9.nip.io:8443/* |
 |IP to Lab Environment | MasterNodePublicIP |e.g. *34.226.81.9* |
 

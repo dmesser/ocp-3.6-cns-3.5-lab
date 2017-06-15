@@ -6,7 +6,7 @@
 Running multiple GlusterFS pools
 --------------------------------
 
-In the previous modules a single GlusterFS clusters was used to supply *PersistentVolume* to applications. CNS allows for multiple clusters to run in a single OpenShift deployment.
+In the previous modules a single GlusterFS clusters was used to supply *PersistentVolumes* to applications. CNS allows for multiple clusters to run in a single OpenShift deployment.
 
 There are several use cases for this:
 
@@ -368,7 +368,10 @@ parameters:
   clusterid: "46b205a4298c625c4bca2206b7a82dd3"
 ```
 
-Again note the `clusterid` in the `parameters` section referencing the second cluster's UUID
+Again note the `clusterid` in the `parameters` section referencing the second cluster's UUID.
+
+!!! Note
+    Again, keep in mind that also the `resturl` parameter is specific to your environment as it contains the route to heketi using the public URL.
 
 &#8680; Add the new *StorageClass*:
 
@@ -508,7 +511,7 @@ Assuming there are no volumes present these need to be deleted in reverse order.
 
 Note that specific values highlighted above in your environment and carry out the following steps in strict order:
 
-&#8680; Delete all devices of all nodes:
+&#8680; Delete all devices of all nodes of the cluster you want to delete:
 
     heketi-cli device delete e481d022cea9bfb11e8a86c0dd8d349
     heketi-cli device delete 09a25a114c53d7669235b368efd2f8d1
@@ -777,8 +780,8 @@ You should now have a GlusterFS consisting of 6 nodes:
 
 With this you have expanded the existing pool. New PVCs will start to use capacity from the additional nodes.
 
-!!! Important
-    You now have a GlusterFS pool with mixed media types (both size and speed). It is recommended to have the same media type per pool.
+!!! Caution "Important"
+    In this lab, with this expansion, you now have a GlusterFS pool with mixed media types (both size and speed). It is recommended to have the same media type per pool.
     If you like to offer multiple media types for CNS in OpenShift, use separate pools and separate `StorageClass` objects as described in the [previous section](#running-multiple-glusterfs-pools).
 
 ---
@@ -936,13 +939,19 @@ The GlusterFS volume name as it used by GlusterFS:
     No events.
 ```
 
-&#8680; Get the volumes topology directly from GlusterFS
+&#8680; Change to the CNS namespace
+
+    oc project container-native-storage
+
+&#8680; Log on to one of the GlusterFS pods
 
     oc rsh glusterfs-52hkc
 
+&#8680; Get the volumes topology directly from GlusterFS
+
     gluster volume info vol_3ff9946ddafaabe9745f184e4235d4e1
 
-The output indicates this volume is indeed backed by, among others, `node-6.lab`
+The output indicates this volume is indeed backed by, among others, `node-6.lab` (see highlighted line)
 
 ``` hl_lines="11"
 Volume Name: vol_3ff9946ddafaabe9745f184e4235d4e1
@@ -974,12 +983,12 @@ Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    S
 				Id:a6c92b6a07983e9b8386871f5b82497f   Size (GiB):200     Path: /var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick
 ```
 
-In this case it's `/dev/vdd` of `node-6.lab`.
+In this case it's `/dev/xvdd` of `node-6.lab`.
 
 !!! Note:
     The device might be different for you. This is subject to heketi's dynamic scheduling.
 
-Let's assume `/dev/vdd` on `node-6.lab` has failed and needs to be replaced.
+Let's assume `/dev/xvdd` on `node-6.lab` has failed and needs to be replaced.
 
 In such a case you'll take the device's ID and go through the following steps:
 
@@ -989,12 +998,16 @@ In such a case you'll take the device's ID and go through the following steps:
 
 This will take the device offline and exclude it from future volume creation requests.
 
-&#8680; Now delete the device in heketi
+&#8680; Now remove the device in heketi
+
+    heketi-cli device remove 62cbae7a3f6faac38a551a614419cca3
+
+This will trigger a brick-replacement in GlusterFS. The command will block and heketi in the background will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.
+The new bricks, if possible, will automatically be created in zones different from the remaining bricks to maintain equal balancing and cross-zone availability.
+
+&#8680; Finally, you are now able to delete the device in heketi entirely
 
     heketi-cli device delete 62cbae7a3f6faac38a551a614419cca3
-
-This will trigger a brick-replacement in GlusterFS. heketi will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.
-The new bricks, if possible, will automatically be created in zones different from the remaining bricks to maintain equal balancing and cross-zone availability.
 
 &#8680; Check again the volumes topology directly from GlusterFS
 
@@ -1004,9 +1017,9 @@ The new bricks, if possible, will automatically be created in zones different fr
 
 You will notice that `Brick3` is now a different mount path, but on the same node.
 
-If you cross-check again the new bricks mount path with the heketi topology you will see it's indeed coming from a different device. The remaining device in `node-6.lab`, in this case `/dev/vdc`
+If you cross-check again the new bricks mount path with the heketi topology you will see it's indeed coming from a different device. The remaining device in `node-6.lab`, in this case `/dev/xvdc`
 
-!!! Note
+!!! Tip
     Device removal while maintaining volume health is possible in heketi as well. Simply delete all devices of the node in question as discussed above. Then the device can be deleted from heketi with `heketi-cli device delete <device-uuid>`
 
 ---
