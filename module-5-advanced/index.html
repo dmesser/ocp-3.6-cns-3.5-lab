@@ -332,6 +332,11 @@
 <p>The only volume type supported with CNS in production is 3-way replicated.<br />
 For demonstration purposes you however can also created distributed volumes (no replication) and dispersed volume (4:2 erasure-coding).</p>
 <p>Currently volume type is implemented as a parameter in the <em>StorageClass</em>, not the PVC. All volumes of this <em>StorageClass</em> will be of the specified type.</p>
+<p>&#8680; Make sure you are logged in as <code>operator</code> in the <code>default</code> namespace:</p>
+<div class="codehilite"><pre><span></span>oc login -u operator -n default
+</pre></div>
+
+
 <p>&#8680; Create a file called <code>cns-storageclass-dispersed.yml</code> with the following content:</p>
 <p><kbd>cns-storageclass-dispersed.yml:</kbd></p>
 <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">apiVersion</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">storage.k8s.io/v1beta1</span>

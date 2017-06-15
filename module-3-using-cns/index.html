@@ -575,7 +575,7 @@ Storage is freed up by deleting the <strong>PVC</strong>. The PVC controls the l
 <p>Log on to the OpenShift UI as the <code>developer</code> user</p>
 </li>
 <li>
-<p>If you don&rsquo;t have a project, create one called &lsquo;my-test-project&rsquo;, label and description is optional</p>
+<p>Create a new project called &lsquo;my-test-project&rsquo;, label and description is optional</p>
 </li>
 <li>
 <p>In the Overview, next to the project’s name select <em>Add to project</em></p>
@@ -745,9 +745,22 @@ rails-pgsql-persistent   rails-pgsql-persistent-my-test-project.cloudapps.34.252
 <p>http://<em>rails-pgsql-persistent-my-test-project.cloudapps.34.252.58.209.nip.io</em>/<strong>articles</strong></p>
 <p>You should be able to successfully create articles and comments. The username/password to create articles and comments is by default <strong>openshift</strong>/<strong>secret</strong>.<br />
 When they are saved they are actually saved in the PostgreSQL database which stores it’s table spaces on a GlusterFS volume provided by CNS.</p>
+<p>&#8680; You can verify that the postgres pod indeed mounted the PVC under the pather where PostgreSQL normally stores it&rsquo;s data with this command:</p>
+<div class="codehilite"><pre><span></span>oc volumes dc --all
+</pre></div>
+
+
+<p>You will see that the <code>DeploymentConfig</code> of the postgres pod did indeed include a PVC:</p>
+<div class="codehilite"><pre><span></span>deploymentconfigs/postgresql
+  pvc/postgresql (allocated 15GiB) as postgresql-data
+    mounted at /var/lib/pgsql/data
+deploymentconfigs/rails-pgsql-persistent
+</pre></div>
+
+
 <p>Now let’s take a look at how this was actually achieved.</p>
 <p>&#8680; A normal user cannot see the details of a PersistentVolume. Log in as <code>operator</code>:</p>
-<div class="codehilite"><pre><span></span>oc login -u operator
+<div class="codehilite"><pre><span></span>oc login -u operator -n my-test-project
 </pre></div>
 
 
@@ -766,6 +779,7 @@ postgresql   Bound     pvc-6c348fbb-4e9d-11e7-970e-0a9938370404   15Gi       RWO
 <p class="admonition-title">Note</p>
 <p>Your volume (PV) name will be different as it’s dynamically generated.</p>
 </div>
+<p>The PVC name is found in above output the <code>VOLUME</code> column.</p>
 <p>&#8680; Look at the details of this PV:</p>
 <div class="codehilite"><pre><span></span>oc describe pv/pvc-6c348fbb-4e9d-11e7-970e-0a9938370404
 </pre></div>
@@ -846,7 +860,7 @@ vol_efac3ddb9d339fa680c0807a1d91c5a3
 </pre></div>
 
 
-<p>The output will show you how the volume has been created. You will also see that the pod you are currently logged on serves one the bricks (in highlight).</p>
+<p>The output will show you how the volume has been created. You will also see that the pod you are currently logged on to serves one the bricks (in highlight).</p>
 <div class="codehilite"><pre><span></span>Volume Name: vol_efac3ddb9d339fa680c0807a1d91c5a3
 Type: Replicate
 Volume ID: cfaccdec-3c97-4e43-b80f-c9677e7a726a
@@ -869,7 +883,7 @@ nfs.disable: on
 <p class="admonition-title">Note</p>
 <p>Identify the right brick by looking at the host IP of the pod you have just logged on to. <code>oc get pods -o wide</code> will give you this information.</p>
 </div>
-<p>GlusterFS created this volume as a 3-way replica set across all GlusterFS pods, therefore across all your OpenShift App nodes running CNS. This is currently the only supported volume type in production. Later you will see how can schedule (unsupported) volume types like dispersed or distributed.</p>
+<p>GlusterFS created this volume as a 3-way replica set across all GlusterFS pods, therefore across your OpenShift App nodes running CNS. This is currently the only supported volume type in production. In <a href="../module-5-advanced/">Module 5</a> you will see how to provision (unsupported) volume types like dispersed or distributed.</p>
 <p>&#8680; You can even look at the local brick:</p>
 <div class="codehilite"><pre><span></span>sh-4.2# ls -ahl /var/lib/heketi/mounts/vg_2a49883a5cb39c3b845477ff85a729ba/brick_c5b00eeae2c57862b4eddeeb9b3903ad/brick
 total 16K
@@ -917,9 +931,9 @@ drwx------.  3 1000080000 root   60 Jun  6 14:44 pg_xlog
 <p>The exact path name will be different in your environment as it has been automatically generated.</p>
 </div>
 <p>You are looking at the PostgreSQL internal data file structure from the perspective of the GlusterFS server side. Evidence that the database uses CNS.</p>
-<p>Clients, like the OpenShift nodes and their application pods talk to this storage with the GlusterFS protocol as it where an ordinary GlusterFS deployment.<br />
+<p>Clients, like the OpenShift nodes and their application pods talk to this storage with the GlusterFS protocol as it were an ordinary GlusterFS deployment.<br />
 When a pod starts that mounts storage from a PV backed by CNS the GlusterFS mount plugin in OpenShift will mount the GlusterFS volume on the right App Node and then <em>bind-mount</em> this directory to the right pod.<br />
-This is happen transparently to the application and looks like a normal local filesystem inside the pod.</p>
+This happens transparently to the application and looks like a normal local filesystem inside the pod.</p>
 <p>&#8680; You may exit your remote session to the GlusterFS pod.</p>
 <div class="codehilite"><pre><span></span>sh-4.2# exit
 </pre></div>
@@ -928,8 +942,8 @@ This is happen transparently to the application and looks like a normal local fi
 <hr />
 <h2 id="providing-shared-storage-to-multiple-application-instances">Providing shared storage to multiple application instances<a class="headerlink" href="#providing-shared-storage-to-multiple-application-instances" title="Permanent link">#</a></h2>
 <p>In the previous example we provisioned an RWO PV - the volume is only usable with one pod at a time. RWO is what most of the OpenShift storage backends support.<br />
-So far only very few options, like the basic NFS support existed, to provide a PersistentVolume to more than one container at once. The access mode used for this is <strong>ReadWriteMany</strong>.</p>
-<p>With CNS this capabilities is now available to all OpenShift deployments, no matter where they are deployed. To demonstrate this capability with an application we will deploy a PHP-based file uploader that has multiple front-end instances sharing a common storage repository.</p>
+So far only very few options, like the basic NFS support existed, to provide a <code>PersistentVolume</code> to more than one container at once. The access mode used for this is <strong>ReadWriteMany</strong>.</p>
+<p>With CNS this capability is now available to all OpenShift deployments, no matter where they are deployed. To demonstrate this capability with an application we will deploy a PHP-based file uploader that has multiple front-end instances sharing a common storage repository.</p>
 <p>&#8680; Log back in as developer</p>
 <div class="codehilite"><pre><span></span>oc login -u developer
 </pre></div>
@@ -977,7 +991,7 @@ Feel free to check it out.</p>
 </pre></div>
 
 
-<p>&#8680; Wait for the application to be deployed with the suggest command:</p>
+<p>&#8680; Wait for the application to be deployed with the suggested command:</p>
 <div class="codehilite"><pre><span></span>oc logs -f bc/file-uploader
 </pre></div>
 
@@ -1010,7 +1024,7 @@ file-uploader-1-k2v0d            1/1       Running     0          1m
 </pre></div>
 
 
-<p>A service has been created for our app but not exposed yet.</p>
+<p>A <code>Service</code> has been created for our app but not exposed via a <code>Route</code> yet.</p>
 <p>&#8680; Let’s fix this:</p>
 <div class="codehilite"><pre><span></span>oc expose svc/file-uploader
 </pre></div>
@@ -1021,17 +1035,17 @@ file-uploader-1-k2v0d            1/1       Running     0          1m
 </pre></div>
 
 
-<p>The route forwards all traffic to port 8080 of the container running the app.</p>
+<p>The route forwards all traffic on port 80 of it&rsquo;s automatically generated subdomain of the OpenShift router to port 8080 of the container running the app.</p>
 <div class="codehilite"><pre><span></span>NAME            HOST/PORT                                                      PATH      SERVICES        PORT       TERMINATION   WILDCARD
 file-uploader   file-uploader-my-test-project.cloudapps.34.252.58.209.nip.io             file-uploader   8080-tcp                 None
 </pre></div>
 
 
-<p>Point your browser the the URL advertised by the route (in this case http://file-uploader-my-test-project.cloudapps.34.252.58.209.nip.io)</p>
+<p>Point your browser to the URL advertised by the route (in this case http://file-uploader-my-test-project.cloudapps.34.252.58.209.nip.io)</p>
 <p>The application simply lists all file previously uploaded and offers the ability to upload new ones as well as download the existing data. Right now there is nothing.</p>
 <p>Select an arbitrary from your local system and upload it to the app.</p>
 <p><a href="../img/uploader_screen_upload.png"><img alt="A simple PHP-based file upload tool" src="../img/uploader_screen_upload.png" /></a></p>
-<p>After uploading a file validate it has been stored locally in the container by following the link <em>List Uploaded Files</em> in the browser.</p>
+<p>After uploading a file validate it has been stored successfully by following the link <em>List Uploaded Files</em> in the browser.</p>
 <p>Let&rsquo;s see how this is stored locally in the container.</p>
 <p>&#8680; List the running pods of our application:</p>
 <div class="codehilite"><pre><span></span>oc get pods | grep file-uploader
@@ -1046,6 +1060,10 @@ file-uploader-1-k2v0d            1/1       Running     0          6m
 
 <p>Note the name of the single pod currently running the app: <strong>file-uploader-1-k2v0d</strong>.<br />
 The container called <code>file-uploader-1-build</code> is the builder container that deployed the application and it has already terminated.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The exact name of the pod will be different in your environment.</p>
+</div>
 <p>&#8680; Log into the application pod via a remote session (using the name noted earlier):</p>
 <div class="codehilite"><pre><span></span>oc rsh file-uploader-1-k2v0d
 </pre></div>
@@ -1061,10 +1079,6 @@ total 16K
 </pre></div>
 
 
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The exact name of the pod will be different in your environment.</p>
-</div>
 <p>The app should also list the file in the overview:</p>
 <p><a href="../img/uploader_screen_list.png"><img alt="The file has been uploaded and can be downloaded again" src="../img/uploader_screen_list.png" /></a></p>
 <p>This pod currently does not use any persistent storage. It stores the file locally.</p>
@@ -1100,7 +1114,7 @@ file-uploader-1-k2v0d            1/1       Running     0          3m
 
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The pod names will be different in your environment since they are automatically generated.</p>
+<p>The pod names will be different in your environment since they are automatically generated. It takes a couple of seconds until they are ready.</p>
 </div>
 <p>These 3 pods now make up our application. OpenShift will load balance incoming traffic between them.<br />
 However, when you log on to one of the new instances you will see they have no data.</p>
@@ -1180,6 +1194,7 @@ my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi   
 </pre></div>
 
 
+<p>Exit out of the follow mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd></p>
 <p>The new config <code>file-uploader-2</code> will have 3 pods all sharing the same storage.</p>
 <p>&#8680; Get the names of the new pods:</p>
 <div class="codehilite"><pre><span></span>oc get pods
