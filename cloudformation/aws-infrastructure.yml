@@ -1,7 +1,7 @@
 ---
 
 AWSTemplateFormatVersion: 2010-09-09
-Description: Container-Native Storage Lab using OCP/CNS 3.5 for Storage SA Summit
+Description: Container-Native Storage Lab using OCP 3.6 and CNS 3.5 by Red Hat
 
 Parameters:
 
@@ -15,54 +15,6 @@ Parameters:
       - t2.small
       - t2.medium
       - t2.large
-      - m1.small
-      - m1.medium
-      - m1.large
-      - m1.xlarge
-      - m2.xlarge
-      - m2.2xlarge
-      - m2.4xlarge
-      - m3.medium
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - c1.medium
-      - c1.xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.2xlarge,
-      - c4.4xlarge
-      - c4.8xlarge
-      - g2.2xlarge
-      - g2.8xlarge
-      - r3.large
-      - r3.xlarge
-      - r3.2xlarge
-      - r3.4xlarge
-      - r3.8xlarge
-      - i2.xlarge
-      - i2.2xlarge
-      - i2.4xlarge
-      - i2.8xlarge
-      - d2.xlarge
-      - d2.2xlarge
-      - d2.4xlarge
-      - d2.8xlarge
-      - hi1.4xlarge
-      - hs1.8xlarge
-      - cr1.8xlarge
-      - cc2.8xlarge
-      - cg1.4xlarge
     ConstraintDescription: Must be a valid EC2 instance type.
 
   MasterInstanceType:
@@ -75,56 +27,7 @@ Parameters:
       - t2.small
       - t2.medium
       - t2.large
-      - m1.small
-      - m1.medium
-      - m1.large
-      - m1.xlarge
-      - m2.xlarge
-      - m2.2xlarge
-      - m2.4xlarge
-      - m3.medium
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - c1.medium
-      - c1.xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.2xlarge,
-      - c4.4xlarge
-      - c4.8xlarge
-      - g2.2xlarge
-      - g2.8xlarge
-      - r3.large
-      - r3.xlarge
-      - r3.2xlarge
-      - r3.4xlarge
-      - r3.8xlarge
-      - i2.xlarge
-      - i2.2xlarge
-      - i2.4xlarge
-      - i2.8xlarge
-      - d2.xlarge
-      - d2.2xlarge
-      - d2.4xlarge
-      - d2.8xlarge
-      - hi1.4xlarge
-      - hs1.8xlarge
-      - cr1.8xlarge
-      - cc2.8xlarge
-      - cg1.4xlarge
     ConstraintDescription: Must be a valid EC2 instance type.
-
 
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -135,19 +38,19 @@ Mappings:
 
   AWSRegion2AMI:
     us-east-1:
-      ami: ami-4ce0bc5a
+      ami: ami-c46487be
     us-east-2:
       ami: NOT_SUPPORTED
     us-west-1:
       ami: NOT_SUPPORTED
     us-west-2:
-      ami: ami-70e6e809
+      ami: ami-60ca3818
     eu-west-1:
-      ami: ami-3855485e
+      ami: NOT_SUPPORTED
     eu-west-2:
       ami: NOT_SUPPORTED
     eu-central-1:
-      ami: NOT_SUPPORTED
+      ami: ami-3b8a3c54
     ap-northeast-1:
       ami: NOT_SUPPORTED
     ap-northeast-2:
@@ -463,7 +366,7 @@ Resources:
         ToPort: 2222
         CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
       - IpProtocol: tcp
-        FromPort: 24007
+        FromPort: 24006
         ToPort: 24008
         CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
       - IpProtocol: tcp
@@ -549,7 +452,7 @@ Resources:
         ToPort: 65535
         CidrIp: 0.0.0.0/0
 
-  InstanceInPublicIF1:
+  MasterNodeInterface:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -563,16 +466,17 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       PrivateIpAddress: 10.0.1.100
 
-  InstanceInPublic1:
+  MasterNode:
     Type: AWS::EC2::Instance
     DependsOn:
       - InternetGatewayAttachement
-      - InstanceInPrivate1
-      - InstanceInPrivate2
-      - InstanceInPrivate3
-      - InstanceInPrivate4
-      - InstanceInPrivate5
-      - InstanceInPrivate6
+      - InfraNode1
+      - InfraNode2
+      - InfraNode3
+      - AppNode1
+      - AppNode2
+      - AppNode3
+      - AppNode4
     Properties:
       ImageId:
         Fn::FindInMap:
@@ -590,7 +494,7 @@ Resources:
       - Key: Name
         Value: 'master'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref InstanceInPublicIF1
+      - NetworkInterfaceId: !Ref MasterNodeInterface
         DeviceIndex: '0'
       BlockDeviceMappings:
       - DeviceName: /dev/xvdc
@@ -606,102 +510,116 @@ Resources:
               - content: |
                   127.0.0.1       localhost.localdomain      localhost
                   ::1             localhost6.localdomain6    localhost6
-                  ${InstanceInPublicIF1.PrimaryPrivateIpAddress}       master.lab         master
-                  ${InstanceInPrivateIF1.PrimaryPrivateIpAddress}      node-1.lab         node-1
-                  ${InstanceInPrivateIF2.PrimaryPrivateIpAddress}      node-2.lab         node-2
-                  ${InstanceInPrivateIF3.PrimaryPrivateIpAddress}      node-3.lab         node-3
-                  ${InstanceInPrivateIF4.PrimaryPrivateIpAddress}      node-4.lab         node-4
-                  ${InstanceInPrivateIF5.PrimaryPrivateIpAddress}      node-5.lab         node-5
-                  ${InstanceInPrivateIF6.PrimaryPrivateIpAddress}      node-6.lab         node-6
+                  ${MasterNodeInterface.PrimaryPrivateIpAddress}       master.lab         master
+                  ${InfraNode1Interface.PrimaryPrivateIpAddress}      infra-1.lab         infra-1
+                  ${InfraNode2Interface.PrimaryPrivateIpAddress}      infra-2.lab         infra-2
+                  ${InfraNode3Interface.PrimaryPrivateIpAddress}      infra-3.lab         infra-3
+                  ${AppNode1Interface.PrimaryPrivateIpAddress}      node-1.lab         node-1
+                  ${AppNode2Interface.PrimaryPrivateIpAddress}      node-2.lab         node-2
+                  ${AppNode3Interface.PrimaryPrivateIpAddress}      node-3.lab         node-3
+                  ${AppNode4Interface.PrimaryPrivateIpAddress}      node-4.lab         node-4
                 path: /etc/hosts
+
               - content: |
                   [OSEv3:children]
                   masters
                   nodes
+                  #glusterfs
+                  glusterfs_registry
 
                   [OSEv3:vars]
-                  ansible_ssh_user=ec2-user
-                  ansible_ssh_private_key_file=/home/ec2-user/.ssh/id_rsa
-                  ansible_ssh_extra_args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=false"
-                  ansible_become=true
                   deployment_type=openshift-enterprise
                   containerized=true
-                  openshift_image_tag=v3.5.5.15
-                  openshift_pkg_version=-3.5.5.15
+                  openshift_release=v3.6
+                  openshift_image_tag=v3.6.173.0.21
                   openshift_master_identity_providers=[{'name': 'htpasswd', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
                   openshift_master_htpasswd_users={'developer': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/','operator': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/'}
-                  openshift_master_default_subdomain='cloudapps.${PublicEIP1}.nip.io'
-                  openshift_router_selector='region=infra'
-                  openshift_registry_selector='region=infra'
-                  osm_default_node_selector='region=apps'
+                  openshift_master_default_subdomain='cloudapps.${MasterNodePublicIP}.nip.io'
+                  osm_default_node_selector='role=app'
+                  openshift_router_selector='role=infra'
+                  openshift_registry_selector='role=infra'
+                  openshift_hosted_registry_storage_kind=glusterfs
                   openshift_examples_modify_imagestreams=true
                   openshift_metrics_install_metrics=false
+                  openshift_metrics_image_version="v3.6.173.0.21"
+                  openshift_metrics_hawkular_hostname="hawkular-metrics.{{ openshift_master_default_subdomain }}"
+                  openshift_metrics_cassandra_storage_type=pv
+                  openshift_metrics_cassandra_pvc_size=10Gi
+                  openshift_cockpit_deployer_version="v3.6"
                   openshift_hosted_logging_deploy=false
+                  openshift_hosted_logging_deployer_version="v3.6.173.0.21"
+                  openshift_logging_es_pvc_size=10Gi
+                  openshift_logging_es_pvc_dynamic=true
+                  openshift_storage_glusterfs_name=app-storage
+                  openshift_storage_glusterfs_namespace=app-storage
+                  openshift_storage_glusterfs_image=rhgs3/rhgs-server-rhel7
+                  openshift_storage_glusterfs_version=3.2.0-7
+                  openshift_storage_glusterfs_heketi_image=rhgs3/rhgs-volmanager-rhel7
+                  openshift_storage_glusterfs_heketi_version=3.2.0-11
+                  openshift_storage_glusterfs_registry_name=infra-storage
+                  openshift_storage_glusterfs_registry_namespace=infra-storage
 
                   [masters]
-                  master.lab openshift_public_hostname=${PublicEIP1}.nip.io openshift_hostname=master.lab openshift_ip=${InstanceInPublicIF1.PrimaryPrivateIpAddress} openshift_public_ip=${PublicEIP1}
+                  master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
 
                   [nodes]
-                  master.lab openshift_public_hostname=${PublicEIP1}.nip.io openshift_hostname=master.lab openshift_ip=${InstanceInPublicIF1.PrimaryPrivateIpAddress} openshift_public_ip=${PublicEIP1}
-                  node-1.lab openshift_hostname=node-1.lab openshift_ip=${InstanceInPrivateIF1.PrimaryPrivateIpAddress}
-                  node-2.lab openshift_hostname=node-2.lab openshift_ip=${InstanceInPrivateIF2.PrimaryPrivateIpAddress}
-                  node-3.lab openshift_hostname=node-3.lab openshift_ip=${InstanceInPrivateIF3.PrimaryPrivateIpAddress}
-                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${InstanceInPrivateIF4.PrimaryPrivateIpAddress}
-                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${InstanceInPrivateIF5.PrimaryPrivateIpAddress}
-                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${InstanceInPrivateIF6.PrimaryPrivateIpAddress}
+                  master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
+                  infra-1.lab openshift_hostname=infra-1.lab openshift_ip=${InfraNode1Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'infra'}"
+                  infra-2.lab openshift_hostname=infra-2.lab openshift_ip=${InfraNode2Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'infra'}"
+                  infra-3.lab openshift_hostname=infra-3.lab openshift_ip=${InfraNode3Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'infra'}"
+                  node-1.lab openshift_hostname=node-1.lab openshift_ip=${AppNode1Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-2.lab openshift_hostname=node-2.lab openshift_ip=${AppNode2Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-3.lab openshift_hostname=node-3.lab openshift_ip=${AppNode3Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
 
-                  [masters:vars]
-                  openshift_schedulable=true
-                  openshift_node_labels="{'region':'infra'}"
+                  [glusterfs_registry]
+                  infra-1.lab glusterfs_ip=${InfraNode1Interface.PrimaryPrivateIpAddress} glusterfs_devices='[ "/dev/xvdc" ]'
+                  infra-2.lab glusterfs_ip=${InfraNode2Interface.PrimaryPrivateIpAddress} glusterfs_devices='[ "/dev/xvdc" ]'
+                  infra-3.lab glusterfs_ip=${InfraNode3Interface.PrimaryPrivateIpAddress} glusterfs_devices='[ "/dev/xvdc" ]'
 
-                  [cns-nodes]
-                  node-1.lab
-                  node-2.lab
-                  node-3.lab
-                  node-4.lab
-                  node-5.lab
-                  node-6.lab
-
-                  [cns-nodes:vars]
-                  openshift_node_labels="{'region':'apps'}"
+                  #[glusterfs]
+                  #node-1.lab glusterfs_ip=${AppNode1Interface.PrimaryPrivateIpAddress} glusterfs_devices='[ "/dev/xvdc", "/dev/xvdd" ]'
+                  #node-2.lab glusterfs_ip=${AppNode2Interface.PrimaryPrivateIpAddress} glusterfs_devices='[ "/dev/xvdc", "/dev/xvdd" ]'
+                  #node-3.lab glusterfs_ip=${AppNode3Interface.PrimaryPrivateIpAddress} glusterfs_devices='[ "/dev/xvdc", "/dev/xvdd" ]'
                 path: /etc/ansible/hosts
 
             runcmd:
               - ansible masters -m filesystem -a "fstype=xfs dev=/dev/xvdc"
               - ansible masters -m mount -a "fstype=xfs src=/dev/xvdc path=/var/lib/origin state=mounted"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=infra-1.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=infra-2.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=infra-3.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-1.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-2.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-3.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-4.lab"
-              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-5.lab"
-              - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-6.lab"
               - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
-              - ansible nodes,masters -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
-              - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml ; /opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
+              - ansible nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
+              - "/opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
 
   WaitHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
 
   WaitCondition:
     Type: AWS::CloudFormation::WaitCondition
-    DependsOn: InstanceInPublic1
+    DependsOn: MasterNode
     Properties:
       Handle: !Ref WaitHandle
       Timeout: '1800'
 
-  PublicEIP1:
+  MasterNodePublicIP:
     Type: AWS::EC2::EIP
     DependsOn: InternetGateway
     Properties:
       Domain: 'vpc'
 
-  PublicEIPAttachment1:
+  MasterNodePublicIPAttach:
     Type: AWS::EC2::EIPAssociation
     Properties:
-      InstanceId: !Ref InstanceInPublic1
-      AllocationId: !GetAtt PublicEIP1.AllocationId
+      InstanceId: !Ref MasterNode
+      AllocationId: !GetAtt MasterNodePublicIP.AllocationId
 
-  InstanceInPrivateIF1:
+  InfraNode1Interface:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -714,7 +632,7 @@ Resources:
       SubnetId: !Ref PrivateSubnet1
       PrivateIpAddress: 10.0.2.101
 
-  InstanceInPrivate1:
+  InfraNode1:
     Type: AWS::EC2::Instance
     DependsOn: NatGateway
     Properties:
@@ -734,16 +652,16 @@ Resources:
             VolumeType: 'gp2'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref InstanceInPrivateIF1
+      - NetworkInterfaceId: !Ref InfraNode1Interface
         DeviceIndex: '0'
       Tags:
       - Key: Application
         Value:
           Ref: AWS::StackId
       - Key: Name
-        Value: 'node-1'
+        Value: 'infra-1'
 
-  InstanceInPrivateIF2:
+  InfraNode2Interface:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -756,7 +674,7 @@ Resources:
       SubnetId: !Ref PrivateSubnet2
       PrivateIpAddress: 10.0.3.102
 
-  InstanceInPrivate2:
+  InfraNode2:
     Type: AWS::EC2::Instance
     DependsOn: NatGateway
     Properties:
@@ -776,16 +694,16 @@ Resources:
             VolumeType: 'gp2'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref InstanceInPrivateIF2
+      - NetworkInterfaceId: !Ref InfraNode2Interface
         DeviceIndex: '0'
       Tags:
       - Key: Application
         Value:
           Ref: AWS::StackId
       - Key: Name
-        Value: 'node-2'
+        Value: 'infra-2'
 
-  InstanceInPrivateIF3:
+  InfraNode3Interface:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -798,7 +716,7 @@ Resources:
       SubnetId: !Ref PrivateSubnet3
       PrivateIpAddress: 10.0.4.103
 
-  InstanceInPrivate3:
+  InfraNode3:
     Type: AWS::EC2::Instance
     DependsOn: NatGateway
     Properties:
@@ -818,16 +736,16 @@ Resources:
             VolumeType: 'gp2'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref InstanceInPrivateIF3
+      - NetworkInterfaceId: !Ref InfraNode3Interface
         DeviceIndex: '0'
       Tags:
       - Key: Application
         Value:
           Ref: AWS::StackId
       - Key: Name
-        Value: 'node-3'
+        Value: 'infra-3'
 
-  InstanceInPrivateIF4:
+  AppNode1Interface:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -838,9 +756,9 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet1
-      PrivateIpAddress: 10.0.2.104
+      PrivateIpAddress: 10.0.2.201
 
-  InstanceInPrivate4:
+  AppNode1:
     Type: AWS::EC2::Instance
     DependsOn: NatGateway
     Properties:
@@ -856,20 +774,20 @@ Resources:
       BlockDeviceMappings:
         - DeviceName: /dev/xvdc
           Ebs:
-            VolumeSize: '500'
-            VolumeType: 'st1'
+            VolumeSize: '50'
+            VolumeType: 'gp2'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref InstanceInPrivateIF4
+      - NetworkInterfaceId: !Ref AppNode1Interface
         DeviceIndex: '0'
       Tags:
       - Key: Application
         Value:
           Ref: AWS::StackId
       - Key: Name
-        Value: 'node-4'
+        Value: 'node-1'
 
-  InstanceInPrivateIF5:
+  AppNode2Interface:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -880,9 +798,9 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet2
-      PrivateIpAddress: 10.0.3.105
+      PrivateIpAddress: 10.0.3.202
 
-  InstanceInPrivate5:
+  AppNode2:
     Type: AWS::EC2::Instance
     DependsOn: NatGateway
     Properties:
@@ -898,20 +816,20 @@ Resources:
       BlockDeviceMappings:
         - DeviceName: /dev/xvdc
           Ebs:
-            VolumeSize: '500'
-            VolumeType: 'st1'
+            VolumeSize: '50'
+            VolumeType: 'gp2'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref InstanceInPrivateIF5
+      - NetworkInterfaceId: !Ref AppNode2Interface
         DeviceIndex: '0'
       Tags:
       - Key: Application
         Value:
           Ref: AWS::StackId
       - Key: Name
-        Value: 'node-5'
+        Value: 'node-2'
 
-  InstanceInPrivateIF6:
+  AppNode3Interface:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -922,9 +840,9 @@ Resources:
       GroupSet:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet3
-      PrivateIpAddress: 10.0.4.106
+      PrivateIpAddress: 10.0.4.203
 
-  InstanceInPrivate6:
+  AppNode3:
     Type: AWS::EC2::Instance
     DependsOn: NatGateway
     Properties:
@@ -940,28 +858,70 @@ Resources:
       BlockDeviceMappings:
         - DeviceName: /dev/xvdc
           Ebs:
-            VolumeSize: '500'
-            VolumeType: 'st1'
+            VolumeSize: '50'
+            VolumeType: 'gp2'
             DeleteOnTermination: 'true'
         - DeviceName: /dev/xvdd
           Ebs:
-            VolumeSize: '500'
-            VolumeType: 'st1'
+            VolumeSize: '50'
+            VolumeType: 'gp2'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref InstanceInPrivateIF6
+      - NetworkInterfaceId: !Ref AppNode3Interface
         DeviceIndex: '0'
       Tags:
       - Key: Application
         Value:
           Ref: AWS::StackId
       - Key: Name
-        Value: 'node-6'
+        Value: 'node-3'
+
+  AppNode4Interface:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet3
+      PrivateIpAddress: 10.0.4.204
+
+  AppNode4:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: NodeInstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdc
+          Ebs:
+            VolumeSize: '50'
+            VolumeType: 'gp2'
+            DeleteOnTermination: 'true'
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref AppNode4Interface
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'node-4'
 
 Outputs:
   MasterNodePublicIP:
     Description: "OpenShift Master Node Public IP Address"
-    Value: !Ref PublicEIP1
+    Value: !Ref MasterNodePublicIP
 
   UserName:
     Description: "OpenShift User Login"
@@ -985,5 +945,5 @@ Outputs:
 
   OpenShiftLoginURL:
     Description: "OpenShift Master Node Public IP Address"
-    Value: !Sub "https://${PublicEIP1}.nip.io:8443/"
+    Value: !Sub "https://${MasterNodePublicIP}.nip.io:8443/"
 ...
