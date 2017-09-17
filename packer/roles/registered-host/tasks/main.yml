@@ -5,12 +5,6 @@
   - name: remove rhui-client packages
     yum: name=rh-amazon-rhui-client* state=absent
 
-  - name: clean yum cache
-    shell:
-      cmd: yum clean all
-      warn: false
-    ignore_errors: true
-
   - name: enable Red Hat product id support in yum
     copy: src=product-id.conf dest=/etc/yum/pluginconf.d/
 
@@ -45,6 +39,12 @@
 
 - name: disable all default repositories
   shell: subscription-manager repos --disable="*"
+
+- name: clean yum cache
+  shell:
+    cmd: yum clean all
+    warn: false
+  ignore_errors: true
 
 - name: enable all required repositories
   shell: subscription-manager repos --enable {{ rhsm_repos | join(" --enable ") }}
