@@ -595,7 +595,7 @@ Resources:
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-4.lab"
               - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
               - ansible nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
-              - "/opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
+              - "/opt/aws/bin/cfn-signal -e 0 '${WaitHandle}'"
 
   WaitHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
