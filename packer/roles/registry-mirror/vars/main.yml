@@ -23,7 +23,7 @@ ose_core_images:
 ose_infra_images:
   - openshift3/ose-haproxy-router:{{ ose_minor_tag }}
   - openshift3/ose-deployer:{{ ose_minor_tag }}
-  - openshift3/ose-recycler:{{ ose_minor_tag }}
+  #- openshift3/ose-recycler:{{ ose_minor_tag }}
   - openshift3/ose-sti-builder:{{ ose_minor_tag }}
   - openshift3/ose-docker-builder:{{ ose_minor_tag }}
   - openshift3/ose-pod:{{ ose_minor_tag }}
