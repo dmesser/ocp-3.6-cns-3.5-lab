@@ -2,46 +2,51 @@
 
 deploy_mirror: false
 
+registry_port: 5555
+
 src_registry: registry.access.redhat.com
-dest_registry: localhost:5555
+dest_registry: "localhost:{{ registry_port }}"
 
 ose_minor_tag: v3.6.173.0.21
 ose_major_tag: v3.6
 
+rhgs_server_tag: 3.2.0-11
+rhgs_volmanager_tag: 3.2.0-7
+
 ose_core_images:
-  - openshift3/ose:latest
-  - openshift3/ose:{{ ose_minor_tag }}
-  - openshift3/ose:{{ ose_major_tag }}
-  - openshift3/node:latest
-  - openshift3/node:{{ ose_minor_tag }}
-  - openshift3/node:{{ ose_major_tag }}
-  - openshift3/openvswitch:latest
-  - openshift3/openvswitch:{{ ose_minor_tag }}
-  - openshift3/openvswitch:{{ ose_major_tag }}
-  - rhel7/etcd:latest
+  - openshift3/ose
+  - openshift3/node
+  - openshift3/openvswitch
 
 ose_infra_images:
-  - openshift3/ose-haproxy-router:{{ ose_minor_tag }}
-  - openshift3/ose-deployer:{{ ose_minor_tag }}
-  #- openshift3/ose-recycler:{{ ose_minor_tag }}
-  - openshift3/ose-sti-builder:{{ ose_minor_tag }}
-  - openshift3/ose-docker-builder:{{ ose_minor_tag }}
-  - openshift3/ose-pod:{{ ose_minor_tag }}
-  - openshift3/ose-docker-registry:{{ ose_minor_tag }}
-  - openshift3/logging-deployer:{{ ose_major_tag }}
-  - openshift3/logging-elasticsearch:{{ ose_major_tag }}
-  - openshift3/logging-kibana:{{ ose_major_tag }}
-  - openshift3/logging-fluentd:{{ ose_major_tag }}
-  - openshift3/logging-curator:{{ ose_major_tag }}
-  - openshift3/logging-auth-proxy:{{ ose_major_tag }}
-  - openshift3/metrics-deployer:{{ ose_major_tag }}
-  - openshift3/metrics-hawkular-metrics:{{ ose_major_tag }}
-  - openshift3/metrics-cassandra:{{ ose_major_tag }}
-  - openshift3/metrics-heapster:{{ ose_major_tag }}
-  - openshift3/registry-console:{{ ose_major_tag }}
+  - openshift3/ose-haproxy-router
+  - openshift3/ose-deployer
+  #- openshift3/ose-recycler
+  - openshift3/ose-sti-builder
+  - openshift3/ose-docker-builder
+  - openshift3/ose-pod
+  - openshift3/ose-docker-registry
+  - openshift3/logging-deployer
+  - openshift3/logging-elasticsearch
+  - openshift3/logging-kibana
+  - openshift3/logging-fluentd
+  - openshift3/logging-curator
+  - openshift3/logging-auth-proxy
+  - openshift3/metrics-deployer
+  - openshift3/metrics-hawkular-metrics
+  - openshift3/metrics-cassandra
+  - openshift3/metrics-heapster
+  - openshift3/registry-console
+
+ose_s2i_images:
+  - rhscl/ruby-23-rhel7:2.3
+  - rhscl/postgresql-95-rhel7:9.5
+
+rhel_core_images:
+  - rhel7/etcd:latest
 
 cns_core_images:
-  - rhgs3/rhgs-volmanager-rhel7:3.2.0-11
-  - rhgs3/rhgs-server-rhel7:3.2.0-7
+  - rhgs3/rhgs-volmanager-rhel7:{{ rhgs_server_tag }}
+  - rhgs3/rhgs-server-rhel7:{{ rhgs_volmanager_tag }}
 
 ...

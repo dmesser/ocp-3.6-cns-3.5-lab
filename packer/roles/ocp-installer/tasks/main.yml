@@ -1,7 +1,11 @@
 ---
 
-  - name: install ose base packages
+  - name: install ose base and storage packages
     yum: name={{ item }} state=present
+    register: yum_result
+    until: yum_result|success
+    retries: 3
+    delay: 300
     with_items:
       - vim
       - wget
@@ -11,14 +15,13 @@
       - iptables-services
       - bridge-utils
       - bash-completion
+      - python-docker-py
+      - skopeo
+      - dnsmasq
       - atomic-openshift-clients
       - atomic-openshift-utils
       - atomic-openshift-excluder
       - atomic-openshift-docker-excluder
-
-  - name: install ose storage packages
-    yum: name={{ item }} state=present
-    with_items:
       - nfs-utils
       - glusterfs-fuse
       - ceph-common
@@ -36,6 +39,5 @@
 
   - name: restart docker
     service: name=docker state=restarted
-
 
 ...

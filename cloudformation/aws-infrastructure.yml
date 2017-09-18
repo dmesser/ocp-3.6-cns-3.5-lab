@@ -29,6 +29,16 @@ Parameters:
       - t2.large
     ConstraintDescription: Must be a valid EC2 instance type.
 
+  MirrorInstanceType:
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.small
+    ConstraintDescription: Must be a valid EC2 instance type.
+
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Default: dmesser
@@ -36,7 +46,7 @@ Parameters:
 
 Mappings:
 
-  AWSRegion2AMI:
+  AWSRegion2OCPAMI:
     us-east-1:
       ami: ami-c46487be
     us-east-2:
@@ -51,6 +61,40 @@ Mappings:
       ami: NOT_SUPPORTED
     eu-central-1:
       ami: ami-3b8a3c54
+    ap-northeast-1:
+      ami: NOT_SUPPORTED
+    ap-northeast-2:
+      ami: NOT_SUPPORTED
+    ap-southeast-1:
+      ami: NOT_SUPPORTED
+    ap-southeast-2:
+      ami: NOT_SUPPORTED
+    ap-south-1:
+      ami: NOT_SUPPORTED
+    us-east-2:
+      ami: NOT_SUPPORTED
+    ca-central-1:
+      ami: NOT_SUPPORTED
+    sa-east-1:
+      ami: NOT_SUPPORTED
+    cn-north-1:
+      ami: NOT_SUPPORTED
+
+  AWSRegion2MirrorAMI:
+    us-east-1:
+      ami: ami-0624c67c
+    us-east-2:
+      ami: NOT_SUPPORTED
+    us-west-1:
+      ami: NOT_SUPPORTED
+    us-west-2:
+      ami: ami-401be938
+    eu-west-1:
+      ami: NOT_SUPPORTED
+    eu-west-2:
+      ami: NOT_SUPPORTED
+    eu-central-1:
+      ami: ami-e660d689
     ap-northeast-1:
       ami: NOT_SUPPORTED
     ap-northeast-2:
@@ -387,6 +431,35 @@ Resources:
         ToPort: 65535
         CidrIp: 0.0.0.0/0
 
+  MirrorSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: VPC
+      GroupDescription: Firewall definition for Mirror Node
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 5555
+        ToPort: 5555
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+
   MasterSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -477,10 +550,11 @@ Resources:
       - AppNode2
       - AppNode3
       - AppNode4
+      - Mirror
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -518,6 +592,7 @@ Resources:
                   ${AppNode2Interface.PrimaryPrivateIpAddress}      node-2.lab         node-2
                   ${AppNode3Interface.PrimaryPrivateIpAddress}      node-3.lab         node-3
                   ${AppNode4Interface.PrimaryPrivateIpAddress}      node-4.lab         node-4
+                  ${MirrorNodeInterface.PrimaryPrivateIpAddress}      mirror.lab         mirror
                 path: /etc/hosts
 
               - content: |
@@ -593,8 +668,9 @@ Resources:
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-2.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-3.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-4.lab"
+              - ansible localhost -m wait_for -a "port=22 timeout=600 host=mirror.lab"
               - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
-              - ansible nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
+              - ansible masters,nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - "/opt/aws/bin/cfn-signal -e 0 '${WaitHandle}'"
 
   WaitHandle:
@@ -638,7 +714,7 @@ Resources:
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -680,7 +756,7 @@ Resources:
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -722,7 +798,7 @@ Resources:
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -764,7 +840,7 @@ Resources:
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -806,7 +882,7 @@ Resources:
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -848,7 +924,7 @@ Resources:
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -895,7 +971,7 @@ Resources:
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegion2AMI
+        - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
       InstanceType:
@@ -917,6 +993,42 @@ Resources:
           Ref: AWS::StackId
       - Key: Name
         Value: 'node-4'
+
+  MirrorNodeInterface:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: MirrorSecurityGroup
+      SubnetId: !Ref PublicSubnet1
+      PrivateIpAddress: 10.0.1.99
+
+  MirrorNode:
+    Type: AWS::EC2::Instance
+    DependsOn: NatGateway
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2MirrorAMI
+        - Ref: AWS::Region
+        - ami
+      InstanceType:
+        Ref: MirrorInstanceType
+      KeyName:
+        Ref: KeyName
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref MirrorNodeInterface
+        DeviceIndex: '0'
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+      - Key: Name
+        Value: 'mirror'
 
 Outputs:
   MasterNodePublicIP:

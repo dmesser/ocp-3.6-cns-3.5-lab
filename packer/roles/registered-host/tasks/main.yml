@@ -37,14 +37,14 @@
     activationkey: "{{ rhsm_act_key }}"
     state: present
 
-- name: disable all default repositories
-  shell: subscription-manager repos --disable="*"
-
 - name: clean yum cache
   shell:
     cmd: yum clean all
     warn: false
   ignore_errors: true
+
+- name: disable all default repositories
+  shell: subscription-manager repos --disable="*"
 
 - name: enable all required repositories
   shell: subscription-manager repos --enable {{ rhsm_repos | join(" --enable ") }}

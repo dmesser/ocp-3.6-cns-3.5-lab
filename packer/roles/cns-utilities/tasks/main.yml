@@ -1,0 +1,13 @@
+---
+
+- name: install CNS utilities
+  yum: name={{ item }} state=present
+  register: yum_result
+  until: yum_result|success
+  retries: 3
+  delay: 300
+  with_items:
+    - cns-deploy
+    - heketi-client
+
+...
