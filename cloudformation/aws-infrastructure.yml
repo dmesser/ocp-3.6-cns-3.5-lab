@@ -611,7 +611,6 @@ Resources:
                   openshift_router_selector='role=infra'
                   openshift_registry_selector='role=infra'
                   openshift_hosted_registry_storage_kind=glusterfs
-                  openshift_examples_modify_imagestreams=true
                   openshift_metrics_install_metrics=false
                   openshift_metrics_hawkular_hostname="hawkular-metrics.{{ openshift_master_default_subdomain }}"
                   openshift_metrics_cassandra_storage_type=pv
@@ -625,6 +624,10 @@ Resources:
                   openshift_storage_glusterfs_heketi_image=rhgs3/rhgs-volmanager-rhel7
                   openshift_storage_glusterfs_heketi_version=3.2.0-11
                   openshift_storage_glusterfs_registry_namespace=infra-storage
+                  openshift_docker_additional_registries=mirror.lab:5555
+                  openshift_docker_insecure_registries=mirror.lab:5555
+                  openshift_examples_modify_imagestreams=true
+                  oreg_url=mirror.lab:5555
 
                   [masters]
                   master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
