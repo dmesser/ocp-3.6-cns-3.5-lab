@@ -550,7 +550,7 @@ Resources:
       - AppNode2
       - AppNode3
       - AppNode4
-      - Mirror
+      - MirrorNode
     Properties:
       ImageId:
         Fn::FindInMap:
