@@ -27,7 +27,6 @@ ose_infra_images:
   - openshift3/ose-pod
   - openshift3/ose-docker-registry
   - openshift3/logging-deployer
-  - openshift3/logging-elasticsearch
   - openshift3/logging-kibana
   - openshift3/logging-fluentd
   - openshift3/logging-curator
@@ -39,6 +38,7 @@ ose_infra_images:
   - openshift3/registry-console
 
 ose_s2i_images:
+  - openshift3/logging-elasticsearch:{{ ose_major_tag }}
   - rhscl/ruby-23-rhel7:2.3
   - rhscl/postgresql-95-rhel7:9.5
 

@@ -31,7 +31,7 @@
     name: "{{ src_registry }}/{{ item[0] }}:{{ item[1] }}"
   with_nested:
     - "{{ ose_infra_images }}"
-    - [ '{{ ose_major_tag }}', 'latest']
+    - [ '{{ ose_minor_tag }}', '{{ ose_major_tag }}', 'latest']
 
 - name: push ose infra images
   docker_image:
@@ -41,7 +41,7 @@
     push: yes
   with_nested:
     - "{{ ose_infra_images }}"
-    - [ '{{ ose_major_tag }}', 'latest']
+    - [ '{{ ose_minor_tag }}', '{{ ose_major_tag }}', 'latest']
 
 - name: remove cached image copies
   docker_image:
