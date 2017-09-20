@@ -1,6 +1,7 @@
 # Welcome to Container-Native Storage Hands-on Lab
 
-This lab guide is designed for self-paced walk-through of the "Container-Native Storage on OpenShift 3.5" hosted on [redhat.qwkilab.com](https://redhat.qwiklab.com). This lab gives you access to a fully functional OpenShift Container Platform 3.5 environment hosted on AWS.
+This lab guide is designed for self-paced walk-through of the "Container-Native Storage 3.5 on OpenShift 3.6" hosted on [redhat.qwkilab.com](https://redhat.qwiklab.com). This lab gives you access to a fully functional OpenShift Container Platform 3.6 environment hosted on AWS.
+This is not a tutorial on OpenShift Container Platform. Basic familiarity is assumed.
 
 
 #### Pre-requisites
@@ -65,17 +66,21 @@ The Master node also functions as your *jumpserver*. Once you are logged on to i
 
 #### Lab Environment IP addresses
 
-The lab environment has 7 nodes in total with stable, internal IP addresses and `/etc/hosts`-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet via it's public IP however.
+The lab environment has 11 nodes in total with stable, internal IP addresses and `/etc/hosts`-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet via it's public IP however.
 
 |Host | FQDN | IP address |
 |------------| -------- |-------- |
 |OpenShift Master| master.lab | 10.0.1.100 |
-|OpenShift App Node 1| node-1.lab | 10.0.2.101 |
-|OpenShift App Node 2| node-2.lab | 10.0.3.102 |
-|OpenShift App Node 3| node-3.lab | 10.0.4.103 |
-|OpenShift App Node 4| node-4.lab | 10.0.2.104 |
-|OpenShift App Node 5| node-5.lab | 10.0.3.105 |
-|OpenShift App Node 6| node-6.lab | 10.0.4.106 |
+|OpenShift Infra Node 1| infra-1.lab | 10.0.2.101 |
+|OpenShift Infra Node 2| infra-2.lab | 10.0.3.102 |
+|OpenShift Infra Node 3| infra-3.lab | 10.0.4.103 |
+|OpenShift App Node 1| node-1.lab | 10.0.2.201 |
+|OpenShift App Node 2| node-2.lab | 10.0.3.202 |
+|OpenShift App Node 3| node-3.lab | 10.0.4.203 |
+|OpenShift App Node 4| node-4.lab | 10.0.4.204 |
+|OpenShift App Node 5| node-5.lab | 10.0.3.205 |
+|OpenShift App Node 6| node-6.lab | 10.0.4.206 |
+|OpenShift App Node 7| node-7.lab | 10.0.4.207 |
 
 This lab topology roughly looks like this:
 
@@ -92,4 +97,4 @@ You might these hints useful:
 - many of the commands/files don't contain environment-specific content, there is a <kbd>copy-to-clipboard</kbd> button on the right end of every code block for your convenience
 - keep a text editor open to store some outputs that are specific to your environment like the URL and public IP of the Master
 - this lab uses nip.io for DNS resolution of the public IP specific to your lab, keep that in mind when working with URLs in the lab
-- if you want to look at this lab guide in a separate window: this documentation is hosted at <a href="https://dmesser.github.io/cns-lab-sa-summit/" target="_blank">https://dmesser.github.io/cns-lab-sa-summit/</a>
+- if you want to look at this lab guide in a separate window: this documentation is hosted at <a href="https://dmesser.github.io/ocp-3.6-cns-3.5-lab/" target="_blank">https://dmesser.github.io/ocp-3.6-cns-3.5-lab</a>
