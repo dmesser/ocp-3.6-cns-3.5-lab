@@ -467,13 +467,6 @@ Resources:
         Ref: VPC
       GroupDescription: Firewall definition for OpenShift Master and Heketi
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
-        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
         CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
       - IpProtocol: tcp
         FromPort: 4789
@@ -607,7 +600,7 @@ Resources:
                   openshift_master_identity_providers=[{'name': 'htpasswd', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
                   openshift_master_htpasswd_users={'developer': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/','operator': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/'}
                   openshift_master_default_subdomain='cloudapps.${MasterNodePublicIP}.nip.io'
-                  openshift_router_selector='role=infra'
+                  openshift_router_selector='role=master'
                   openshift_registry_selector='role=infra'
                   openshift_metrics_install_metrics=false
                   openshift_metrics_hawkular_hostname="hawkular-metrics.{{ openshift_master_default_subdomain }}"
@@ -624,9 +617,10 @@ Resources:
 
                   [masters]
                   master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
+                  openshift_node_labels="{'role': 'master'}"
 
                   [nodes]
-                  master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
+                  master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab  openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
                   infra-1.lab openshift_hostname=infra-1.lab openshift_ip=${InfraNode1Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'infra'}"
                   infra-2.lab openshift_hostname=infra-2.lab openshift_ip=${InfraNode2Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'infra'}"
                   infra-3.lab openshift_hostname=infra-3.lab openshift_ip=${InfraNode3Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'infra'}"
@@ -649,7 +643,7 @@ Resources:
                   openshift_master_identity_providers=[{'name': 'htpasswd', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
                   openshift_master_htpasswd_users={'developer': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/','operator': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/'}
                   openshift_master_default_subdomain='cloudapps.${MasterNodePublicIP}.nip.io'
-                  openshift_router_selector='role=infra'
+                  openshift_router_selector='role=master'
                   openshift_registry_selector='role=infra'
                   openshift_hosted_registry_storage_kind=glusterfs
                   openshift_metrics_install_metrics=false
@@ -672,6 +666,7 @@ Resources:
 
                   [masters]
                   master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
+                  openshift_node_labels="{'role': 'master'}"
 
                   [nodes]
                   master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
@@ -702,7 +697,7 @@ Resources:
                   openshift_master_identity_providers=[{'name': 'htpasswd', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
                   openshift_master_htpasswd_users={'developer': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/','operator': '$apr1$bKWroIXS$/xjq07zVg9XtH6/VKuh6r/'}
                   openshift_master_default_subdomain='cloudapps.${MasterNodePublicIP}.nip.io'
-                  openshift_router_selector='role=infra'
+                  openshift_router_selector='role=master'
                   openshift_registry_selector='role=infra'
                   openshift_metrics_install_metrics=false
                   openshift_metrics_hawkular_hostname="hawkular-metrics.{{ openshift_master_default_subdomain }}"
@@ -724,6 +719,7 @@ Resources:
 
                   [masters]
                   master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
+                  openshift_node_labels="{'role': 'master'}"
 
                   [nodes]
                   master.lab openshift_public_hostname=${MasterNodePublicIP}.nip.io openshift_hostname=master.lab openshift_ip=${MasterNodeInterface.PrimaryPrivateIpAddress} openshift_public_ip=${MasterNodePublicIP}
