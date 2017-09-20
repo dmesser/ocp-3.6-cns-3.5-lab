@@ -610,7 +610,7 @@ Resources:
                   openshift_logging_es_pvc_dynamic=true
                   openshift_docker_additional_registries=mirror.lab:5555
                   openshift_docker_insecure_registries=mirror.lab:5555
-                  oreg_url=http://mirror.lab:5555/openshift3/ose-${!component}:${!version}
+                  oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
                   openshift_examples_modify_imagestreams=true
                   openshift_disable_check=disk_availability,memory_availability
 
@@ -662,7 +662,7 @@ Resources:
                   openshift_storage_glusterfs_registry_namespace=infra-storage
                   openshift_docker_additional_registries=mirror.lab:5555
                   openshift_docker_insecure_registries=mirror.lab:5555
-                  oreg_url=http://mirror.lab:5555/openshift3/ose-${!component}:${!version}
+                  oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
                   openshift_examples_modify_imagestreams=true
                   openshift_disable_check=disk_availability,memory_availability
 
@@ -718,7 +718,7 @@ Resources:
                   openshift_storage_glusterfs_heketi_version=3.2.0-11
                   openshift_docker_additional_registries=mirror.lab:5555
                   openshift_docker_insecure_registries=mirror.lab:5555
-                  oreg_url=http://mirror.lab:5555/openshift3/ose-${!component}:${!version}
+                  oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
                   openshift_examples_modify_imagestreams=true
                   openshift_disable_check=disk_availability,memory_availability
 
