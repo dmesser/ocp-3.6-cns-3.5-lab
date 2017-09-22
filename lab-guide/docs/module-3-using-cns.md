@@ -1,104 +1,62 @@
 !!! Summary "Overview"
     In this module you will use CNS as a developer would do in OpenShift. For that purpose you will dynamically provision storage both in standalone fashion and in context of an application deployment.
 
-Creating a StorageClass
------------------------
+OpenShift Storage 101
+---------------------
 
-OpenShift uses Kubernetes' PersistentStorage facility to dynamically allocate storage of any kind for applications. This is a fairly simple framework in which only 3 components exists: the storage provider, the storage volume and the request for a storage volume.
+OpenShift uses Kubernetes' PersistentStorage facility to dynamically allocate storage of any kind for applications. This is a fairly simple framework in which only 3 components are relevant: the storage provider, the storage volume and the request for a storage volume.
 
 [![OpenShift Storage Lifecycle](img/cns_diagram_pvc.svg)](img/cns_diagram_pvc.svg)
 
-OpenShift knows non-ephemeral storage as "persistent" volumes. This is storage that is decoupled from pod lifecycles. Users can request such storage by submitting a *PersistentVolumeClaim* to the system, which carries aspects like desired capacity or access mode (shared, single, read-only).
+OpenShift knows non-ephemeral storage as "persistent" volumes. This is storage that is decoupled from pod lifecycles. Users can request such storage by submitting a `PersistentVolumeClaim` to the system, which carries aspects like desired capacity or access mode (shared, single, read-only).
 
-A storage provider in the system is represented by a *StorageClass* and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  
+A storage provider in the system is represented by a `StorageClass` and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  
 
-The provisioned storage is represented in OpenShift as a *PersistentVolume* which can directly be used by pods to mount it.
+The provisioned storage is represented in OpenShift as a `PersistentVolume` which can directly be used by pods to mount it.
 
-With these basics defined we can configure our system for CNS. First we will set up the credentials for CNS in OpenShift.
+With these basics defined we can try CNS in our system. First examine the `StorageClass` the installer has automatically created respectively.
 
-&#8680; Make sure you are logged on as `operator` and you are in the `default` namespace:
+&#8680; Make sure you are still logged in as `operator`:
 
-    oc whoami
+    oc login -u operator
 
-&#8680; If you are not `operator` log in again to the default namespace
+&#8680; Examine the `StorageClass` objects available:
 
-    oc login -u operator -n default
+    oc get storageclass
 
-&#8680; Create an encoded value for the CNS admin user like below:
+`openshift-ansible` defined a `StorageClass` for CNS:
 
-    echo -n "myS3cr3tpassw0rd" | base64
+~~~~
+NAME                TYPE
+glusterfs-storage   kubernetes.io/glusterfs
+~~~~
 
-The encoded string looks like this:
+&#8680; Let's look at the details:
 
-    bXlTM2NyM3RwYXNzdzByZA==
+    oc describe storageclass/glusterfs-storage
 
-We will store this encoded value in an OpenShift secret.
+The output indicates the backing storage type: GlusterFS
 
-&#8680; Create a file called `cns-secret.yml` with contents like below (highlight shows where to put encoded password):
+~~~~
+Name:		glusterfs-storage
+IsDefaultClass:	No
+Annotations:	<none>
+Provisioner:	kubernetes.io/glusterfs
+Parameters:	resturl=http://heketi-storage-app-storage.cloudapps.52.28.134.154.nip.io,restuser=admin,secretName=heketi-storage-admin-secret,secretNamespace=app-storage
+~~~~
 
-<kbd>cns-secret.yml:</kbd>
+!!! Note:
+    The exact value for `resturl` will again be different for you because it's based on the `route`/IP address on your system.
 
-```yaml hl_lines="7"
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cns-secret
-  namespace: default
-data:
-  key: bXlTM2NyM3RwYXNzdzByZA==
-type: kubernetes.io/glusterfs
-```
-
-&#8680; Create the secret in OpenShift with the following command:
-
-    oc create -f cns-secret.yml
-
-To represent CNS as a storage provider in the system you first have to create a `StorageClass`. Define it by creating a file called `cns-storageclass.yml` which references the secret and the heketi URL shown earlier with the contents as below:
-
-!!! Warning "Important"
-    Replace the `resturl` parameter with your heketi URL.
-
-<a name="storageclass-setup"></a>
-
-<kbd>cns-storageclass.yml:</kbd>
-```yaml
-apiVersion: storage.k8s.io/v1beta1
-kind: StorageClass
-metadata:
-  name: container-native-storage
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-provisioner: kubernetes.io/glusterfs
-parameters:
-  resturl: "http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io"
-  restauthenabled: "true"
-  restuser: "admin"
-  volumetype: "replicate:3"
-  secretNamespace: "default"
-  secretName: "cns-secret"
-```
-
-&#8680; Create the StorageClass in OpenShift with the following command:
-
-    oc create -f cns-storageclass.yml
-
-With these components in place the system is ready to dynamically provision storage capacity from Container-native Storage.
+The *Provisioner* is the module in OpenShift/Kubernetes that can talk to the CNS API service: *heketi*. The parameters supplied tell the *Provisioner* the URL of the API as well as the `admin` users (defined in `restuser`) password in the form of an OpenShift `secret` (base64'd hash of the password).
 
 ---
 
 Requesting Storage
 ------------------
 
-To get storage provisioned as a user you have to "claim" storage. The `PersistentVolumeClaim` (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.  
+To get storage provisioned via this `StorageClass` as a user you have to "claim" storage. The object `PersistentVolumeClaim` (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.  
 Also the access mode is set here, where *ReadWriteOnce* allows one container at a time to mount and access this storage.
-
-&#8680; Where are going to do this as a regular OpenShift user. Login in as `developer`:
-
-    oc login -u developer
-
-&#8680; Create a new project called `playground` for this exercise:
-
-    oc new-project playground
 
 &#8680; Create a claim by specifying a file called `cns-pvc.yml` with the following contents:
 
@@ -108,15 +66,15 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: my-container-storage
-  annotations:
-    volume.beta.kubernetes.io/storage-class: container-native-storage
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
+  storageClassName: glusterfs-storage
 ```
+
 With above PVC we are requesting 10 GiB of non-shared storage. Instead of *ReadWriteOnce* you could also have specified *ReadWriteOnly* (for read-only) and *ReadWriteMany* (for shared storage).
 
 &#8680; Submit the PVC to the system like so:
@@ -129,17 +87,15 @@ With above PVC we are requesting 10 GiB of non-shared storage. Instead of *ReadW
 
 You should see the PVC listed and in *Bound* state.
 
-    NAME                   STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
-    my-container-storage   Bound     pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8   10Gi       RWO           16s
+    NAME                   STATUS    VOLUME                                     CAPACITY   ACCESSMODES   STORAGECLASS        AGE
+    my-container-storage   Bound     pvc-848cbc48-9fe3-11e7-83c3-022238c6a515   10Gi       RWO           glusterfs-storage   6s
 
-!!! Note
-    It may take a couple seconds for the claim to be in **bound**.
 
 !!! Caution
-    If the PVC is stuck in *PENDING* state you will need to investigate. Run `oc describe pvc/my-container-storage` to see a more detailed explanation. Typically there are two root causes - the StorageClass is not properly setup (wrong name, wrong credentials, incorrect secret name, wrong heketi URL, heketi service not up, heketi pod not up…) or the PVC is malformed (wrong StorageClass, name already taken …)
+    If the PVC is stuck in *PENDING* state you will need to investigate. Run `oc describe pvc/my-container-storage` to see a more detailed explanation. Typically there are two root causes - the StorageClass is not properly specified (wrong name, not specified) or (less likely here) the backing storage system has a problem (in our case: error on heketi side, incorrect URL in `StorageClass`, etc.)
 
 !!! Tip
-    You can also do this step with the UI. Log on as `developer` and select or create a Project. Then go to the "Storage" tab. Select "Create" storage and make selections accordingly to the PVC described before.
+    You can also do this step with the UI. Log on as `operator` and select any Project. Then go to the "Storage" tab. Select "Create" storage and make selections accordingly to the PVC described before.
 
     [![Creating a PersistentVolumeClaim](img/openshift_pvc_create.png)](img/openshift_pvc_create.png)
 
@@ -152,15 +108,21 @@ When the claim was fulfilled successfully it is in the *Bound* state. That means
 The details of the PVC show against which `StorageClass` it has been submitted and the name of the `PersistentVolume` which was generated to fulfill the claim.
 
 ``` hl_lines="1 5"
-Name:           my-container-storage
-Namespace:      playground
-StorageClass:   container-native-storage
-Status:         Bound
-Volume:         pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
-Labels:         <none>
-Capacity:       10Gi
-Access Modes:   RWO
-No events.
+Name:		my-container-storage
+Namespace:	app-storage
+StorageClass:	glusterfs-storage
+Status:		Bound
+Volume:		pvc-848cbc48-9fe3-11e7-83c3-022238c6a515
+Labels:		<none>
+Annotations:	pv.kubernetes.io/bind-completed=yes
+		pv.kubernetes.io/bound-by-controller=yes
+		volume.beta.kubernetes.io/storage-provisioner=kubernetes.io/glusterfs
+Capacity:	10Gi
+Access Modes:	RWO
+Events:
+  FirstSeen	LastSeen	Count	From				SubObjectPath	Type		Reason			Message
+  ---------	--------	-----	----				-------------	--------	------			-------
+  10m		10m		1	persistentvolume-controller			Normal		ProvisioningSucceeded	Successfully provisioned volume pvc-848cbc48-9fe3-11e7-83c3-022238c6a515 using kubernetes.io/glusterfs
 ```
 
 !!! Note
@@ -168,40 +130,40 @@ No events.
 
 In order to look at a the details of a PV in a default setup like this you need more privileges.
 
-&#8680; For convenience just log in as `operator` to this project:
-
-    oc login -u operator -n playground
-
 &#8680; Look at the corresponding PV by it’s name:
 
-    oc describe pv/pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
+    oc describe pv/pvc-848cbc48-9fe3-11e7-83c3-022238c6a515
 
 The output shows several interesting things, like the access mode (RWO = ReadWriteOnce), the reclaim policy (what happens when the PV object gets deleted), the capacity and the type of storage backing this PV (in our case GlusterFS as part of CNS):
 
-``` hl_lines="4 5 6 7 8 11"
-Name:           pvc-382ac13d-4a9f-11e7-b56f-2cc2602a6dc8
-Labels:         <none>
-StorageClass:   container-native-storage
-Status:         Bound
-Claim:          container-native-storage/my-container-storage
-Reclaim Policy: Delete
-Access Modes:   RWO
-Capacity:       10Gi
+``` hl_lines="7 9 10 11 12 15"
+Name:		pvc-848cbc48-9fe3-11e7-83c3-022238c6a515
+Labels:		<none>
+Annotations:	pv.beta.kubernetes.io/gid=2001
+		pv.kubernetes.io/bound-by-controller=yes
+		pv.kubernetes.io/provisioned-by=kubernetes.io/glusterfs
+		volume.beta.kubernetes.io/mount-options=auto_unmount
+StorageClass:	glusterfs-storage
+Status:		Bound
+Claim:		app-storage/my-container-storage
+Reclaim Policy:	Delete
+Access Modes:	RWO
+Capacity:	10Gi
 Message:
 Source:
-    Type:               Glusterfs (a Glusterfs mount on the host that shares a pod's lifetime)
-    EndpointsName:      glusterfs-dynamic-my-container-storage
-    Path:               vol_304670f0d50bf5aa4717a69652bd48ff
-    ReadOnly:           false
-No events.
+    Type:		Glusterfs (a Glusterfs mount on the host that shares a pod's lifetime)
+    EndpointsName:	glusterfs-dynamic-my-container-storage
+    Path:		vol_7e1733b13e1b46c028a71590f8cfe8b5
+    ReadOnly:		false
+Events:			<none>
 ```
 
 !!! Tip "Why is it called *Bound*?"
-    Originally PVs weren't automatically created. Hence in earlier documentation you may also find references about administrators actually **pre-provisioning** PVs. Later PVCs would "pick up" a suitable PV by looking at it’s capacity. When successful they are *bound* to this PV.
+    Originally PVs weren't automatically created. Hence in earlier documentation you may also find references about administrators actually **pre-provisioning** PVs. Later PVCs would "pick up"/match a suitable PV by looking at it’s capacity and access mode. When successful they are *bound* to this PV.
     This was needed for storage like NFS that does not have an API and therefore does not support **dynamic provisioning**. Hence it's called **static provisioning**.
     This kind of storage should not be used anymore as it requires manual intervention, risky capacity planning and incurs inefficient storage utilization.
 
-Let’s release this storage capacity again.
+Although the storage is provisioned on the GlusterFS side it's not yet used by any application/pod/host. So let’s release this storage capacity again.
 Storage is freed up by deleting the **PVC**. The PVC controls the lifecycle of the storage, not the PV.
 
 !!! Caution "Important"
