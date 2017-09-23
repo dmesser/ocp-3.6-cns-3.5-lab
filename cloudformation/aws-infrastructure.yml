@@ -611,7 +611,7 @@ Resources:
                   openshift_docker_additional_registries=mirror.lab:5555
                   openshift_docker_insecure_registries=mirror.lab:5555
                   oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
-                  openshift_examples_modify_imagestreams=true
+                  openshift_examples_modify_imagestreams=false
                   openshift_disable_check=disk_availability,memory_availability
 
                   [masters]
@@ -663,7 +663,7 @@ Resources:
                   openshift_docker_additional_registries=mirror.lab:5555
                   openshift_docker_insecure_registries=mirror.lab:5555
                   oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
-                  openshift_examples_modify_imagestreams=true
+                  openshift_examples_modify_imagestreams=false
                   openshift_disable_check=disk_availability,memory_availability
 
                   [masters]
@@ -719,7 +719,7 @@ Resources:
                   openshift_docker_additional_registries=mirror.lab:5555
                   openshift_docker_insecure_registries=mirror.lab:5555
                   oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
-                  openshift_examples_modify_imagestreams=true
+                  openshift_examples_modify_imagestreams=false
                   openshift_disable_check=disk_availability,memory_availability
 
                   [masters]
@@ -759,7 +759,8 @@ Resources:
               - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
               - ansible masters,nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - ansible all -m shell -a "modprobe dm-thin-pool"
-              - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml && oc adm policy add-cluster-role-to-user cluster-admin operator ; /opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
+              - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml ; /opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
+              - oc adm policy add-cluster-role-to-user cluster-admin operator
 
   WaitHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
