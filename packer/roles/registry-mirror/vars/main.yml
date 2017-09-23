@@ -39,8 +39,8 @@ ose_infra_images:
 
 ose_s2i_images:
   - openshift3/logging-elasticsearch:{{ ose_major_tag }}
-  - rhscl/ruby-23-rhel7:2.3
-  - rhscl/postgresql-95-rhel7:9.5
+  - rhscl/ruby-23-rhel7:latest
+  - rhscl/postgresql-95-rhel7:latest
 
 rhel_core_images:
   - rhel7/etcd:latest
