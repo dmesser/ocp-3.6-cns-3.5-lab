@@ -31,7 +31,9 @@ In the previous chapter you logged on to the master node as `ec2-user`.
 
 &#8680; From here continue to log on to OpenShift using the `oc` client:
 
-  oc login -u operator
+    oc login -u operator
+
+Use `r3dh4t` as the password.
 
     Authentication required for https://master.lab:8443 (openshift)
     Username: operator
@@ -44,13 +46,13 @@ In the previous chapter you logged on to the master node as `ec2-user`.
 
 &#8680; Switch to the `default` namespace:
 
-  oc project default
+    oc project default
 
 #### Reviewing deployed components
 
 &#8680; Get a general status of the components deployed in this project:
 
-  oc status
+    oc status
 
 You will see that there is a router, an internal container registry and a web-console for that registry deployed:
 
@@ -112,7 +114,7 @@ node-4.lab    Ready                      14m       v1.6.1+5115d708d7   beta.kube
 
 &#8680; Examine the configuration of the OpenShift internal registry:
 
-  oc describe deploymentconfig/docker-registry
+    oc describe deploymentconfig/docker-registry
 
 There is a single instance of the registry because there is no shared storage in this environment:
 
@@ -190,15 +192,15 @@ In this deployment OpenShift has been deployed without Logging and Metrics servi
 
 &#8680; Verify there are no Logging services currently deployed:
 
-  oc get all -n logging
+    oc get all -n logging
 
 Log aggregation components will normally be deployed in the `logging` namespace. Right now there should be nothing:
 
-  No resources found.
+    No resources found.
 
 &#8680; Similarly note that there are no Metrics/monitoring components deployed either:
 
-  oc get all -n openshift-infra
+    oc get all -n openshift-infra
 
 For operating OpenShift in production environments these services however are very valuable. By nature they do not need shared storage like CNS can provide. They however do **benefit from the scale-out capabilities of CNS** which typically offers capacity beyond what's available in a single infrastructure node - these nodes will run logging and Metrics components in OpenShift.
 

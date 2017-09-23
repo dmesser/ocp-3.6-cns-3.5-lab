@@ -15,7 +15,7 @@ pages:
 - Modules:
     - 'Module 1 - Examine OpenShift Installation': module-1-ocp-environment.md
     - 'Module 2 - Deploying Container-Native Storage': module-2-deploy-cns.md
-    - 'Module 3 - Using Persistent Storage': module-3-using-cns.md
+    - 'Module 3 - Persistent Storage for Apps': module-3-cns-for-apps.md
     - 'Module 4 - Cluster Operations': module-4-cluster-ops.md
     - 'Module 5 - Advanced Topics': module-5-advanced.md
 

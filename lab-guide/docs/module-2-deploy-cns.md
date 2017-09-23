@@ -9,7 +9,7 @@
 
 &#8680; First ensure you have the correct openshift-ansible version installed on the system.
 
-  yum list installed openshift-ansible
+    yum list installed openshift-ansible
 
 A version higher than 3.6.173.0.5-3 is required to utilize the **OpenShift Advanced Installer** to deploy CNS.
 
@@ -301,7 +301,7 @@ http://*heketi-storage-app-storage.cloudapps.35.158.172.55.nip.io*
 !!! Note:
     In your environment the URL will be slightly different. It will contain the public IPv4 address of your deployment, dynamically resolved by the nip.io service.
 
-&#8680; You may verify this **with your IP** address by doing a trivial health check:
+&#8680; You may verify this **with your URL** address by doing a trivial health check:
 
     curl http://heketi-storage-app-storage.cloudapps.<YOUR-IP-HERE>.nip.io/hello
 
