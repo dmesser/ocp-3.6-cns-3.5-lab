@@ -759,7 +759,7 @@ Resources:
               - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
               - ansible masters,nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - ansible all -m shell -a "modprobe dm-thin-pool"
-              - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml ; /opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
+              - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml && oc adm policy add-cluster-role-to-user cluster-admin operator ; /opt/aws/bin/cfn-signal -e $? '${WaitHandle}'"
 
   WaitHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
