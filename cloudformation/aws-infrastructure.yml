@@ -1040,11 +1040,6 @@ Resources:
             VolumeSize: '50'
             VolumeType: 'gp2'
             DeleteOnTermination: 'true'
-        - DeviceName: /dev/xvdd
-          Ebs:
-            VolumeSize: '75'
-            VolumeType: 'gp2'
-            DeleteOnTermination: 'true'
       NetworkInterfaces:
       - NetworkInterfaceId: !Ref AppNode3Interface
         DeviceIndex: '0'
@@ -1169,6 +1164,11 @@ Resources:
         - DeviceName: /dev/xvdc
           Ebs:
             VolumeSize: '500'
+            VolumeType: 'st1'
+            DeleteOnTermination: 'true'
+        - DeviceName: /dev/xvdd
+          Ebs:
+            VolumeSize: '510'
             VolumeType: 'st1'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
