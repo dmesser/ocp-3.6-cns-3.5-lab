@@ -85,29 +85,33 @@ NAME          STATUS                     AGE       VERSION
 infra-1.lab   Ready                      14m       v1.6.1+5115d708d7
 infra-2.lab   Ready                      14m       v1.6.1+5115d708d7
 infra-3.lab   Ready                      14m       v1.6.1+5115d708d7
-master.lab    Ready,SchedulingDisabled   17m       v1.6.1+5115d708d7
+master.lab    Ready,SchedulingDisabled   19m       v1.6.1+5115d708d7
 node-1.lab    Ready                      14m       v1.6.1+5115d708d7
 node-2.lab    Ready                      14m       v1.6.1+5115d708d7
 node-3.lab    Ready                      14m       v1.6.1+5115d708d7
 node-4.lab    Ready                      14m       v1.6.1+5115d708d7
+node-5.lab    Ready                      14m       v1.6.1+5115d708d7
+node-6.lab    Ready                      14m       v1.6.1+5115d708d7
 ~~~~
 
 &#8680; A slight variant of that command will show us some tags (called *labels*):
 
     oc get nodes --show-labels
 
-You should see that 3 node have the label `region=infra` applied whereas the other 7 have `region=apps` set. The master node has scheduling disabled so it is not burdened with additional workloads.
+You should see that 3 node have the label `role=infra` applied whereas the other 6 have `role=apps` set. The master node has scheduling disabled so it is not burdened with additional workloads.
 
 ~~~~
 NAME          STATUS                     AGE       VERSION             LABELS
-infra-1.lab   Ready                      14m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-1.lab,role=infra
-infra-2.lab   Ready                      14m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-2.lab,role=infra
-infra-3.lab   Ready                      14m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-3.lab,role=infra
-master.lab    Ready,SchedulingDisabled   17m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=master.lab,role=master
-node-1.lab    Ready                      14m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-1.lab,role=app
-node-2.lab    Ready                      14m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-2.lab,role=app
-node-3.lab    Ready                      14m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-3.lab,role=app
-node-4.lab    Ready                      14m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-4.lab,role=app
+infra-1.lab   Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-1.lab,role=infra
+infra-2.lab   Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-2.lab,role=infra
+infra-3.lab   Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-3.lab,role=infra
+master.lab    Ready,SchedulingDisabled   26m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=master.lab,role=master
+node-1.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,glusterfs=storage-host,kubernetes.io/hostname=node-1.lab,role=app
+node-2.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,glusterfs=storage-host,kubernetes.io/hostname=node-2.lab,role=app
+node-3.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,glusterfs=storage-host,kubernetes.io/hostname=node-3.lab,role=app
+node-4.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-4.lab,role=app
+node-5.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-5.lab,role=app
+node-6.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=node-6.lab,role=app
 ~~~~
 
 #### Review Registry configuration

@@ -193,9 +193,9 @@ For the following example it is required to make the `StorageClass` that got cre
 
     oc describe storageclass/glusterfs-storage
 
-Verify it's indeed the default:
+Verify it's indeed the default (see highlighted line):
 
-~~~~
+~~~~ hl_lines="2"
 Name:           glusterfs-storage
 IsDefaultClass: Yes
 Annotations:	<none>

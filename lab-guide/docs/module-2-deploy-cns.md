@@ -301,9 +301,9 @@ http://*heketi-storage-app-storage.cloudapps.35.158.172.55.nip.io*
 !!! Note:
     In your environment the URL will be slightly different. It will contain the public IPv4 address of your deployment, dynamically resolved by the nip.io service.
 
-&#8680; You may verify this **with your URL** address by doing a trivial health check:
+&#8680; You may verify this trivial health check using `curl` (and an in-line shell command to dynamically retrieve the `route` for easy copy&paste):
 
-    curl http://heketi-storage-app-storage.cloudapps.<YOUR-IP-HERE>.nip.io/hello
+    curl http://$(oc get route/heketi-storage -o jsonpath='{.spec.host}')/hello
 
 This should say:
 
@@ -315,7 +315,7 @@ The client needs to know the heketi API URL above and the password for the built
 
 <a name="heketi-env-setup"></a>
 
-&#8680; Get the generated `admin` password for *heketi* from the pod configuration:
+&#8680; View the generated `admin` password for *heketi* from the pod configuration:
 
     oc describe pod/heketi-storage-1-h27cg | grep HEKETI_ADMIN_KEY
 
@@ -323,22 +323,16 @@ Example output:
 
     HEKETI_ADMIN_KEY:			sV7MHQ7S08N7ONJz1nnt/l/wBSK3L3w0xaEqDzG3YM4=
 
-&#8680; Retrieve the value for the OpenShfit `route` for heketi and prepend it with `http://`
+This information, the heketi user name, the API URL, and the password is needed whenever you want to use the `heketi-cli` client. So it's a good idea to store this in environment variables.
 
-    oc get route/heketi-storage -o jsonpath='{.spec.host}'
+&#8680; Enter the following lines in your shell to conveniently get and store the heketi API URL, the password of of the `admin` user and the user name set to `admin`:
 
-Example output:
-
-    heketi-storage-app-storage.cloudapps.35.158.172.55.nip.io
-
-&#8680; export the password along with the heketi API URL and the user set to `admin` like this on your shell:
-
-    export HEKETI_CLI_SERVER=http://heketi-storage-app-storage.cloudapps.<YOUR-IP-HERE>.nip.io
-    export HEKETI_CLI_USER=admin
-    export HEKETI_CLI_KEY=<YOUR-HEKETI-ADMIN-PW-HERE>
-
-!!! Tip
-    Now is probably a good time to copy&paste this information somewhere for the duration of the lab. You'll need this info again later multiple times.
+~~~~
+HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -o jsonpath="{.items[0].metadata.name}")
+export HEKETI_CLI_SERVER=http://$(oc get route/heketi-storage -o jsonpath='{.spec.host}')
+export HEKETI_CLI_USER=admin
+export HEKETI_CLI_KEY=$(oc get pod/$HEKETI_POD -o jsonpath='{.spec.containers[0].env[?(@.name=="HEKETI_ADMIN_KEY")].value}')
+~~~~
 
 &#8680; You are now able to use the heketi CLI tool:
 

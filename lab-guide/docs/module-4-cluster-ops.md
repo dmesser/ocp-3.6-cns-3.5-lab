@@ -14,36 +14,125 @@ There are several use cases for this:
 
 1. Provide multiple performance tiers of CNS, i.e. HDD-based vs. SSD-based
 
-1. Overcome the maximum amount of 300 PVs per cluster, currently imposed in version 3.5
+1. Run a OpenShift across large geo-graphical distances where latency prohibits synchronous data replication
 
-To deploy a second GlusterFS pool follow these steps:
+!!! Note:
+    The procedures to add an additional CNS cluster to an existing setup is not yet supported by `openshift-ansible`.
 
-&#8680; Log in as `operator` to namespace `container-native-storage`
+Because we cannot use `openshift-ansible` as of today we need to run a couple of steps manually that would otherwise be automated.
 
-    oc login -u operator -n container-native-storage
+To deploy a second CNS cluster, aka GlusterFS pool, follow these steps:
 
-Your deployment has 6 OpenShift Application Nodes in total, `node-1`, `node-2` and `node-3` currently setup running CNS. We will now set up a second cluster using `node-4`, `node-5` and `node-6`.
+&#8680; Log in as `operator` to namespace `app-storage`
 
-&#8680; Apply additional labels (user-defined key-value pairs) to the remaining 3 OpenShift Nodes:
+    oc login -u operator -n app-storage
 
-    oc label node/node-4.lab storagenode=glusterfs
-    oc label node/node-5.lab storagenode=glusterfs
-    oc label node/node-6.lab storagenode=glusterfs
+Your deployment has 6 OpenShift Application Nodes in total, `node-1`, `node-2` and `node-3` currently setup running CNS. We will now set up a **second CNS cluster*** using `node-4`, `node-5` and `node-6`.
 
-The label will be used to control GlusterFS pod placement and availability.
+First we need to make sure the firewall on those systems is updated. Without `openshift-ansible` automating CNS deployment the ports necessary for running GlusterFS are not yet opened.
+
+&#8680; Next, create a file called `configure-firewall.yml` and copy&paste the following contents:
+
+<kbd>configure-firewall.yml:</kbd>
+```yaml
+---
+
+- hosts:
+    - node-4.lab
+    - node-5.lab
+    - node-6.lab
+
+  tasks:
+
+    - name: insert iptables rules required for GlusterFS
+      blockinfile:
+        dest: /etc/sysconfig/iptables
+        block: |
+          -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 24007 -j ACCEPT
+          -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 24008 -j ACCEPT
+          -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2222 -j ACCEPT
+          -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m multiport --dports 49152:49664 -j ACCEPT
+        insertbefore: "^COMMIT"
+
+    - name: reload iptables
+      systemd:
+        name: iptables
+        state: reloaded
+
+...
+```
+
+&#8680; Run this small Ansible playbook to apply and reload the firewall configuration on all 3 nodes conveniently:
+
+    ansible-playbook configure-firewall.yml
+
+The playbook should complete successfully:
+
+~~~~
+PLAY [node-4.lab,node-5.lab,node-6.lab] ******************************************************************************************
+
+TASK [Gathering Facts] ***********************************************************************************************************
+Sunday 24 September 2017  14:02:50 +0000 (0:00:00.056)       0:00:00.056 ******
+ok: [node-5.lab]
+ok: [node-6.lab]
+ok: [node-4.lab]
+
+TASK [insert iptables rules required for GlusterFS] ******************************************************************************
+Sunday 24 September 2017  14:02:51 +0000 (0:00:00.859)       0:00:00.916 ******
+changed: [node-4.lab]
+changed: [node-5.lab]
+changed: [node-6.lab]
+
+TASK [reload iptables] ***********************************************************************************************************
+Sunday 24 September 2017  14:02:51 +0000 (0:00:00.268)       0:00:01.184 ******
+changed: [node-6.lab]
+changed: [node-5.lab]
+changed: [node-4.lab]
+
+PLAY RECAP ***********************************************************************************************************************
+node-4.lab                 : ok=3    changed=2    unreachable=0    failed=0
+node-5.lab                 : ok=3    changed=2    unreachable=0    failed=0
+node-6.lab                 : ok=3    changed=2    unreachable=0    failed=0
+
+Sunday 24 September 2017  14:02:52 +0000 (0:00:00.334)       0:00:01.519 ******
+===============================================================================
+Gathering Facts --------------------------------------------------------- 0.86s
+reload iptables --------------------------------------------------------- 0.34s
+insert iptables rules required for GlusterFS ---------------------------- 0.27s
+~~~~
+
+&#8680; Next, we need to apply additional labels to the remaining 3 OpenShift Nodes:
+
+~~~~
+oc label node/node-4.lab glusterfs=storage-host
+oc label node/node-5.lab glusterfs=storage-host
+oc label node/node-6.lab glusterfs=storage-host
+~~~~
+
+The label will be used to control GlusterFS pod placement and availability. They are part of a DaemonSet definition that is looking for hosts with this particular label.
 
 &#8680; Wait for all pods to show `1/1` in the `READY` column:
 
-     oc get pods -o wide -n container-native-storage
+     oc get pods -o wide -n app-storage
+
+You can also watch the additional GlusterFS pods deploy in the OpenShift UI, while being logged in as `operator` in project `app-storage`, select **Applications** from the left menu and then **Pods**:
+
+[![CNS Deployment](img/openshift_2nd_cns_pods.png)](img/openshift_2nd_cns_pods.png)
 
 !!! Note:
     It may take up to 3 minutes for the GlusterFS pods to transition into `READY` state.
 
-For bulk import of new nodes into a new cluster, the topology JSON file can be updated to include a second cluster with a separate set of nodes.
+&#8680; When done, on the CLI display all GlusterFS pods alongside with the Host they are running on:
 
-&#8680; Create a new file named updated-topology.json with the content below:
+    oc get pods -o wide -n app-storage -l glusterfs=storage-pod
 
-<kbd>updated-topology.json:</kbd>
+You will see that now also app nodes `node-4`, `node-5` and `node-6` run GlusterFS pods, although they are unitialized and not yet ready to use by CNS yet.
+
+For manual bulk import of new nodes like this, a JSON topology file is used which includes the existing cluster as well as the new, second cluster with a separate set of nodes.
+
+&#8680; Create a new file named 2-clusters-topology.json with the content below (use copy&paste):
+
+<kbd>2-clusters-topology.json:</kbd>
 
 ```json hl_lines="54"
 {
@@ -57,7 +146,7 @@ For bulk import of new nodes into a new cluster, the topology JSON file can be u
                                 "node-1.lab"
                             ],
                             "storage": [
-                                "10.0.2.101"
+                                "10.0.2.201"
                             ]
                         },
                         "zone": 1
@@ -73,7 +162,7 @@ For bulk import of new nodes into a new cluster, the topology JSON file can be u
                                 "node-2.lab"
                             ],
                             "storage": [
-                                "10.0.3.102"
+                                "10.0.3.202"
                             ]
                         },
                         "zone": 2
@@ -89,7 +178,7 @@ For bulk import of new nodes into a new cluster, the topology JSON file can be u
                                 "node-3.lab"
                             ],
                             "storage": [
-                                "10.0.4.103"
+                                "10.0.4.203"
                             ]
                         },
                         "zone": 3
@@ -109,7 +198,7 @@ For bulk import of new nodes into a new cluster, the topology JSON file can be u
                                 "node-4.lab"
                             ],
                             "storage": [
-                                "10.0.2.104"
+                                "10.0.2.204"
                             ]
                         },
                         "zone": 1
@@ -125,7 +214,7 @@ For bulk import of new nodes into a new cluster, the topology JSON file can be u
                                 "node-5.lab"
                             ],
                             "storage": [
-                                "10.0.3.105"
+                                "10.0.3.205"
                             ]
                         },
                         "zone": 2
@@ -141,7 +230,7 @@ For bulk import of new nodes into a new cluster, the topology JSON file can be u
                                 "node-6.lab"
                             ],
                             "storage": [
-                                "10.0.4.106"
+                                "10.0.4.206"
                             ]
                         },
                         "zone": 3
@@ -156,15 +245,19 @@ For bulk import of new nodes into a new cluster, the topology JSON file can be u
 }
 ```
 
-The file contains the same content as `topology.json` with a second cluster specification (beginning at the highlighted line).
+The file contains the same content as the dynamically generated JSON structure `openshift-ansible` used, but with a second cluster specification (beginning at the highlighted line).
 
-When loading this topology to heketi, it will recognize the existing cluster (leaving it unchanged) and start creating the new one, with the same bootstrapping process as seen with `cns-deploy`.
+When loading this topology to heketi, it will recognize the existing cluster (leaving it unchanged) and start creating the new one, with the same bootstrapping process used to initialize the first cluster.
+That is: the `glusterd` process running in the pods will form a new 3-node cluster and the supplied block storage device `/dev/xvdc` will be formatted.
 
 &#8680; Prepare the heketi CLI tool like previously in [Module 2](module-2-deploy-cns.md#heketi-env-setup).
 
-    export HEKETI_CLI_SERVER=http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
-    export HEKETI_CLI_USER=admin
-    export HEKETI_CLI_KEY=myS3cr3tpassw0rd
+~~~~
+HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -o jsonpath="{.items[0].metadata.name}")
+export HEKETI_CLI_SERVER=http://$(oc get route/heketi-storage -o jsonpath='{.spec.host}')
+export HEKETI_CLI_USER=admin
+export HEKETI_CLI_KEY=$(oc get pod/$HEKETI_POD -o jsonpath='{.spec.containers[0].env[?(@.name=="HEKETI_ADMIN_KEY")].value}')
+~~~~
 
 &#8680; Verify there is currently only a single cluster known to heketi
 
@@ -175,11 +268,15 @@ Example output:
     Clusters:
     fb67f97166c58f161b85201e1fd9b8ed
 
-**Note this cluster's id** for later reference.
+Your ID will be different since it's auto-generated.
+
+&#8680; Save your specific ID of the first cluster with this shell command (and the versatile `jq` json parser) into an environment variable:
+
+    FIRST_CNS_CLUSTER=$(heketi-cli cluster list --json | jq -r '.clusters[0]')
 
 &#8680; Load the new topology with the heketi client
 
-    heketi-cli topology load --json=updated-topology.json
+    heketi-cli topology load --json=2-clusters-topology.json
 
 You should see output similar to the following:
 
@@ -209,7 +306,13 @@ You should see a second cluster in the list:
     46b205a4298c625c4bca2206b7a82dd3
     fb67f97166c58f161b85201e1fd9b8ed
 
-The second cluster with the ID `46b205a4298c625c4bca2206b7a82dd3` is an entirely independent GlusterFS deployment. **Note this second cluster's ID** as well for later reference.
+The second cluster with the ID `46b205a4298c625c4bca2206b7a82dd3` is an entirely independent GlusterFS deployment. The exact value will be different in your environment.
+
+`heketi` is now able to differentiate between the clusters with storage provisioning requests when their UUID is specified.
+
+&#8680; Save the UUID of the second CNS cluster in an environment variable as follows for easy copy&paste later:
+
+    SECOND_CNS_CLUSTER=$(heketi-cli cluster list --json | jq -r ".clusters[] | select(contains(\"$FIRST_CNS_CLUSTER\") | not)")
 
 Now we have two independent GlusterFS clusters managed by the same heketi instance:
 
@@ -268,31 +371,29 @@ heketi formed an new, independent 3-node GlusterFS cluster on those nodes.
 
 &#8680; Check running GlusterFS pods
 
-    oc get pods -o wide
+    oc get pods -o wide -l glusterfs=storage-pod
 
 From the output you can spot the pod names running on the new cluster's nodes:
 
 ``` hl_lines="2 3 5"
 NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
-glusterfs-1nvtj   1/1       Running   0          23m       10.0.4.106   node-6.lab
-glusterfs-5gvw8   1/1       Running   0          24m       10.0.2.104   node-4.lab
-glusterfs-5rc2g   1/1       Running   0          4h        10.0.2.101   node-1.lab
-glusterfs-b4wg1   1/1       Running   0          24m       10.0.3.105   node-5.lab
-glusterfs-jbvdk   1/1       Running   0          4h        10.0.3.102   node-2.lab
-glusterfs-rchtr   1/1       Running   0          4h        10.0.4.103   node-3.lab
-heketi-1-tn0s9    1/1       Running   0          4h        10.130.2.3   node-6.lab
+glusterfs-1nvtj   1/1       Running   0          23m       10.0.4.206   node-6.lab
+glusterfs-5gvw8   1/1       Running   0          24m       10.0.2.204   node-4.lab
+glusterfs-5rc2g   1/1       Running   0          4h        10.0.2.201   node-1.lab
+glusterfs-b4wg1   1/1       Running   0          24m       10.0.3.205   node-5.lab
+glusterfs-jbvdk   1/1       Running   0          4h        10.0.3.202   node-2.lab
+glusterfs-rchtr   1/1       Running   0          4h        10.0.4.203   node-3.lab
 ```
 
 !!! Note:
-    Again note that the pod names are dynamically generated and will be different. Use the FQDN of your hosts to determine one of new cluster's pods.
+    Again note that the pod names are dynamically generated and will be different. Look the FQDN of your hosts to determine one of new cluster's pods.
 
-&#8680; Log on to one of the new cluster's pods:
+&#8680; Let's run the `gluster peer status` command in the GlusterFS pod running on the node `node-6.lab`:
 
-    oc rsh glusterfs-1nvtj
-
-&#8680; Query this GlusterFS node for it's peers:
-
-    gluster peer status
+~~~~
+POD_NUMBER_SIX=$(oc get pods -o jsonpath='{.items[?(@.status.hostIP=="10.0.4.206")].metadata.name}')
+oc rsh $POD_NUMBER_SIX gluster peer status
+~~~~
 
 As expected this node only has 2 peers, evidence that it's running in it's own GlusterFS pool separate from the first cluster in deployed in Module 2.
 
@@ -302,7 +403,7 @@ As expected this node only has 2 peers, evidence that it's running in it's own G
     Uuid: 0db9b5d0-7fa8-4d2f-8b9e-6664faf34606
     State: Peer in Cluster (Connected)
     Other names:
-    10.0.3.105
+    10.0.3.205
 
     Hostname: node-4.lab
     Uuid: 695b661d-2a55-4f94-b22e-40a9db79c01a
@@ -312,70 +413,105 @@ Before you can use the second cluster two tasks have to be accomplished:
 
 1. The *StorageClass* for the first cluster has to be updated to point the first cluster's UUID,
 
-1. A second *StorageClass* for the second cluster has to be created, pointing to the same heketi
+1. A second *StorageClass* for the second cluster has to be created, pointing to the same heketi API
 
 !!! Tip "Why do we need to update the first *StorageClass*?"
-    By default, when no cluster UUID is specified, heketi serves volume creation requests from any cluster currently registered to it.
-    In order to request a volume from specific cluster you have to supply the cluster's UUID to heketi. The first *StorageClass* has no UUID specified so far.
+    When no cluster UUID is specified, heketi serves volume creation requests from any cluster currently registered to it. That would be two now.
+    In order to request a volume from specific cluster you have to supply the cluster's UUID to heketi. The first *StorageClass* has no UUID specified so far because `openshift-ansible` did not create it.
 
-&#8680; Edit the existing *StorageClass* definition by updating the `cns-storageclass.yml` file from [Module 3](module-3-using-cns.md#storageclass-setup) like below:
+Unfortunately you cannot `oc patch` a `StorageClass` in OpenShift. So we have to delete it and re-create it. Don't worry - existing `PVCs` will remain untouched.
 
-<kbd>cns-storageclass.yml:</kbd>
-```yaml hl_lines="15"
-apiVersion: storage.k8s.io/v1beta1
-kind: StorageClass
-metadata:
-  name: container-native-storage
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-provisioner: kubernetes.io/glusterfs
-parameters:
-  resturl: "http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io"
-  restauthenabled: "true"
-  restuser: "admin"
-  volumetype: "replicate:3"
-  secretNamespace: "default"
-  secretName: "cns-secret"
-  clusterid: "fb67f97166c58f161b85201e1fd9b8ed"
+To simplify our work, we will just export the current `StorageClass` definition and manipulate it using some clever JSON query syntax to put the additional `clusterid` parameter in the right place.
+
+&#8680; To do that, run the following command via copy&paste:
+
+    oc get storageclass/glusterfs-storage -o json | jq ".parameters=(.parameters + {\"clusterid\": \"$FIRST_CNS_CLUSTER\"})" > glusterfs-storage-fast.json
+
+This will result in a file looking like the following:
+
+<kbd>glusterfs-storage-fast.json:</kbd>
+```json hl_lines="16"
+{
+  "apiVersion": "storage.k8s.io/v1",
+  "kind": "StorageClass",
+  "metadata": {
+    "creationTimestamp": "2017-09-24T12:45:24Z",
+    "name": "glusterfs-storage",
+    "resourceVersion": "2697",
+    "selfLink": "/apis/storage.k8s.io/v1/storageclasses/glusterfs-storage",
+    "uid": "3c107010-a126-11e7-b0a5-025fcde0880f"
+  },
+  "parameters": {
+    "resturl": "http://heketi-storage-app-storage.cloudapps.34.252.58.209.nip.io",
+    "restuser": "admin",
+    "secretName": "heketi-storage-admin-secret",
+    "secretNamespace": "app-storage",
+    "clusterid": "fb67f97166c58f161b85201e1fd9b8ed"
+  },
+  "provisioner": "kubernetes.io/glusterfs"
+}
 ```
 
-Note the additional `clusterid` parameter highlighted. It's the cluster's UUID as known by heketi. Don't change anything else.
+Note the additional `clusterid` parameter highlighted. It's the cluster's UUID as known by heketi. The exact values will be different in your environment. The rest of the definition remains the same.
 
 &#8680; Delete the existing *StorageClass* definition in OpenShift
 
-    oc delete storageclass/container-native-storage
+    oc delete storageclass/glusterfs-storage
 
 &#8680; Add the *StorageClass* again:
 
-    oc create -f cns-storageclass.yml
+    oc create -f glusterfs-storage-fast.json
 
-&#8680; Create a new file called cns-storageclass-slow.yml with the following contents:
+Step 1 complete. The existing `StorageClass` is "updated". `PVC` using the `StorageClass` *glusterfs-storage* will now specifically get served by the first CNS cluster, and only the first cluster.
 
-<kbd>cns-storageclass-slow.yml:</kbd>
-```yaml hl_lines="13"
-apiVersion: storage.k8s.io/v1beta1
-kind: StorageClass
-metadata:
-  name: container-native-storage-slow
-provisioner: kubernetes.io/glusterfs
-parameters:
-  resturl: "http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io"
-  restauthenabled: "true"
-  restuser: "admin"
-  volumetype: "replicate:3"
-  secretNamespace: "default"
-  secretName: "cns-secret"
-  clusterid: "46b205a4298c625c4bca2206b7a82dd3"
+To relieve you from manually editing JSON files, we will again use some `jq` magic to generate the correct JSON structure for our second `StorageClass`, this time using the second CNS cluster's ID and a different name `glusterfs-storage-slow`
+
+&#8680; Run the following command:
+
+    oc get storageclass/glusterfs-storage -o json | jq ".parameters=(.parameters + {\"clusterid\": \"$SECOND_CNS_CLUSTER\"})" | jq '.metadata.name = "glusterfs-storage-slow"' > glusterfs-storage-slow.json'
+
+This creates a file, looking similar to the below:
+
+<kbd>glusterfs-storage-slow.json:</kbd>
+```json hl_lines="6 12"
+{
+  "apiVersion": "storage.k8s.io/v1",
+  "kind": "StorageClass",
+  "metadata": {
+    "creationTimestamp": "2017-09-24T15:12:34Z",
+    "name": "glusterfs-storage-slow",
+    "resourceVersion": "12722",
+    "selfLink": "/apis/storage.k8s.io/v1/storageclasses/glusterfs-storage",
+    "uid": "cb16946d-a13a-11e7-b0a5-025fcde0880f"
+  },
+  "parameters": {
+    "clusterid": "46b205a4298c625c4bca2206b7a82dd3",
+    "resturl": "http://heketi-storage-app-storage.cloudapps.34.252.58.209.nip.io",
+    "restuser": "admin",
+    "secretName": "heketi-storage-admin-secret",
+    "secretNamespace": "app-storage"
+  },
+  "provisioner": "kubernetes.io/glusterfs"
+}
 ```
 
-Again note the `clusterid` in the `parameters` section referencing the second cluster's UUID.
+Again note the `clusterid` in the `parameters` section referencing the second cluster's UUID will as well as the update.
 
-!!! Note
-    Again, keep in mind that also the `resturl` parameter is specific to your environment as it contains the route to heketi using the public URL.
+&#8680; Add the new `StorageClass`:
 
-&#8680; Add the new *StorageClass*:
+    oc create -f glusterfs-storage-slow.json
 
-    oc create -f cns-storageclass-slow.yml
+&#8680; Display all `StorageClass` objects to verify:
+
+    oc get storageclass
+
+That's it. You now have 2 `StorageClass` definitions, one for each CNS cluster, managed by the same `heketi` instance.
+
+~~~~
+NAME                     TYPE
+glusterfs-storage        kubernetes.io/glusterfs
+glusterfs-storage-slow   kubernetes.io/glusterfs
+~~~~
 
 Let's verify both *StorageClasses* are working as expected:
 
@@ -386,15 +522,14 @@ Let's verify both *StorageClasses* are working as expected:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: my-container-storage-fast
-  annotations:
-    volume.beta.kubernetes.io/storage-class: container-native-storage
+  name: my-fast-container-storage
 spec:
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
       storage: 5Gi
+  storageClassName: glusterfs-storage
 ```
 
 <kbd>cns-pvc-slow.yml:</kbd>
@@ -402,15 +537,14 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: my-container-storage-slow
-  annotations:
-    volume.beta.kubernetes.io/storage-class: container-native-storage-slow
+  name: my-slow-container-storage
 spec:
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
       storage: 7Gi
+  storageClassName: glusterfs-storage-slow
 ```
 
 &#8680; Create both PVCs:
@@ -418,39 +552,78 @@ spec:
     oc create -f cns-pvc-fast.yml
     oc create -f cns-pvc-slow.yml
 
+Check their provisioning state after a few seconds:
+
+    oc get pvc
+
 They should both be in bound state after a couple of seconds:
 
-    NAME                        STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
-    my-container-storage        Bound     pvc-3e249fdd-4ec0-11e7-970e-0a9938370404   5Gi        RWO           32s
-    my-container-storage-slow   Bound     pvc-405083e6-4ec0-11e7-970e-0a9938370404   7Gi        RWO           29s
+~~~~
+NAME                        STATUS    VOLUME                                     CAPACITY   ACCESSMODES   STORAGECLASS             AGE
+my-fast-container-storage   Bound     pvc-bfbf3f72-a13d-11e7-b0a5-025fcde0880f   5Gi        RWX           glusterfs-storage        6s
+my-slow-container-storage   Bound     pvc-c045c082-a13d-11e7-b0a5-025fcde0880f   7Gi        RWX           glusterfs-storage-slow   6s
+~~~~
 
-&#8680; If you check again one of the pods of the second cluster...
+&#8680; If you check again the GlusterFS pod on on `node-6.lab` comprising the second cluster...
 
-    oc rsh glusterfs-1nvtj
+    oc rsh $POD_NUMBER_SIX gluster vol list
 
-&#8680; ...you will see a new volume has been created
+...you will see a new volume has been created
 
-    sh-4.2# gluster volume list
-    vol_0d976f357a7979060a4c32284ca8e136
+    vol_755b4434cf9062104123e0d9919dd800
 
+The other volume has been created on the first cluster.
 
-This is how you use multiple, parallel GlusterFS pools/clusters on a single OpenShift cluster with a single heketi instance. Whereas the first pool is created with `cns-deploy` subsequent pools/cluster are created with the `heketi-cli` client.
+&#8680; If you were to check GlusterFS on `node-1.lab`...
+
+~~~~
+POD_NUMBER_ONE=$(oc get pods -o jsonpath='{.items[?(@.status.hostIP=="10.0.2.201")].metadata.name}')
+oc rsh $POD_NUMBER_ONE gluster vol list
+~~~~
+
+...you will also see a new volume has been created, alongside the volumes from the previous exercises and the `heketidbstorage` volume:
+
+~~~~
+heketidbstorage
+[...output omitted... ]
+vol_8eb957320215fe8801748b239d524808
+~~~~
+
+If you now compare the `PV` objects that have been created:
+
+&#8680; ... the first PV using `StorageClass` glusterfs-storage:
+
+~~~~
+FAST_PV=$(oc get pvc/my-fast-container-storage -o jsonpath="{.spec.volumeName}")
+oc get pv/$FAST_PV -o jsonpath="{.spec.glusterfs.path}"
+~~~~
+
+&#8680; ... and the second PV using `StorageClass` glusterfs-storage-slow:
+
+~~~~
+SLOW_PV=$(oc get pvc/my-slow-container-storage -o jsonpath="{.spec.volumeName}")
+oc get pv/$SLOW_PV -o jsonpath="{.spec.glusterfs.path}"
+~~~~
+
+... you will notice that they match the volumes found in the CNS clusters from within their pods respectively.
+
+This is how you use multiple, parallel GlusterFS pools/clusters on a single OpenShift cluster with a single heketi instance. Whereas the first pool is created with `openshift-ansible` subsequent pools/cluster are created with the `heketi-cli` client.
 
 Clean up the PVCs and the second *StorageClass* in preparation for the next section.
 
 &#8680; Delete both PVCs (and therefore their volume)
 
-    oc delete pvc/my-container-storage-fast
-    oc delete pvc/my-container-storage-slow
+    oc delete pvc/my-fast-container-storage
+    oc delete pvc/my-slow-container-storage
 
 &#8680; Delete the second *StorageClass*
 
-    oc delete storageclass/container-native-storage-slow
+    oc delete storageclass/glusterfs-storage-slow
 
 ---
 
-Deleting a GlusterFS pool
--------------------------
+Deleting a CNS cluster
+----------------------
 
 Since we want to re-use `node-4`, `node-5` and `node-6` for the next section we need to delete it the GlusterFS pools on top of them first.
 
@@ -458,15 +631,25 @@ This is a process that involves multiple steps of manipulating the heketi topolo
 
 &#8680; Make sure the client is still properly configured via environment variables:
 
-    export HEKETI_CLI_SERVER=http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
-    export HEKETI_CLI_USER=admin
-    export HEKETI_CLI_KEY=myS3cr3tpassw0rd
+~~~~
+echo $HEKETI_CLI_SERVER
+echo $HEKETI_CLI_USER
+echo $HEKETI_CLI_KEY
+~~~~
 
-&#8680; First list the topology and identify the cluster we want to delete:
+&#8680; We also require the environment variables storing the UUIDs of both CNS clusters:
+
+~~~~
+echo $FIRST_CNS_CLUSTER
+echo $SECOND_CNS_CLUSTER
+~~~~
+
+&#8680; First display the entire system topology as it is known to heketi:
 
     heketi-cli topology info
 
-The portions of interest are highlighted:
+You will get detailled infos about both clusters.
+The portions of interest for the second clusters we are about to delete are highlighted:
 
 ``` hl_lines="1 7 14 17 24 27 34"
 Cluster Id: 46b205a4298c625c4bca2206b7a82dd3
@@ -509,84 +692,132 @@ Cluster Id: 46b205a4298c625c4bca2206b7a82dd3
 The hierachical dependencies in this topology works as follows: Clusters > Nodes > Devices.
 Assuming there are no volumes present these need to be deleted in reverse order.
 
-Note that specific values highlighted above in your environment and carry out the following steps in strict order:
+To make navigating this process easier and avoid mangling with anonymous UUID values we will use some simple scripting.
 
-&#8680; Delete all devices of all nodes of the cluster you want to delete:
+&#8680; This is how you get all nodes IDs of the second cluster:
 
-    heketi-cli device delete e481d022cea9bfb11e8a86c0dd8d349
-    heketi-cli device delete 09a25a114c53d7669235b368efd2f8d1
-    heketi-cli device delete cccadb2b54dccd99f698d2ae137a22ff
+    heketi-cli cluster info $SECOND_CNS_CLUSTER --json | jq -r '.nodes[]'
 
-&#8680; Delete all nodes of the cluster in question:
+For example:
 
-    heketi-cli node delete 538b860406870288af23af0fbc2cd27f
-    heketi-cli node delete 604d2eb15a5ca510ff3fc5ecf912d3c0
-    heketi-cli node delete 7736bd0cb6a84540860303a6479cacb2
+~~~~
+538b860406870288af23af0fbc2cd27f
+604d2eb15a5ca510ff3fc5ecf912d3c0
+7736bd0cb6a84540860303a6479cacb2
+~~~~
 
-&#8680; Finally delete the cluster:
+&#8680; Let's put this in a variable so we can iterate over it:
 
-    heketi-cli cluster delete 46b205a4298c625c4bca2206b7a82dd3
+    NODES=$(heketi-cli cluster info $SECOND_CNS_CLUSTER --json | jq -r '.nodes[]')
+
+&#8680; This is how you get information about a node
+
+    heketi-cli node info ${NODES[0]}
+
+~~~~
+Node Id: 538b860406870288af23af0fbc2cd27f
+State: online
+Cluster Id: 38cba86da51146a0ef9747383bd44476
+Zone: 2
+Management Hostname: node-5.lab
+Storage Hostname: 10.0.3.205
+Devices:
+Id:e481d022cea9bfb11e8a86c0dd8d3499   Name:/dev/xvdc           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
+~~~~
+
+&#8680; Let's iterate over this `NODES` array and extract all device IDs:
+
+    for node in ${NODES} ; do heketi-cli node info $node --json | jq -r '.devices[].id' ; done
+
+... for example:
+
+~~~~
+e481d022cea9bfb11e8a86c0dd8d3499
+09a25a114c53d7669235b368efd2f8d1
+cccadb2b54dccd99f698d2ae137a22ff
+~~~~
+
+&#8680; Let's put this in a a variable too, so we can easily iterate over it:
+
+    DEVICES=$(for node in ${NODES} ; do heketi-cli node info $node --json | jq -r '.devices[].id' ; done)
+
+
+&#8680; Let's iterate over this `DEVICES` array and delete the device by it's ID in heketi:
+
+    for device in $DEVICES ; do heketi-cli device delete $device ; done
+
+Example output:
+
+~~~~
+Device 538b860406870288af23af0fbc2cd27f deleted
+Device 604d2eb15a5ca510ff3fc5ecf912d3c0 deleted
+Device 7736bd0cb6a84540860303a6479cacb2 deleted
+~~~~
+
+&#8680; Since the nodes have no devices anymore we can delete those as well:
+
+    for node in ${NODES} ; do heketi-cli node delete $node ; done
+
+Example output:
+
+~~~~
+Node 4ff85abd2674c89e79c1f7c7f8ee1be4 deleted
+Node ed9c045f10a5c1f9057d07880543a461 deleted
+Node fd6ddca52c788e2d764fada1f4da2ce4 deleted
+~~~~
+
+&#8680; Finally, without any nodes, you can also delete the second cluster:
+
+    heketi-cli cluster delete $SECOND_CNS_CLUSTER
 
 &#8680; Confirm the cluster is gone:
 
     heketi-cli cluster list
 
-&#8680; Verify the clusters new topology back to it's state from Module 3.
+&#8680; Verify the new topology known by heketi now only containing a single cluster.
 
-This deleted all heketi database entries about the cluster. However the GlusterFS pods are still running, since they are controlled directly by OpenShift instead of heketi:
+    heketi-cli topology info
 
-&#8680; List all the pods in the `container-native-storage` namespace:
-
-    oc get pods -o wide -n container-native-storage
-
-The pods formerly running the second GlusterFS pool are still there:
-
-    NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
-    glusterfs-1nvtj   1/1       Running   0          1h       10.0.4.106   node-6.lab
-    glusterfs-5gvw8   1/1       Running   0          1h       10.0.2.104   node-4.lab
-    glusterfs-5rc2g   1/1       Running   0          4h       10.0.2.101   node-1.lab
-    glusterfs-b4wg1   1/1       Running   0          1h       10.0.3.105   node-5.lab
-    glusterfs-jbvdk   1/1       Running   0          4h       10.0.3.102   node-2.lab
-    glusterfs-rchtr   1/1       Running   0          4h       10.0.4.103   node-3.lab
-    heketi-1-tn0s9    1/1       Running   0          4h       10.130.2.3   node-6.lab
+This deleted all heketi database entries about the cluster. However the GlusterFS pods are still running, since they are controlled directly by OpenShift and the `DaemonSet`.
 
 They can be stopped by removing the labels OpenShift uses to determine GlusterFS pod placement for CNS.
 
 &#8680; Remove the labels from the last 3 OpenShift nodes like so:
 
-    oc label node/node-4.lab storagenode-
-    oc label node/node-5.lab storagenode-
-    oc label node/node-6.lab storagenode-
+    oc label node/node-4.lab glusterfs-
+    oc label node/node-5.lab glusterfs-
+    oc label node/node-6.lab glusterfs-
 
 Contrary to the output of these commands the label `storagenode` is actually removed.
 
 &#8680; Verify that all GlusterFS pods running on `node-4`, `node-5` and `node-6` are indeed terminated:
 
-    oc get pods -o wide -n container-native-storage
+    oc get pods -o wide -n app-storage -l glusterfs=storage-pod
 
 !!! Note:
     It can take up to 2 minutes for the pods to terminate.
 
 You should be back down to 3 GlusterFS pods.
 
-    NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
-    glusterfs-5rc2g   1/1       Running   0          5h        10.0.2.101   node-1.lab
-    glusterfs-jbvdk   1/1       Running   0          5h        10.0.3.102   node-2.lab
-    glusterfs-rchtr   1/1       Running   0          5h        10.0.4.103   node-3.lab
-    heketi-1-tn0s9    1/1       Running   0          5h        10.130.2.3   node-6.lab
+~~~~
+NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
+glusterfs-5rc2g   1/1       Running   0          5h        10.0.2.201   node-1.lab
+glusterfs-jbvdk   1/1       Running   0          5h        10.0.3.202   node-2.lab
+glusterfs-rchtr   1/1       Running   0          5h        10.0.4.203   node-3.lab
+~~~~
 
 ---
 
 Expanding a GlusterFS pool
 --------------------------
 
-Instead of creating additional GlusterFS pools in CNS on OpenShift it is also possible to expand existing pools.
+Instead of creating additional GlusterFS pools in CNS on OpenShift it is also possible to expand existing pools. This is useful the increase capacity, performance and resiliency of the storage system.
 
 This works similar to creating additional pools, with bulk-import via the topology file. Only this time with nodes added to the existing cluster structure in JSON.
 
-Since manipulating JSON can be error-prone create a new file called `expanded-topology.json` with contents as below:
+Since manipulating JSON can be error-prone create a new file called `expanded-cluster.json` with contents as below:
 
-<kbd>expanded-topology.json:</kbd>
+<kbd>expanded-cluster.json:</kbd>
 
 ```json
 {
@@ -600,7 +831,7 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
                                 "node-1.lab"
                             ],
                             "storage": [
-                                "10.0.2.101"
+                                "10.0.2.201"
                             ]
                         },
                         "zone": 1
@@ -616,7 +847,7 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
                                 "node-2.lab"
                             ],
                             "storage": [
-                                "10.0.3.102"
+                                "10.0.3.202"
                             ]
                         },
                         "zone": 2
@@ -632,7 +863,7 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
                                 "node-3.lab"
                             ],
                             "storage": [
-                                "10.0.4.103"
+                                "10.0.4.203"
                             ]
                         },
                         "zone": 3
@@ -648,7 +879,7 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
                                 "node-4.lab"
                             ],
                             "storage": [
-                                "10.0.2.104"
+                                "10.0.2.204"
                             ]
                         },
                         "zone": 1
@@ -664,7 +895,7 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
                                 "node-5.lab"
                             ],
                             "storage": [
-                                "10.0.3.105"
+                                "10.0.3.205"
                             ]
                         },
                         "zone": 2
@@ -680,7 +911,7 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
                                 "node-6.lab"
                             ],
                             "storage": [
-                                "10.0.4.106"
+                                "10.0.4.206"
                             ]
                         },
                         "zone": 3
@@ -695,15 +926,19 @@ Since manipulating JSON can be error-prone create a new file called `expanded-to
 }
 ```
 
+The difference between this file to the `2-clusters-topology.json` is that we now have 6 nodes in a single cluster instead of 2 clusters, with 3 nodes each.
+
 &#8680; Again, apply the expected labels to the remaining 3 OpenShift Nodes:
 
-    oc label node/node-4.lab storagenode=glusterfs
-    oc label node/node-5.lab storagenode=glusterfs
-    oc label node/node-6.lab storagenode=glusterfs
+~~~~
+oc label node/node-4.lab glusterfs=storage-host
+oc label node/node-5.lab glusterfs=storage-host
+oc label node/node-6.lab glusterfs=storage-host
+~~~~
 
 &#8680; Wait for all pods to show `1/1` in the `READY` column:
 
-     oc get pods -o wide -n container-native-storage
+     oc get pods -o wide -n app-storage -l glusterfs=storage-pod
 
 !!! Note:
     It may take up to 3 minutes for the GlusterFS pods to transition into `READY` state.
@@ -719,15 +954,17 @@ This confirms all GlusterFS pods are ready to receive remote commands:
     glusterfs-rchtr   1/1       Running   0          5h        10.0.4.103   node-3.lab
     heketi-1-tn0s9    1/1       Running   0          5h        10.130.2.3   node-6.lab
 
-&#8680; If you logged out of the session meanwhile re-instate the heketi-cli configuration with the environment variables;
+&#8680; Ensure the environment variables for operating `heketi-cli` are still in place:
 
-    export HEKETI_CLI_SERVER=http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
-    export HEKETI_CLI_USER=admin
-    export HEKETI_CLI_KEY=myS3cr3tpassw0rd
+~~~~
+echo $HEKETI_CLI_SERVER
+echo $HEKETI_CLI_USER
+echo $HEKETI_CLI_KEY
+~~~~
 
 &#8680; Now load the new topology:
 
-    heketi-cli topology load --json=expanded-topology.json
+    heketi-cli topology load --json=expanded-cluster.json
 
 The output indicated that the existing cluster was expanded, rather than creating a new one:
 
@@ -745,35 +982,34 @@ The output indicated that the existing cluster was expanded, rather than creatin
         Adding device /dev/xvdc ... OK
 
 
-&#8680; Log on to one of the GlusterFS pods and confirm their new peers:
+&#8680; Verify the their new peers are now part of the first CNS cluster:
 
-    oc rsh glusterfs-0lr75
-
-&#8680; Run the peer status command inside the container remote session:
-
-    gluster peer status
+~~~~
+POD_NUMBER_ONE=$(oc get pods -o jsonpath='{.items[?(@.status.hostIP=="10.0.2.201")].metadata.name}')
+oc rsh $POD_NUMBER_ONE gluster peer status
+~~~~
 
 You should now have a GlusterFS consisting of 6 nodes:
 
     Number of Peers: 5
 
-    Hostname: 10.0.3.102
+    Hostname: 10.0.3.202
     Uuid: c6a6d571-fd9b-4bd8-aade-e480ec2f8eed
     State: Peer in Cluster (Connected)
 
-    Hostname: 10.0.4.103
+    Hostname: 10.0.4.203
     Uuid: 46044d06-a928-49c6-8427-a7ab37268fed
     State: Peer in Cluster (Connected)
 
-    Hostname: 10.0.2.104
+    Hostname: 10.0.2.204
     Uuid: 62abb8b9-7a68-4658-ac84-8098a1460703
     State: Peer in Cluster (Connected)
 
-    Hostname: 10.0.3.105
+    Hostname: 10.0.3.205
     Uuid: 5b44b6ea-6fb5-4ea9-a6f7-328179dc6dda
     State: Peer in Cluster (Connected)
 
-    Hostname: 10.0.4.106
+    Hostname: 10.0.4.206
     Uuid: ed39ecf7-1f5c-4934-a89d-ee1dda9a8f98
     State: Peer in Cluster (Connected)
 
@@ -793,46 +1029,40 @@ Instead of adding entirely new nodes you can also add new storage devices for CN
 
 It is again possible to do this by loading an updated topology file. Alternatively to bulk-loading via JSON you are also able to do this directly with the `heketi-cli` utility. This also applies to the previous sections in this module.
 
-For this purpose `node-6.lab` has an additional, so far unused block device `/dev/xvdd`.
+For this purpose `node-3.lab` has an additional, so far unused block device `/dev/xvdd`.
 
 &#8680; To use the heketi-cli make sure the environment variables are still set:
 
-    export HEKETI_CLI_SERVER=http://heketi-container-native-storage.cloudapps.34.252.58.209.nip.io
-    export HEKETI_CLI_USER=admin
-    export HEKETI_CLI_KEY=myS3cr3tpassw0rd
+~~~~
+echo $HEKETI_CLI_SERVER
+echo $HEKETI_CLI_USER
+echo $HEKETI_CLI_KEY
+~~~~
 
-&#8680; Determine the UUUI heketi uses to identify `node-6.lab` in it's database:
+&#8680; Determine the UUUI heketi uses to identify `node-6.lab` in it's database and save it in an environment variable:
 
-    heketi-cli topology info | grep -B4 node-6.lab
+    NODE_ID_6=$(heketi-cli topology info --json | jq -r ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .id")
 
-**Note the UUID**:
+&#8680; Query the node's available devices:
 
-``` hl_lines="1"
-Node Id: ae03d2c5de5cdbd44ba27ff5320d3438
+    heketi-cli node info $NODE_ID_6
+
+The node has one device available:
+
+~~~~
+Node Id: 3f39ebf3c8c82531a7ba447135742776
 State: online
 Cluster Id: eb909a08c8e8fd0bf80499fbbb8a8545
 Zone: 3
 Management Hostname: node-6.lab
-```
-
-&#8680; Query the node's available devices:
-
-    heketi-cli node info ae03d2c5de5cdbd44ba27ff5320d343
-
-The node has one device available:
-
-    Node Id: ae03d2c5de5cdbd44ba27ff5320d3438
-    State: online
-    Cluster Id: eb909a08c8e8fd0bf80499fbbb8a8545
-    Zone: 3
-    Management Hostname: node-6.lab
-    Storage Hostname: 10.0.4.106
-    Devices:
-    Id:cc594d7f5ce59ab2a991c70572a0852f   Name:/dev/xvdc           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
+Storage Hostname: 10.0.4.206
+Devices:
+Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):509     Used (GiB):0       Free (GiB):509
+~~~~
 
 &#8680; Add the device `/dev/xvdd` to the node using the UUID noted earlier.
 
-    heketi-cli device add --node=ae03d2c5de5cdbd44ba27ff5320d3438 --name=/dev/xvdd
+    heketi-cli device add --node=$NODE_ID_6 --name=/dev/xvdd
 
 The device is registered in heketi's database.
 
@@ -840,17 +1070,21 @@ The device is registered in heketi's database.
 
 &#8680; Query the node's available devices again and you'll see a second device.
 
-    heketi-cli node info ae03d2c5de5cdbd44ba27ff5320d343
+    heketi-cli node info $NODE_ID_6
 
-    Node Id: ae03d2c5de5cdbd44ba27ff5320d3438
-    State: online
-    Cluster Id: eb909a08c8e8fd0bf80499fbbb8a8545
-    Zone: 3
-    Management Hostname: node-6.lab
-    Storage Hostname: 10.0.4.106
-    Devices:
-    Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
-    Id:cc594d7f5ce59ab2a991c70572a0852f   Name:/dev/xvdc           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
+That node now has 2 devices.
+
+~~~~
+Node Id: 3f39ebf3c8c82531a7ba447135742776
+State: online
+Cluster Id: eb909a08c8e8fd0bf80499fbbb8a8545
+Zone: 3
+Management Hostname: node-6.lab
+Storage Hostname: 10.0.4.206
+Devices:
+Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):509     Used (GiB):0       Free (GiB):509
+Id:cc594d7f5ce59ab2a991c70572a0852f   Name:/dev/xvdc           State:online    Size (GiB):499     Used (GiB):0       Free (GiB):499
+~~~~
 
 ---
 
@@ -860,14 +1094,9 @@ Replacing a failed device
 One of heketi's advantages is the automation of otherwise tedious manual tasks, like replacing a faulty brick in GlusterFS to repair degraded volumes.
 We will simulate this use case now.
 
-&#8680; For convenience you can remain operator for now:
+&#8680; Make sure you are `operator` in OpenShift and using the project `my-test-project`
 
-    [ec2-user@master ~]$ oc whoami
-    operator
-
-&#8680; Use any available project to submit some PVCs.
-
-    oc project playground
+    oc login -u operator -n my-test-project
 
 &#8680; Create the file `cns-large-pvc.yml` with content below:
 
@@ -878,14 +1107,13 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: my-large-container-store
-  annotations:
-    volume.beta.kubernetes.io/storage-class: container-native-storage
 spec:
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
       storage: 200Gi
+  storageClassName: glusterfs-storage
 ```
 
 &#8680; Create this request for a large volume:
@@ -905,8 +1133,8 @@ PVC -> PV -> heketi volume -> GlusterFS volume -> GlusterFS brick -> Physical De
 Note the PVs name:
 ``` hl_lines="5"
     Name:		my-large-container-store
-    Namespace:	container-native-storage
-    StorageClass:	container-native-storage
+    Namespace:	my-test-project
+    StorageClass:	app-storage
     Status:		Bound
     Volume:		pvc-078a1698-4f5b-11e7-ac96-1221f6b873f8
     Labels:		<none>
@@ -924,9 +1152,9 @@ The GlusterFS volume name as it used by GlusterFS:
 ``` hl_lines="13"
     Name:		pvc-078a1698-4f5b-11e7-ac96-1221f6b873f8
     Labels:		<none>
-    StorageClass:	container-native-storage
+    StorageClass:	app-storage
     Status:		Bound
-    Claim:		container-native-storage/my-large-container-store
+    Claim:		my-test-project/my-large-container-store
     Reclaim Policy:	Delete
     Access Modes:	RWO
     Capacity:	200Gi
@@ -939,17 +1167,29 @@ The GlusterFS volume name as it used by GlusterFS:
     No events.
 ```
 
+Save the relevant information, the `PV` name, the respective GlusterFS volume's, the name of the GlusterFS pod on the node `node-6.lab` and that node's id in `heketi` and IP address in environment variables:
+
+~~~~
+LARGE_PV=$(oc get pvc/my-large-container-store -o jsonpath="{.spec.volumeName}")
+LARGE_GLUSTER_VOLUME=$(oc get pv/$LARGE_PV -o jsonpath="{.spec.glusterfs.path}")
+POD_NUMBER_SIX=$(oc get pods -n app-storage -o jsonpath='{.items[?(@.status.hostIP=="10.0.4.206")].metadata.name}')
+NODE_ID_6=$(heketi-cli topology info --json | jq -r ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .id")
+NODE_IP_6=$(oc get pod/$POD_NUMBER_SIX -n app-storage -o jsonpath="{.status.hostIP}")
+
+echo "LARGE_PV             = $LARGE_PV"
+echo "LARGE_GLUSTER_VOLUME = $LARGE_GLUSTER_VOLUME"
+echo "POD_NUMBER_SIX       = $POD_NUMBER_SIX"
+echo "NODE_ID_6            = $NODE_ID_6"
+echo "NODE_IP_6            = $NODE_IP_6"
+~~~~
+
 &#8680; Change to the CNS namespace
 
-    oc project container-native-storage
+    oc project app-storage
 
 &#8680; Log on to one of the GlusterFS pods
 
-    oc rsh glusterfs-52hkc
-
-&#8680; Get the volumes topology directly from GlusterFS
-
-    gluster volume info vol_3ff9946ddafaabe9745f184e4235d4e1
+    oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME
 
 The output indicates this volume is indeed backed by, among others, `node-6.lab` (see highlighted line)
 
@@ -962,20 +1202,27 @@ Snapshot Count: 0
 Number of Bricks: 1 x 3 = 3
 Transport-type: tcp
 Bricks:
-Brick1: 10.0.3.105:/var/lib/heketi/mounts/vg_e1b93823a2906c6758aeec13930a0919/brick_b3d5867d2f86ac93fce6967128643f85/brick
-Brick2: 10.0.2.104:/var/lib/heketi/mounts/vg_3c3489a5779c1c840a82a26e0117a415/brick_6323bd816f17c8347b3a68e432501e96/brick
-Brick3: 10.0.4.106:/var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick
+Brick1: 10.0.3.205:/var/lib/heketi/mounts/vg_e1b93823a2906c6758aeec13930a0919/brick_b3d5867d2f86ac93fce6967128643f85/brick
+Brick2: 10.0.2.204:/var/lib/heketi/mounts/vg_3c3489a5779c1c840a82a26e0117a415/brick_6323bd816f17c8347b3a68e432501e96/brick
+Brick3: 10.0.4.206:/var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick
 Options Reconfigured:
 transport.address-family: inet
 performance.readdir-ahead: on
 nfs.disable: on
 ```
 
+&#8680; Safe the hightlighted brick directory in an environment variable:
+
+~~~~
+BRICK_DIR=$(echo -n $(oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME | grep $NODE_IP_6) | cut -d ':' -f 3 | tr -d $'\r' )
+echo $BRICK_DIR
+~~~~
+
 &#8680; Using the full path of `Brick3` we cross-check with heketi's topology on which device it is based on:
 
-    heketi-cli topology info | grep -B2 '/var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick'
+    heketi-cli topology info | grep -B2 $BRICK_DIR
 
-Among other results grep will show the physical backing device of this brick's mount path:
+Among other data grep will show the physical backing device of this brick's mount path:
 
 ``` hl_lines="1"
 Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):499     Used (GiB):201     Free (GiB):298
@@ -988,34 +1235,50 @@ In this case it's `/dev/xvdd` of `node-6.lab`.
 !!! Note:
     The device might be different for you. This is subject to heketi's dynamic scheduling.
 
-Let's assume `/dev/xvdd` on `node-6.lab` has failed and needs to be replaced.
+Safe the device's ID in `heketi` use the following definition of an environment variable:
+
+    FAILED_DEVICE=$(heketi-cli topology info --json | jq ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .devices " | jq -r ".[] | select (.bricks[0].path ==\"$BRICK_DIR\") | .id")
+
+&#8680; Check programmatically the device that we have selected:
+
+    echo $FAILED_DEVICE
+
+Let's assume the device that makes up the brick from the `PVC` just created on `node-6.lab` has failed and needs to be replaced.
 
 In such a case you'll take the device's ID and go through the following steps:
 
 &#8680; First, disable the device in heketi
 
-    heketi-cli device disable 62cbae7a3f6faac38a551a614419cca3
+    heketi-cli device disable $FAILED_DEVICE
 
 This will take the device offline and exclude it from future volume creation requests.
 
 &#8680; Now remove the device in heketi
 
-    heketi-cli device remove 62cbae7a3f6faac38a551a614419cca3
+    heketi-cli device remove $FAILED_DEVICE
 
-This will trigger a brick-replacement in GlusterFS. The command will block and heketi in the background will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.
+You will notice this command takes a while.
+That's because it will trigger a brick-replacement in GlusterFS. The command will block and heketi in the background will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.
 The new bricks, if possible, will automatically be created in zones different from the remaining bricks to maintain equal balancing and cross-zone availability.
 
 &#8680; Finally, you are now able to delete the device in heketi entirely
 
-    heketi-cli device delete 62cbae7a3f6faac38a551a614419cca3
+    heketi-cli device delete $FAILED_DEVICE
 
 &#8680; Check again the volumes topology directly from GlusterFS
 
-    oc rsh glusterfs-52hkc
-
-    gluster volume info vol_3ff9946ddafaabe9745f184e4235d4e1
+    oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME
 
 You will notice that `Brick3` is now a different mount path, but on the same node.
+
+&#8680; Use the following to programmatically determine the new device:
+
+~~~~
+NEW_BRICK_DIR=$(echo -n $(oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME | grep $NODE_IP_6) | cut -d ':' -f 3 | tr -d $'\r' )
+NEW_DEVICE=$(heketi-cli topology info --json | jq ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .devices " | jq -r ".[] | select (.bricks[0].path ==\"$NEW_BRICK_DIR\") | .name")
+
+echo $NEW_DEVICE
+~~~~
 
 If you cross-check again the new bricks mount path with the heketi topology you will see it's indeed coming from a different device. The remaining device in `node-6.lab`, in this case `/dev/xvdc`
 
