@@ -203,6 +203,9 @@ Provisioner:	kubernetes.io/glusterfs
 Parameters:     resturl=http://heketi-storage-app-storage.cloudapps.52.28.134.154.nip.io,restuser=admin,secretName=heketi-storage-admin-secret,secretNamespace=app-storage
 ~~~~
 
+!!! Danger "Important"
+    It is crucial that you **do not skip this step** as it is fundamental to the next example to work.
+
 ---
 
 Using non-shared storage for databases
@@ -255,6 +258,7 @@ Let's pick a database application that definitely needs persistent storage. Ther
 Among various OpenShift resource also our PVC will be created:
 
 ``` hl_lines="7"
+[...output omitted...]
 secret "rails-pgsql-persistent" created
 service "rails-pgsql-persistent" created
 route "rails-pgsql-persistent" created
@@ -349,9 +353,6 @@ Output:
     NAME         STATUS    VOLUME                                     CAPACITY   ACCESSMODES   AGE
     postgresql   Bound     pvc-6c348fbb-4e9d-11e7-970e-0a9938370404   15Gi       RWO           4m
 
-!!! Tip "Why did this even work?"
-    If you paid close attention you likely noticed that the PVC in the template does not specify a particular `StorageClass`. This still yields a PV deployed because our `StorageClass` has actually been defined as the system-wide default. PVCs that don't specify a `StorageClass` will use the default class.
-
 Now go ahead and try out the application. The overview page in the OpenShift UI will tell you the `route` which has been deployed as well (the http://... link in the upper right hand corner). Use it and append `/articles` to the URL to get to the actual app.
 
 &#8680; Otherwise get it on the CLI like this:
@@ -368,7 +369,7 @@ Output:
 
 Following this output, point your browser to the URL and append **/articles** to reach the actual application, in this case:
 
-http://*rails-pgsql-persistent-my-test-project.cloudapps.<YOUR-IP-HERE\>.nip.io*/**articles**
+http://*rails-pgsql-persistent-my-test-project.cloudapps.**<YOUR-IP-HERE\>**.nip.io*/**articles**
 
 You should be able to successfully create articles and comments. The username/password to create articles and comments is by default **openshift**/**secret**.
 When they are saved they are actually saved in the PostgreSQL database which stores it’s table spaces on a GlusterFS volume provided by CNS.
@@ -459,7 +460,7 @@ glusterfs-storage-68lxn   1/1       Running   0          23m       10.0.3.202   
 heketi-storage-1-06psx    1/1       Running   0          20m       10.131.2.4   node-4.lab
 ~~~~
 
-Pick the first the pod in the list, in this example *glusterfs-storage-16pbo0* and note it's host IP address.
+Pick the first the pod in the list, in this example *glusterfs-storage-16pb0* and note it's host IP address.
 
 &#8680; Use the following command to conveniently safe it's name and host IP address in a shell variable for later use (copy & paste those lines in your shell):
 
@@ -489,7 +490,7 @@ You will see two volumes:
 
     oc rsh $FIRST_GLUSTER_POD gluster vol info $GLUSTER_VOL_NAME
 
-The output will show you how the volume has been created. You will also see that the pod you are currently logged on to serves one the bricks (in highlight).
+The output will show you how the volume has been created. You will also see that the pod you are currently logged on to serves one the bricks.
 
 ``` hl_lines="9 10 11"
 Volume Name: vol_4b22dda4c9681f4325ba5e24cb4f64c6
@@ -509,7 +510,7 @@ performance.readdir-ahead: on
 nfs.disable: on
 ```
 
-The above output tells us GlusterFS created this volume as a 3-way replica set across 3 bricks. Bricks are local directories on GlusterFS nodes. In this case the GlusterFS nodes are our CNS pods and since they share the physical hosts network they are displayed with these IP addresses (see highlighted lines) . This volume type `Replicate` is currently the only supported volume type in production. It's synchronously replicates all data across those 3 bricks.
+The above output tells us GlusterFS created this volume as a 3-way replica set across 3 bricks. Bricks are local directories on GlusterFS nodes. In this case the GlusterFS nodes are our CNS pods and since they share the physical hosts network they are displayed with these IP addresses (see highlighted lines) . This volume type `Replicate` is currently the only supported volume type in production. It synchronously replicates all data across those 3 bricks.
 
 Let's take a look at what's inside a brick.
 
@@ -576,18 +577,14 @@ drwx------.  3 1000080000 root   60 Jun  6 14:44 pg_xlog
 You are looking at the PostgreSQL internal data file structure from the perspective of the GlusterFS server side. Evidence that the database uses CNS.
 
 Clients, like the OpenShift nodes and their application pods talk to this storage with the GlusterFS protocol as it were an ordinary GlusterFS deployment.
-When a pod starts that mounts storage from a PV backed by CNS the GlusterFS mount plugin in OpenShift will mount the GlusterFS volume on the right App Node and then *bind-mount* this directory to the right pod.  
-This happens transparently to the application and looks like a normal local filesystem inside the pod as you just saw. Let's have a look:
+When a pod starts that mounts storage from a `PV` backed by CNS the GlusterFS mount plugin in OpenShift will mount the GlusterFS volume on the right OpenShift node and then *bind-mount* this directory to the right pod's file namespace.  
+This happens transparently to the application and looks like a normal local filesystem inside the pod as you just saw. Let's have a look from the container host perspective:
 
-&#8680; First log back in as `operator` into the `my-test-project` namespace
-
-    oc login -u operator -n my-test-project
-
-&#8680; Get the name and the host IP of the postgres pod with this shell shortcut into an environment variable:
+&#8680; Get the name and the host IP of the postgres pod with this shell shortcut into environment variables for easy copy&paste later:
 
 ~~~~
-POSTGRES_POD=$(oc get pods -l name=postgresql -o jsonpath="{.items[0].metadata.name}")
-POSTGRES_HOST_IP=$(oc get pod/$POSTGRES_POD -o jsonpath="{.status.hostIP}")
+POSTGRES_POD=$(oc get pods -l name=postgresql -n my-test-project -o jsonpath="{.items[0].metadata.name}")
+POSTGRES_HOST_IP=$(oc get pod/$POSTGRES_POD -n my-test-project -o jsonpath="{.status.hostIP}")
 echo $POSTGRES_POD
 echo $POSTGRES_HOST_IP
 ~~~~
@@ -613,17 +610,14 @@ Providing shared storage to multiple application instances
 ----------------------------------------------------------
 
 In the previous example we provisioned an RWO PV - the volume is only usable with one pod at a time. RWO is what most of the OpenShift storage backends support.
-So far only very few options, like the basic NFS support existed, to provide a `PersistentVolume` to more than one container at once. The access mode used for this is **ReadWriteMany**.
+So far only very few options, like the basic NFS support existed, to provide a `PersistentVolume` to more than one container at once. The reason is that most supported storage backends are actually *block-based*. That is a block device is made available to one of the container hosts and is then formatted with an XFS filesystem, which is inherently not cluster-compatible.
+GlusterFS on the other hand is a true scale-out cluster filesystem with distributed locking. Hence we can use the access mode **ReadWriteMany** on OpenShift.
 
 With CNS this capability is now available to all OpenShift deployments, no matter where they are deployed. To demonstrate this capability with an application we will deploy a PHP-based file uploader that has multiple front-end instances sharing a common storage repository.
 
-&#8680; Log back in as developer
+&#8680; Log back in as `developer` to our project `my-test-project`
 
-    oc login -u developer
-
-&#8680; First make sure you are still in the example project created earlier
-
-    oc project my-test-project
+    oc login -u developer -n my-test-project
 
 &#8680; Next deploy the example application:
 
@@ -659,23 +653,26 @@ Output:
         Build scheduled, use 'oc logs -f bc/file-uploader' to track its progress.
         Run 'oc status' to view your app.
 
-&#8680; Wait for the application to be deployed with the suggested command:
+&#8680; Observe the application to be deployed with the suggested command:
 
     oc logs -f bc/file-uploader
 
 The follow-mode of the above command ends automatically when the build is successful and you return to your shell.
 
-    ...
-    Cloning "https://github.com/christianh814/openshift-php-upload-demo" ...
-            Commit: 7508da63d78b4abc8d03eac480ae930beec5d29d (Update index.html)
-            Author: Christian Hernandez <christianh814@users.noreply.github.com>
-            Date:   Thu Mar 23 09:59:38 2017 -0700
-    ---> Installing application source...
-    Pushing image 172.30.120.134:5000/my-test-project/file-uploader:latest ...
-    Pushed 0/5 layers, 2% complete
-    Pushed 1/5 layers, 20% complete
-    Pushed 2/5 layers, 40% complete
-    Push successful
+~~~~
+[ ...output omitted...]
+
+Cloning "https://github.com/christianh814/openshift-php-upload-demo" ...
+        Commit: 7508da63d78b4abc8d03eac480ae930beec5d29d (Update index.html)
+        Author: Christian Hernandez <christianh814@users.noreply.github.com>
+        Date:   Thu Mar 23 09:59:38 2017 -0700
+---> Installing application source...
+Pushing image 172.30.120.134:5000/my-test-project/file-uploader:latest ...
+Pushed 0/5 layers, 2% complete
+Pushed 1/5 layers, 20% complete
+Pushed 2/5 layers, 40% complete
+Push successful
+~~~~
 
 &#8680; When the build is completed ensure the pods are running:
 
@@ -685,10 +682,10 @@ Among your existing pods you should see new pods running.
 
     NAME                             READY     STATUS      RESTARTS   AGE
     file-uploader-1-build            0/1       Completed   0          2m
-    file-uploader-1-k2v0d            1/1       Running     0          1m
+    file-uploader-1-g7b0h            1/1       Running     0          1m
     ...
 
-A `Service` has been created for our app but not exposed via a `Route` yet.
+As part of the deployment a `Service` has been created for our app automatically. It load balances traffic to our PHP pods internally but not externally. For that a `Route` needs to expose it to the network outside of OpenShift.
 
 &#8680; Let’s fix this:
 
@@ -703,11 +700,15 @@ The route forwards all traffic on port 80 of it's automatically generated subdom
     NAME            HOST/PORT                                                      PATH      SERVICES        PORT       TERMINATION   WILDCARD
     file-uploader   file-uploader-my-test-project.cloudapps.34.252.58.209.nip.io             file-uploader   8080-tcp                 None
 
-Point your browser to the URL advertised by the route (in this case http://file-uploader-my-test-project.cloudapps.34.252.58.209.nip.io)
+Point your browser to the URL advertised by the route, that is *http://file-uploader-my-test-project.cloudapps.**<YOUR-IP-HERE\>**.nip.io*
 
-The application simply lists all file previously uploaded and offers the ability to upload new ones as well as download the existing data. Right now there is nothing.
+Alternatively, in the OpenShift UI, while logged on as `devleoper` to the project called `my-test-project`, click the **Down Arrow** in the **Overview** section next to the deployment called **file-uploader**. The URL to your app will be in the section called **ROUTES**.
 
-Select an arbitrary from your local system and upload it to the app.
+[![The file uploader app route](img/uploader_app_route.png)](img/uploader_app_route.png)
+
+The application again is very simply: it lists all file previously uploaded files and offers the ability to upload new ones, as well as download the existing uploads. Right now there is nothing.
+
+Try it out in your browser: select an arbitrary from your local system and upload it to the app.
 
 [![A simple PHP-based file upload tool](img/uploader_screen_upload.png)](img/uploader_screen_upload.png)
 
@@ -722,24 +723,27 @@ Let's see how this is stored locally in the container.
 You will see two entries:
 
     file-uploader-1-build            0/1       Completed   0          7m
-    file-uploader-1-k2v0d            1/1       Running     0          6m
+    file-uploader-1-g7b0h            1/1       Running     0          6m
 
-Note the name of the single pod currently running the app: **file-uploader-1-k2v0d**.
+The name of the single pod currently running the app is this example is **file-uploader-1-g7b0h**.
 The container called `file-uploader-1-build` is the builder container that deployed the application and it has already terminated.
 
 !!! Note
     The exact name of the pod will be different in your environment.
 
-&#8680; Log into the application pod via a remote session (using the name noted earlier):
+&#8680; Use the following shell command to store the exact name of the `file-uploader` application pod in your environment in a shell variable called `UPLOADER_POD`:
 
-    oc rsh file-uploader-1-k2v0d
+~~~~
+UPLOADER_POD=$(oc get pods -l app=file-uploader -o jsonpath="{.items[0].metadata.name}")
+echo $UPLOADER_POD
+~~~~
 
-In the container explore the directory in which the uploaded files will be stored.
+&#8680; Use the remote shell capability of the `oc` client to list the content of `uploaded/` directory inside the up after you uploaded a file in the PHP app:
 
-    sh-4.2$ cd uploaded
-    sh-4.2$ pwd
-    /opt/app-root/src/uploaded
-    sh-4.2$ ls -lh
+    oc rsh $UPLOADER_POD ls -ahl /opt/app-root/src/uploaded
+
+In the below example output we've uploaded a file named `cns-deploy-4.0.0-15.el7rhgs.x86_64.rpm.gz` in the app via the browser, and we see it store from within the pod:
+
     total 16K
     -rw-r--r--. 1 1000080000 root 16K May 26 09:32 cns-deploy-4.0.0-15.el7rhgs.x86_64.rpm.gz
 
@@ -747,16 +751,14 @@ The app should also list the file in the overview:
 
 [![The file has been uploaded and can be downloaded again](img/uploader_screen_list.png)](img/uploader_screen_list.png)
 
-This pod currently does not use any persistent storage. It stores the file locally.
+However, in it's default configuration his pod currently does not use any persistent storage. It uses it's local filesystem - that is stores the file in inside the container image' root filesystem.
 
 !!! Danger "Important"
-    Never store data in a pod. It’s ephemeral by definition and will be lost as soon as the pod terminates.
+    Never store important data inside a pods root filesystem or `emptyDir`. It’s ephemeral by definition and will be lost as soon as the pod terminates.
+    Worse, the container's root filesystem is even slower than `emptyDir` as it needs to traverse the `overlay2` stack, that Red Hat Enterprise Linux uses by default as of version 7.4
+    Also, inherently pods using this kind of storage cannot be scaled out trivially.
 
 Let’s see when this become a problem.
-
-&#8680; Exit out of the container shell:
-
-    sh-4.2$ exit
 
 &#8680; Let’s scale the deployment to 3 instances of the app:
 
@@ -764,7 +766,7 @@ Let’s see when this become a problem.
 
 &#8680; Watch the additional pods getting spawned:
 
-    oc get pods
+    oc get pods -l app=file-uploader
 
 You will see 2 additional pods being spawned:
 
@@ -772,51 +774,92 @@ You will see 2 additional pods being spawned:
     file-uploader-1-3cgh1            1/1       Running     0          20s
     file-uploader-1-3hckj            1/1       Running     0          20s
     file-uploader-1-build            0/1       Completed   0          4m
-    file-uploader-1-k2v0d            1/1       Running     0          3m
+    file-uploader-1-g7b0h            1/1       Running     0          3m
     ...
 
 !!! Note
     The pod names will be different in your environment since they are automatically generated. It takes a couple of seconds until they are ready.
 
+Alternatively, in the UI, wait for the `file-uploader` application reach 3 healthy pods (the blue circle is completely filled):
+
+[![The file uploader application is being scaled](img/uploader_scaled.png)](img/uploader_scaled.png)
+
+On the command line this will look like this:
+
+~~~~
+oc get pods -l app=file-uploader
+NAME                    READY     STATUS    RESTARTS   AGE
+file-uploader-1-98fwm   1/1       Running   0          2m
+file-uploader-1-g7b0h   1/1       Running   0          8m
+file-uploader-1-rwt2p   1/1       Running   0          2m
+~~~~
+
 These 3 pods now make up our application. OpenShift will load balance incoming traffic between them.
 However, when you log on to one of the new instances you will see they have no data.
 
-&#8680; Log on to one of the new containers:
+&#8680; Store the names of all in some environment variables for easy copy&paste:
 
-    oc rsh file-uploader-1-3cgh1
+~~~~
+UPLOADER_POD_1=$(oc get pods -l app=file-uploader -o jsonpath="{.items[0].metadata.name}")
+UPLOADER_POD_2=$(oc get pods -l app=file-uploader -o jsonpath="{.items[1].metadata.name}")
+UPLOADER_POD_3=$(oc get pods -l app=file-uploader -o jsonpath="{.items[2].metadata.name}")
+~~~~
 
-&#8680; Again check the upload directory:
+&#8680; Lets check all upload directories of all pods:
 
-    sh-4.2$ cd uploaded
-    sh-4.2$ pwd
-    /opt/app-root/src/uploaded
-    sh-4.2$ ls -hl
-    total 0
+~~~~
+oc rsh $UPLOADER_POD_1 ls -ahl /opt/app-root/src/uploaded
+oc rsh $UPLOADER_POD_2 ls -ahl /opt/app-root/src/uploaded
+oc rsh $UPLOADER_POD_3 ls -ahl /opt/app-root/src/uploaded
+~~~~
+
+Oh oh, only one of the pods has the previously uploaded file. Looks like our application data is not consistent anymore:
+
+~~~~
+oc rsh $UPLOADER_POD_1 ls -ahl /opt/app-root/src/uploaded
+total 0
+drwxrwxr-x. 2 default root  22 Sep 24 11:31 .
+drwxrwxr-x. 1 default root 124 Sep 24 11:31 ..
+-rw-rw-r--. 1 default root   0 Sep 24 11:31 .gitkeep
+
+oc rsh $UPLOADER_POD_2 ls -ahl /opt/app-root/src/uploaded
+total 108K
+drwxrwxr-x. 1 default    root   52 Sep 24 11:35 .
+drwxrwxr-x. 1 default    root   22 Sep 24 11:31 ..
+-rw-rw-r--. 1 default    root    0 Sep 24 11:31 .gitkeep
+-rw-r--r--. 1 1000080000 root  16K May 26 09:32 cns-deploy-4.0.0-15.el7rhgs.x86_64.rpm.gz
+
+oc rsh $UPLOADER_POD_3 ls -ahl /opt/app-root/src/uploaded
+total 0
+drwxrwxr-x. 2 default root  22 Sep 24 11:31 .
+drwxrwxr-x. 1 default root 124 Sep 24 11:31 ..
+-rw-rw-r--. 1 default root   0 Sep 24 11:31 .gitkeep
+~~~~
 
 It's empty because the previously uploaded files were stored locally in the first container and are not available to the others.
-Similarly, other users of the app will sometimes see your uploaded files and sometimes not. With the deployment scaled to 3 instances OpenShifts router will simply round-robin across them. Whenever the load balancing service in OpenShift points to the pod that has the file stored locally users will see it or not. You can simulate this with another instance of your browser in "Incognito mode" pointing to your app.
+
+Similarly, other users of the app will sometimes see your uploaded files and sometimes not. With the deployment scaled to 3 instances OpenShifts router will simply round-robin across them. You can simulate this with another instance of your browser in "Incognito mode" pointing to your app.
 
 The app is of course not usable like this. We can fix this by providing shared storage to this app.
 
 &#8680; First create a PVC with the appropriate setting in a file called `cns-rwx-pvc.yml` with below contents:
 
 <kbd>cns-rwx-pvc.yml:</kbd>
-
-```yaml hl_lines="9"
+```yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: my-shared-storage
-  annotations:
-    volume.beta.kubernetes.io/storage-class: container-native-storage
 spec:
   accessModes:
   - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 5Gi
+  storageClassName: glusterfs-storage
 ```
-Notice the access mode explicitly requested to be `ReadWriteMany` (also referred to as RWX). Storage provisioned like this can be mounted by multiple containers on multiple hosts at the same time.
+
+Notice the access mode explicitly requested to be `ReadWriteMany` (also referred to as `RWX`). Storage provisioned like this can be mounted by multiple containers on multiple hosts at the same time.
 
 &#8680; Submit the request to the system:
 
@@ -832,13 +875,13 @@ Notice the access mode explicitly requested to be `ReadWriteMany` (also referred
     my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi       RWX           22s
     ...
 
-We can now update the *DeploymentConfig* of our application to use this PVC to provide the application with persistent, shared storage for uploads.
+We can now update the `DeploymentConfig` of our application to use this PVC to provide the application with persistent, shared storage for uploads.
 
 &#8680; Update the configuration of the application by adding a volume claim like this:
 
     oc volume dc/file-uploader --add --name=shared-storage --type=persistentVolumeClaim --claim-name=my-shared-storage --mount-path=/opt/app-root/src/uploaded
 
-Our app will now re-deploy (in a rolling fashion) with the new settings - all pods will mount the volume identified by the PVC under /opt/app-root/src/upload (the path is predictable so we can hard-code it here).
+Our app will now re-deploy (in a rolling fashion) with the new settings - all pods will mount the volume identified by the `PVC` under /opt/app-root/src/upload (the path is predictable so we can hard-code it here).
 
 &#8680; You can watch it like this:
 
@@ -846,49 +889,44 @@ Our app will now re-deploy (in a rolling fashion) with the new settings - all po
 
 The new `DeploymentConfig` will supersede the old one.
 
-    --> Scaling up file-uploader-2 from 0 to 3, scaling down file-uploader-1 from 3 to 0 (keep 3 pods available, don't exceed 4 pods)
-        Scaling file-uploader-2 up to 1
-        Scaling file-uploader-1 down to 2
-        Scaling file-uploader-2 up to 2
-        Scaling file-uploader-1 down to 1
-        Scaling file-uploader-2 up to 3
-        Scaling file-uploader-1 down to 0
-    --> Success
+~~~~
+--> Scaling up file-uploader-2 from 0 to 3, scaling down file-uploader-1 from 3 to 0 (keep 3 pods available, don't exceed 4 pods)
+    Scaling file-uploader-2 up to 1
+    Scaling file-uploader-1 down to 2
+    Scaling file-uploader-2 up to 2
+    Scaling file-uploader-1 down to 1
+    Scaling file-uploader-2 up to 3
+    Scaling file-uploader-1 down to 0
+--> Success
+~~~~
 
 Exit out of the follow mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd>
+
+!!! Warning
+    Changing the storage settings of a pod can be destructive. Any existing data will **not be preserved**. You are responsible to care for data migration.
+    One strategy here could have been using `oc rsync` to save the data to a local directory on a machine running the `oc` client.
+
+You can also observe the rolling upgrade of the file uploader application in the OpenShift UI:
+
+[![The file uploader application is being scaled](img/uploader_upgrade.png)](img/uploader_upgrade.png)
 
 The new config `file-uploader-2` will have 3 pods all sharing the same storage.
 
 &#8680; Get the names of the new pods:
 
-    oc get pods
+    oc get pods -l app=file-uploader
 
 Output:
 
-    NAME                             READY     STATUS      RESTARTS   AGE
-    file-uploader-1-build            0/1       Completed   0          18m
-    file-uploader-2-jd22b            1/1       Running     0          1m
-    file-uploader-2-kw9lq            1/1       Running     0          2m
-    file-uploader-2-xbz24            1/1       Running     0          1m
-    ...
+~~~~
+NAME                             READY     STATUS      RESTARTS   AGE
+file-uploader-1-build            0/1       Completed   0          18m
+file-uploader-2-jd22b            1/1       Running     0          1m
+file-uploader-2-kw9lq            1/1       Running     0          2m
+file-uploader-2-xbz24            1/1       Running     0          1m
+~~~~
 
-Try it out in your application: upload new files and watch them being visible from within all application pods. In new browser sessions, simulating other users, the application behaves normally as it circles through the pods between browser requests.
-
-    [root@master ~]# oc rsh file-uploader-2-jd22b
-    sh-4.2$ ls -lh uploaded
-    total 16K
-    -rw-r--r--. 1 1000080000 root 16K May 26 10:21 cns-deploy-4.0.0-15.el7rhgs.x86_64.rpm.gz
-    sh-4.2$ exit
-    exit
-    [root@master ~]# oc rsh file-uploader-2-kw9lq
-    sh-4.2$ ls -lh uploaded
-    -rw-r--r--. 1 1000080000 root 16K May 26 10:21 cns-deploy-4.0.0-15.el7rhgs.x86_64.rpm.gz
-    sh-4.2$ exit
-    exit
-    [root@master ~]# oc rsh file-uploader-2-xbz24
-    sh-4.2$ ls -lh uploaded
-    -rw-r--r--. 1 1000080000 root 16K May 26 10:21 cns-deploy-4.0.0-15.el7rhgs.x86_64.rpm.gz
-    sh-4.2$ exit
+Try it out in your application: upload new files and watch them being visible from within all application pods. In new browser *Incognito* sessions, simulating other users, the application behaves normally as it circles through the pods between browser requests.
 
 That’s it. You have successfully provided shared storage to pods throughout the entire system, therefore avoiding the need for data to be replicated at the application level to each pod.
 
