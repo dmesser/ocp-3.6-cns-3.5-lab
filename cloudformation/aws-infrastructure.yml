@@ -1227,22 +1227,6 @@ Outputs:
     Description: "OpenShift Master Node Public IP Address"
     Value: !Ref MasterNodePublicIP
 
-  UserName:
-    Description: "OpenShift User Login"
-    Value: "developer"
-
-  Password:
-    Description: "OpenShift User Login Password"
-    Value: "r3dh4t"
-
-  UserName:
-   Description: "OpenShift Operator Login"
-   Value: "operator"
-
-  Password:
-   Description: "OpenShift User Login Password"
-   Value: "r3dh4t"
-
   SSHLoginUser:
     Description: "User name on the Master node to connect via SSH and PEM file"
     Value: "ec2-user"
