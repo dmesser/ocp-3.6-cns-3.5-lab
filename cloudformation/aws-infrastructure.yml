@@ -780,7 +780,7 @@ Resources:
               - "/opt/aws/bin/cfn-signal -e 0 '${OpenShiftInstallerHandle}'"
               - oc --config=/home/ec2-user/.kube/config adm policy add-cluster-role-to-user cluster-admin operator
               - "oc --config=/home/ec2-user/.kube/config patch namespace default -p '{\"metadata\": {\"annotations\": {\"openshift.io/node-selector\": \"role=infra\"}}}'"
-              - "ansible masters -m replace -a \"regexp='(defaultNodeSelector\: \")(.*)?(\")' replace='\1role=app\3' dest=/etc/origin/master/master-config.yaml\""
+              - "ansible masters -m replace -a \"regexp='(defaultNodeSelector\\: \")(.*)?(\")' replace='\1role=app\3' dest=/etc/origin/master/master-config.yaml\""
               - "ansible masters -m service -a 'name=atomic-openshift-master state=restarted' ; /opt/aws/bin/cfn-signal -e $? '${OpenShiftServiceHandle}'"
 
   OpenShiftInstallerHandle:
