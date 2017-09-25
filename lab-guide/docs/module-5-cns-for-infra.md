@@ -114,7 +114,8 @@ infra-2.lab | SUCCESS => {
 
 &#8680; Run the CNS registry playbook that ships with `openshift-ansible`:
 
-    ansible-playbook -i /etc/ansible/ocp-with-glusterfs-registry /usr/share/ansible/openshift-ansible/playbooks/byo/openshift-glusterfs/registry.yml
+    ansible-playbook -i /etc/ansible/ocp-with-glusterfs-registry \
+    /usr/share/ansible/openshift-ansible/playbooks/byo/openshift-glusterfs/registry.yml
 
 This will take about 6 minutes to complete.
 
@@ -291,12 +292,122 @@ The highlighted lines indicate the settings that are required in order to put th
 Similarly the backend for the ElasticSearch component of OpenShift Logging is set to `PersistentVolume` (`openshift_logging_es_pvc_dynamic=true`) and the size is specifed (`openshift_logging_es_pvc_size=10Gi`).
 With these settings in place `openshift-ansible` will request `PVC` object for these services.
 
-Unfortunately `openshift-ansible` today is lacking the ability to specify a certain `StorageClass` with those `PVCs`, so we have to make the CNS cluster that was created above temporarily the system-wide default:
+Unfortunately `openshift-ansible` today is lacking the ability to specify a certain `StorageClass` with those `PVCs`, so we have to make the CNS cluster that was created above temporarily the system-wide default.
 
-&#8680; Use the `oc patch` command to change the definition of the `StorageClass` on the fly:
+&#8680; Login as `operator` to the `openshift-infra` namespace:
 
-    oc patch storageclass glusterfs-registry-storage -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
+    oc login -u operator -n openshift-infra
 
-&#8680; If you deployed the general-purpose CNS cluster in [Module 2](../module-2-deploy-cns/), you need to disable the other `StorageClass` `glusterfs-storage` from the other CNS stack as being the default:
+&#8680; First, if you deployed the general-purpose CNS cluster in [Module 2](../module-2-deploy-cns/), you need to disable the other `StorageClass` `glusterfs-storage` from the other CNS stack as being the default:
 
-    oc patch storageclass glusterfs-storage -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "false"}}}'
+    oc patch storageclass glusterfs-storage \
+    -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "false"}}}'
+
+&#8680; Then, use the `oc patch` command again to change the definition of the `StorageClass` on the fly:
+
+    oc patch storageclass glusterfs-registry \
+    -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
+
+&#8680; Verify that now the `StorageClass` `glusterfs-registry` is the default:
+
+    oc get storageclass
+
+~~~~ hl_lines="2"
+NAME                           TYPE
+glusterfs-registry (default)   kubernetes.io/glusterfs
+glusterfs-storage              kubernetes.io/glusterfs
+~~~~
+
+#### Deploying OpenShift Metrics with Persistent Storage from CNS
+
+The inventory file `/etc/ansible/hosts` as explained has all the required options set to run Logging/Metrics on dynamic provisioned storage supplied via a `PVC`. The only variable that we need to override is (`openshift_metrics_install_metrics`) to actually invoke the required playbooks the installation.
+
+&#8680; Execute the Metrics deployment playbook like this:
+
+    ansible-playbook -i /etc/ansible/hosts \
+        -e openshift_metrics_install_metrics=True \
+        /usr/share/ansible/openshift-ansible/playbooks/byo/openshift-cluster/openshift-metrics.yml
+
+This takes about 1-2 minutes to complete. However the deployment is not quite finished yet.
+
+&#8680; Use the `watch` command to wait for the `hawkular-metrics` pod to be in `READY` state.
+
+    oc get pods -l name=hawkular-metrics
+
+It will be ready when the database (Cassandra) finished initializing. Alternatively in the UI observe the deployment in the **Overview** pane, focussing on the `hawkular-metrics` deployment:
+
+[![Waiting on OpenShift Metrics to be deployed](img/waiting_for_metrics_on_cns.png)](img/waiting_for_metrics_on_cns.png)
+
+After 2-3 minutes all 3 pods, that make up the OpenShift Metrics service, should be ready:
+
+&#8680; Verify all pods in the namespace have a `1/1` in the `READY` column:
+
+    oc get pods
+
+~~~~
+NAME                         READY     STATUS    RESTARTS   AGE
+hawkular-cassandra-1-sxctx   1/1       Running   0          5m
+hawkular-metrics-895xz       1/1       Running   0          5m
+heapster-pjxpp               1/1       Running   0          5m
+~~~~
+
+To use the Metrics service you need to logon / reload the OpenShift UI in your browser. You will then see a warning message like this one:
+
+[![OpenShift Metrics Warning](img/metrics_warning.png)](img/metrics_warning.png)
+
+Don't worry - this is due to self-signed SSL certificates in this environment.
+
+&#8680; Click the **Open Metrics URL** link and accept the self-signed certificate in your new browser tab. You will see the status page of the OpenShift Hawkular Metrics component:
+
+[![OpenShift Metrics Hawkular](img/metrics_hawkular.png)](img/metrics_hawkular.png)
+
+&#8680; Then go back to the overview page. Next to the pods monitoring graphs for CPU, memory and network consumption will appear:
+
+[![OpenShift Metrics Graphs](img/metrics_graphs.png)](img/metrics_graphs.png)
+
+If you change to the **Storage** menu in the OpenShift UI you will also see the `PVC` that `openshift-ansible` has set up for the Cassandra pod.
+
+[![OpenShift Metrics PVC](img/metrics_pvc.png)](img/metrics_pvc.png)
+
+Congratulations. You have successfully deploy OpenShift Metrics using scalable, fault-tolerant and persistent storage. The data that you see visualized in the UI is stored on a `PersistentVolume` served by CNS.
+
+!!! Note "Preview"
+    This was a preview of the general process. Note that this will be supported for production with the release of CNS 3.6.
+
+#### Deploying OpenShift Logging with Persistent Storage from CNS
+
+In a very similar fashion you can install OpenShift Logging Services, run by Kibana.
+
+&#8680; As `operator`, login in to the `logging` namespace:
+
+    oc login -u operator -n logging
+
+&#8680; Execute the Logging deployment playbook like this:
+
+    ansible-playbook -i /etc/ansible/hosts \
+      -e openshift_hosted_logging_deploy=True \
+      /usr/share/ansible/openshift-ansible/playbooks/byo/openshift-cluster/openshift-logging.yml
+
+After 1-2 minutes the playbook finishes and you have a number of new pods in the `logging` namespace:
+
+&#8680; List all the ElasticSearch pods that aggregate and store the logs:
+
+    oc get pods -l component=es
+
+This pod runs a single ElasticSearch instance.
+
+~~~~
+NAME                                      READY     STATUS    RESTARTS   AGE
+logging-es-data-master-kcbtgll3-1-vb34h   1/1       Running   0          11m
+~~~~
+
+List the Kibana pod:
+
+    oc get pods -l component=Kibana
+
+This pod runs the Kibana front-end to query and search through logs:
+
+~~~~
+NAME                     READY     STATUS    RESTARTS   AGE
+logging-kibana-1-1c2dj   2/2       Running   0          11m
+~~~~
