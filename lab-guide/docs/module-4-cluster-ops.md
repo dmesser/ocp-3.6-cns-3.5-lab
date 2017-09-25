@@ -1,12 +1,14 @@
 !!! Summary "Overview"
     In this module you be introduced to some standard operational procedures. You will learn how to run multiple GlusterFS *Trusted Storage Pools* on OpenShift and how to expand and maintain deployments.
 
-    Herein, we will use the term pool (GlusterFS terminology) and cluster (heketi terminology) interchangeably.
+    Herein, we will use the term pool (GlusterFS terminology) and cluster (`heketi` terminology) interchangeably.
+
+    This module requires that you have completed [Module 2](../module-2-deploy-cns/).
 
 Running multiple GlusterFS pools
 --------------------------------
 
-In the previous modules a single GlusterFS clusters was used to supply *PersistentVolumes* to applications. CNS allows for multiple clusters to run in a single OpenShift deployment.
+In the previous modules a single GlusterFS cluster was used to supply `PersistentVolumes` to applications. CNS allows for multiple clusters to run in a single OpenShift deployment, controlled by a central `heketi` API:
 
 There are several use cases for this:
 
@@ -14,7 +16,7 @@ There are several use cases for this:
 
 1. Provide multiple performance tiers of CNS, i.e. HDD-based vs. SSD-based
 
-1. Run a OpenShift across large geo-graphical distances where latency prohibits synchronous data replication
+1. Run OpenShift across large geo-graphical distances with a CNS cluster per region whereas otherwise latency prohibits synchronous data replication in  a stretched setup
 
 !!! Note:
     The procedures to add an additional CNS cluster to an existing setup is not yet supported by `openshift-ansible`.
@@ -31,7 +33,7 @@ Your deployment has 6 OpenShift Application Nodes in total, `node-1`, `node-2` a
 
 First we need to make sure the firewall on those systems is updated. Without `openshift-ansible` automating CNS deployment the ports necessary for running GlusterFS are not yet opened.
 
-&#8680; Next, create a file called `configure-firewall.yml` and copy&paste the following contents:
+&#8680; First, create a file called `configure-firewall.yml` and copy&paste the following contents:
 
 <kbd>configure-firewall.yml:</kbd>
 ```yaml
@@ -109,7 +111,7 @@ oc label node/node-5.lab glusterfs=storage-host
 oc label node/node-6.lab glusterfs=storage-host
 ~~~~
 
-The label will be used to control GlusterFS pod placement and availability. They are part of a DaemonSet definition that is looking for hosts with this particular label.
+The label will be used to control GlusterFS pod placement and availability. They are part of a `DaemonSet` definition that is looking for hosts with this particular label.
 
 &#8680; Wait for all pods to show `1/1` in the `READY` column:
 
@@ -130,7 +132,7 @@ You will see that now also app nodes `node-4`, `node-5` and `node-6` run Gluster
 
 For manual bulk import of new nodes like this, a JSON topology file is used which includes the existing cluster as well as the new, second cluster with a separate set of nodes.
 
-&#8680; Create a new file named 2-clusters-topology.json with the content below (use copy&paste):
+&#8680; Create a new file named `2-clusters-topology.json` with the content below (use copy&paste):
 
 <kbd>2-clusters-topology.json:</kbd>
 
@@ -247,7 +249,7 @@ For manual bulk import of new nodes like this, a JSON topology file is used whic
 
 The file contains the same content as the dynamically generated JSON structure `openshift-ansible` used, but with a second cluster specification (beginning at the highlighted line).
 
-When loading this topology to heketi, it will recognize the existing cluster (leaving it unchanged) and start creating the new one, with the same bootstrapping process used to initialize the first cluster.
+When loading this topology to `heketi`, it will recognize the existing cluster (leaving it unchanged) and start creating the new one, with the same bootstrapping process used to initialize the first cluster.
 That is: the `glusterd` process running in the pods will form a new 3-node cluster and the supplied block storage device `/dev/xvdc` will be formatted.
 
 &#8680; Prepare the heketi CLI tool like previously in [Module 2](module-2-deploy-cns.md#heketi-env-setup).

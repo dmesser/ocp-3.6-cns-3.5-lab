@@ -1,5 +1,6 @@
 !!! Summary "Overview"
     In this module you will use CNS as a developer would do in OpenShift. For that purpose you will dynamically provision storage both in standalone fashion and in context of an application deployment.
+    This module requires that you have completed [Module 2](../module-2-deploy-cns/).
 
 OpenShift Storage 101
 ---------------------
@@ -10,13 +11,13 @@ OpenShift uses Kubernetes' PersistentStorage facility to dynamically allocate st
 
 OpenShift knows non-ephemeral storage as "persistent" volumes. This is storage that is decoupled from pod lifecycles. Users can request such storage by submitting a `PersistentVolumeClaim` to the system, which carries aspects like desired capacity or access mode (shared, single, read-only).
 
-A storage provider in the system is represented by a `StorageClass` and is referenced in the claim. Upon receiving the claim it talks to the API of the actual storage system to provision the storage.  
+A storage provider in the system is represented by a `StorageClass` and is referenced in the claim. Upon receiving the claim OpenShift talks to the API of the actual storage system to provision the storage.  
 
 The provisioned storage is represented in OpenShift as a `PersistentVolume` which can directly be used by pods to mount it.
 
-With these basics defined we can try CNS in our system. First examine the `StorageClass` the installer has automatically created respectively.
+With these basics defined we can try CNS in our system. First examine the `StorageClass` the installer has automatically created for us.
 
-&#8680; Make sure you are still logged in as `operator`:
+&#8680; Remain logged in as `operator` for now:
 
     oc login -u operator
 
@@ -48,7 +49,8 @@ Parameters:	resturl=http://heketi-storage-app-storage.cloudapps.52.28.134.154.ni
 !!! Note:
     The exact value for `resturl` will again be different for you because it's based on the `route`/IP address on your system.
 
-The *Provisioner* is the module in OpenShift/Kubernetes that can talk to the CNS API service: *heketi*. The parameters supplied tell the *Provisioner* the URL of the API as well as the `admin` users (defined in `restuser`) password in the form of an OpenShift `secret` (base64'd hash of the password).
+The *Provisioner* is a module in OpenShift/Kubernetes that can talk to the CNS API service: *heketi*. The parameters supplied in the `StorageClass` tell the *Provisioner* the URL of the API as well as the `admin` users (defined in `restuser`) password in the form of an OpenShift `secret` (`base64`'d hash of the password).
+The *Provisioner* is not an entity directly accessible to users.
 
 ---
 
@@ -56,7 +58,7 @@ Requesting Storage
 ------------------
 
 To get storage provisioned via this `StorageClass` as a user you have to "claim" storage. The object `PersistentVolumeClaim` (PVC) basically acts a request to the system to provision storage with certain properties, like a specific capacity.  
-Also the access mode is set here, where *ReadWriteMany* allows one or more container in parallel to mount and access this storage. This capability is dependend on the storage backend. In our case, GlusterFS, we have one of the few systems that can reliable implement shared storage.
+Also the access mode is set here, where *ReadWriteMany* allows one or more container in parallel to mount and access this storage. This capability is dependent on the storage backend. In our case, with GlusterFS, we have one of the few systems that can reliable implement shared storage.
 
 &#8680; Create a claim by specifying a file called `cns-pvc.yml` with the following contents:
 
@@ -75,7 +77,7 @@ spec:
   storageClassName: glusterfs-storage
 ```
 
-With above PVC we are requesting 10 GiB of non-shared storage. Instead of *ReadWriteMany* you could also have specified *ReadWriteOnly* (for read-only) and *ReadWriteOnce* (for non-shared storage, only one pod can mount at a time).
+With above PVC we are requesting 10 GiB of shared storage. Instead of *ReadWriteMany* you could also have specified *ReadWriteOnly* (for read-only) and *ReadWriteOnce* (for non-shared storage, where only one pod can mount at a time).
 
 &#8680; Submit the PVC to the system like so:
 
@@ -92,10 +94,10 @@ You should see the PVC listed and in *Bound* state.
 
 
 !!! Caution
-    If the PVC is stuck in *PENDING* state you will need to investigate. Run `oc describe pvc/my-container-storage` to see a more detailed explanation. Typically there are two root causes - the StorageClass is not properly specified (wrong name, not specified) or (less likely here) the backing storage system has a problem (in our case: error on heketi side, incorrect URL in `StorageClass`, etc.)
+    If the PVC is stuck in *PENDING* state you will need to investigate. Run `oc describe pvc/my-container-storage` to see a more detailed explanation. Typically there are two root causes - the StorageClass is not properly specified in the `PVC` (wrong name, not specified) or (less likely here) the backing storage system has a problem (in our case: error on heketi side, incorrect URL in `StorageClass`, etc.)
 
 !!! Tip
-    You can also do this step with the UI. Log on as `operator` and select any Project. Then go to the "Storage" tab. Select "Create" storage and make selections accordingly to the PVC described before.
+    Alternatively, you can also do this step with the UI. Log on as `operator` and select any Project. Then go to the "Storage" tab. Select "Create" storage and make selections accordingly to the PVC described before.
 
     [![Creating a PersistentVolumeClaim](img/openshift_pvc_create.png)](img/openshift_pvc_create.png)
 
@@ -105,7 +107,8 @@ When the claim was fulfilled successfully it is in the *Bound* state. That means
 
     oc describe pvc/my-container-storage
 
-The details of the PVC show all the desired properties of the requested storage and against which `StorageClass` it has been submitted. Since it's already bound thanks to dynamic provisioning it also displays the name of the `PersistentVolume` which was generated to fulfill the claim.
+The details of the PVC show all the desired properties of the requested storage and against which `StorageClass` it has been submitted. Since it's already bound thanks to dynamic provisioning it also displays the name of the `PersistentVolume` which was generated to fulfil the claim.
+The name of the `PV` always follows the pattern `pvc-...`.
 
 ``` hl_lines="1 5"
 Name:           my-container-storage
@@ -126,11 +129,11 @@ Events:
 ```
 
 !!! Note
-    The PV name will be different in your environment since it’s automatically generated.
+    The `PV` name will be different in your environment since it’s automatically generated.
 
-In order to look at a the details of a PV in a default setup like this you need more privileges.
+In order to look at a the details of a `PV` in a default setup like this you need more privileges.
 
-&#8680; Look at the corresponding PV by it’s name, using the following copy&paste-friendly commands:
+&#8680; Look at the corresponding `PV` by it’s name. Use the following command which stores the exact name in an environment variable extracted by an `oc` command for copy&paste-friendliness:
 
 ~~~~
 PV_NAME=$(oc get pvc/my-container-storage -o jsonpath="{.spec.volumeName}")
@@ -165,7 +168,7 @@ Note how all the properties exactly match up with what the `PVC` requested.
 
 !!! Tip "Why is it called *Bound*?"
     Originally `PVs` weren't automatically created. Hence in earlier documentation you may also find references about administrators actually **pre-provisioning** `PVs`. Later `PVCs` would "pick up"/match a suitable `PV` by looking at it’s capacity and access mode. When successful they are *bound* to this `PV`.
-    This was needed for storage like NFS that does not have an API and therefore does not support **dynamic provisioning**. Hence it's called **static provisioning**.
+    This was needed for storage like NFS that does not have an API and therefore does not support **dynamic provisioning**. That's called **static provisioning**.
     This kind of storage should not be used anymore as it requires manual intervention, risky capacity planning and incurs inefficient storage utilization.
 
 Although the storage is provisioned on the GlusterFS side it's not yet used by any application/pod/host. So let’s release this storage capacity again.
@@ -183,11 +186,12 @@ Storage is freed up by deleting the `PVC`. The `PVC` controls the lifecycle of t
 Make CNS the default storage
 ----------------------------
 
-For the following example it is required to make the `StorageClass` that got created the system-wide default. This simplifies the following steps.
+For the following example it is required to make the `StorageClass` that got created for CNS the system-wide default. This simplifies the following steps.
 
-&#8680; Use the `oc patch` command to change the definition of the `StorageClass` at on the fly:
+&#8680; Use the `oc patch` command to change the definition of the `StorageClass` on the fly:
 
-    oc patch storageclass glusterfs-storage -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
+    oc patch storageclass glusterfs-storage \
+    -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
 
 &#8680; Look at the `StorageClass` again to see the change reflected:
 
@@ -204,7 +208,7 @@ Parameters:     resturl=http://heketi-storage-app-storage.cloudapps.52.28.134.15
 ~~~~
 
 !!! Danger "Important"
-    It is crucial that you **do not skip this step** as it is fundamental to the next example to work.
+    It is crucial that you **do not skip this step** as it is fundamental for the next example to work.
 
 ---
 
@@ -212,7 +216,7 @@ Using non-shared storage for databases
 --------------------------------------
 
 
-Normally a user doesn’t request storage with a PVC directly. Rather the PVC is integrated in a larger template that describe the entire application. Such examples ship with OpenShift out of the box.
+Normally a user doesn’t request storage with a `PVC` directly. Rather the `PVC` is part of a larger template that describes the entire application stack. Such examples ship with OpenShift out of the box.
 
 !!! Tip "Alternative"
     The steps described in this section to launch the Rails/Postgres example app can again also be done with the UI. For this purpose follow these steps similar to the one in Module 1:
@@ -247,15 +251,15 @@ To create an application from the OpenShift Example templates on the CLI follow 
 
     oc new-project my-test-project
 
-To use the example applications that ship with OpenShift we can use the `new-app` command of the `oc` client. It will allow us to specify one of the  application stack templates in the systems. There are a lot of example templates ship in the pre-defined namespace called `openshift` which is the default place where `oc new-app` will look.
+To use the example applications that ship with OpenShift we can use the `new-app` command of the `oc` client. It will allow us to specify one of the  application stack templates in the system. There are a lot of example templates that ship in the pre-defined namespace called `openshift` which is the default place where `oc new-app` will look.
 
-Let's pick a database application that definitely needs persistent storage. There is an simple example blog application based on Rails and PostgreSQL.
+Let's pick a database application that definitely needs persistent storage. It's going to be part of a simple example blog application based on Rails and PostgreSQL.
 
 &#8680; Instantiate this application with the following command
 
     oc new-app rails-pgsql-persistent -p VOLUME_CAPACITY=5Gi
 
-Among various OpenShift resource also our PVC will be created:
+Among various OpenShift resources also our `PVC` will be created:
 
 ``` hl_lines="7"
 [...output omitted...]
@@ -272,15 +276,15 @@ deploymentconfig "postgresql" created
 
 The deployment process for the application stack continues in the background.
 
-We have given the `new-app` command an additional switch: `-p VOLUME_CAPACITY=5Gi`. This causes a parameter in the template called `VOLUME_CAPACITY` to be set to 5GiB. Parameters make templates make more generic. In our case the template contains a `PersistentVolumeClaim` (like highlighted above) which will take it's size from this parameter.
+We have given the `new-app` command an additional switch: `-p VOLUME_CAPACITY=5Gi`. This causes a parameter in the template called `VOLUME_CAPACITY` to be set to 5GiB. Parameters make templates more generic. In our case the template contains a `PersistentVolumeClaim` (like highlighted above) which will take it's size from this parameter.
 
 !!! Hint "What other parameters does this template have?"
     Plenty. If you are interested about all the variables/parameters this particular template supports, you can run `oc process openshift//rails-pgsql-persistent --parameters`.
 
 !!! Hint "What else does the template file contain?"
     The template describes all OpenShift resources necessary to stand up the rails pod and the postgres pod and make them accessible via services and routes. If you are curious: `oc get template/rails-pgsql-persistent -n openshift -o yaml`
-    In essence it creates Ruby on Rails instance in a pod which functionality mimics a very basic blogging application. The blog articles are saved in a PostgreSQL database which runs in a separate pod.
-    Above mentioned PVC can be found there as well (around line 194) which supplies the postgres pod with persistent storage below the mount point `/var/lib/pgsql/data` (around line 275).
+    In essence it creates Ruby on Rails instance in a pod which functionality mimics a very basic blogging application. The blog articles are saved in a PostgreSQL database that runs in a separate pod.
+    Above mentioned `PVC` can be found there as well (around line 194) which supplies the postgres pod with persistent storage below the mount point `/var/lib/pgsql/data` (around line 275).
 
 
 You can now either use the OpenShift UI (while being logged as `developer` in the project `my-test-project`) or the CLI to follow the deployment process.
@@ -367,7 +371,7 @@ Output:
 !!! Note:
     Again, the URL will be slightly different for you.
 
-Following this output, point your browser to the URL and append **/articles** to reach the actual application, in this case:
+Following this output, point your browser to the URL (prepend it with `http://` and append **/articles**) to reach the actual application, in this case:
 
 http://*rails-pgsql-persistent-my-test-project.cloudapps.**<YOUR-IP-HERE\>**.nip.io*/**articles**
 
@@ -378,7 +382,7 @@ When they are saved they are actually saved in the PostgreSQL database which sto
 
     oc volumes dc --all
 
-You will see that the `DeploymentConfig` of the postgres pod did indeed include a PVC:
+You will see that the `DeploymentConfig` of the postgres pod did indeed include a `PVC`:
 
     deploymentconfigs/postgresql
       pvc/postgresql (allocated 5GiB) as postgresql-data
@@ -387,7 +391,7 @@ You will see that the `DeploymentConfig` of the postgres pod did indeed include 
 
 Now let’s take a look at how this was actually achieved.
 
-&#8680; A normal user cannot see the details of a `PersistentVolume`. Log in as `operator`:
+&#8680; A normal user cannot see the details of a `PersistentVolume`. Log back in as `operator`:
 
     oc login -u operator -n my-test-project
 
@@ -405,7 +409,7 @@ Output:
 
 The PVC name is found in above output the `VOLUME` column.
 
-&#8680; Look at the details of this PV with the following short-hand:
+&#8680; Look at the details of this PV with the following copy&paste-friendly short-hand:
 
 ~~~~
 PV_NAME=$(oc get pvc/postgresql -o jsonpath="{.spec.volumeName}")
@@ -446,18 +450,17 @@ Note the GlusterFS volume name, in this case `vol_4b22dda4c9681f4325ba5e24cb4f64
 
     oc project app-storage
 
-&#8680; Look at the GlusterFS pods running
+&#8680; Look at the GlusterFS pods (filtered by label) running:
 
-    oc get pods -o wide
+    oc get pods -o wide -l glusterfs=storage-pod
 
-Pick one of the GlusterFS pods by name (which one is not important):
+Pick the first of the GlusterFS pods in the list:
 
-~~~~
+~~~~ hl_lines="2"
 NAME                      READY     STATUS    RESTARTS   AGE       IP           NODE
 glusterfs-storage-16pb0   1/1       Running   0          23m       10.0.2.201   node-1.lab
 glusterfs-storage-37tqx   1/1       Running   0          23m       10.0.4.203   node-3.lab
 glusterfs-storage-68lxn   1/1       Running   0          23m       10.0.3.202   node-2.lab
-heketi-storage-1-06psx    1/1       Running   0          20m       10.131.2.4   node-4.lab
 ~~~~
 
 Pick the first the pod in the list, in this example *glusterfs-storage-16pb0* and note it's host IP address.
@@ -471,9 +474,9 @@ echo $FIRST_GLUSTER_POD
 echo $HOST_IP
 ~~~~
 
-Next we are going to use the remote session capability of the `oc` client to execute a command in that pods namespace. We are going to leverage the GlusterFS CLI utilities being present in to pod.
+Next we are going to use the remote session capability of the `oc` client to execute a command in that pods namespace. We are going to leverage the GlusterFS CLI utilities being present in that pod.
 
-&#8680; Ask GlusterFS from inside the CNS pod about all the GlusterFS volumes present:
+&#8680; Ask GlusterFS from inside the CNS pod about all the GlusterFS volumes defined:
 
     oc rsh $FIRST_GLUSTER_POD gluster vol list
 
@@ -482,15 +485,15 @@ You will see two volumes:
     heketidbstorage
     vol_4b22dda4c9681f4325ba5e24cb4f64c6
 
--   `heketidbstorage` is a internal-only volume dedicated to heketi’s internal database.
+-   `heketidbstorage` is an internal-only volume dedicated to heketi’s internal database.
 
 -   the second is the volume backing the PV of the PostgreSQL database deployed earlier, in this example `vol_4b22dda4c9681f4325ba5e24cb4f64c6` - your's will be differently named.
 
-&#8680; Interrogate GlusterFS about the topology of this volume:
+&#8680; Ask GlusterFS about the topology of this volume:
 
     oc rsh $FIRST_GLUSTER_POD gluster vol info $GLUSTER_VOL_NAME
 
-The output will show you how the volume has been created. You will also see that the pod you are currently logged on to serves one the bricks.
+The output of the `gluster` command will show you how the volume has been created. You will also see that the pod you are currently logged on to serves one the bricks.
 
 ``` hl_lines="9 10 11"
 Volume Name: vol_4b22dda4c9681f4325ba5e24cb4f64c6
@@ -510,7 +513,8 @@ performance.readdir-ahead: on
 nfs.disable: on
 ```
 
-The above output tells us GlusterFS created this volume as a 3-way replica set across 3 bricks. Bricks are local directories on GlusterFS nodes. In this case the GlusterFS nodes are our CNS pods and since they share the physical hosts network they are displayed with these IP addresses (see highlighted lines) . This volume type `Replicate` is currently the only supported volume type in production. It synchronously replicates all data across those 3 bricks.
+The above output tells us GlusterFS created this volume as a 3-way replica set across 3 bricks. Bricks are local directories on GlusterFS nodes. They make up replication targets.
+In our case the GlusterFS nodes are our CNS pods and since they share the physical hosts network they are displayed with these IP addresses (see highlighted lines) . This volume type `Replicate` is currently the only supported volume type in production. It synchronously replicates all data across those 3 bricks.
 
 Let's take a look at what's inside a brick.
 
@@ -525,7 +529,7 @@ echo $BRICK_DIR
 
     oc rsh $FIRST_GLUSTER_POD ls -ahl $BRICK_DIR
 
-What you see is the content of the brick directory of our postgres volume from within the CNS pod:
+What you see is the content of the brick directory from within the GlusterFS pod, which makes up 1 out of 3 copies of our postgres volume:
 
 ~~~~
 total 16K
@@ -576,7 +580,7 @@ drwx------.  3 1000080000 root   60 Jun  6 14:44 pg_xlog
 
 You are looking at the PostgreSQL internal data file structure from the perspective of the GlusterFS server side. Evidence that the database uses CNS.
 
-Clients, like the OpenShift nodes and their application pods talk to this storage with the GlusterFS protocol as it were an ordinary GlusterFS deployment.
+Clients, like the OpenShift nodes and their application pods talk to this storage with the GlusterFS protocol as it were an ordinary local mounts.
 When a pod starts that mounts storage from a `PV` backed by CNS the GlusterFS mount plugin in OpenShift will mount the GlusterFS volume on the right OpenShift node and then *bind-mount* this directory to the right pod's file namespace.  
 This happens transparently to the application and looks like a normal local filesystem inside the pod as you just saw. Let's have a look from the container host perspective:
 
@@ -584,16 +588,16 @@ This happens transparently to the application and looks like a normal local file
 
 ~~~~
 POSTGRES_POD=$(oc get pods -l name=postgresql -n my-test-project -o jsonpath="{.items[0].metadata.name}")
-POSTGRES_HOST_IP=$(oc get pod/$POSTGRES_POD -n my-test-project -o jsonpath="{.status.hostIP}")
+POSTGRES_CONTAINER_HOST=$(oc get pod/$POSTGRES_POD -n my-test-project -o jsonpath="{.status.hostIP}")
 echo $POSTGRES_POD
-echo $POSTGRES_HOST_IP
+echo $POSTGRES_CONTAINER_HOST
 ~~~~
 
 Since you are acting from the master node `master.lab` you can use SSH without password to execute a remote command on the OpenShift node hosting the postgres pod.
 
 &#8680; Look for the GlusterFS mount points on the host, searching the GlusterFS volume that was provisioned for the database
 
-    ssh $POSTGRES_HOST_IP mount | grep $GLUSTER_VOL_NAME
+    ssh $POSTGRES_CONTAINER_HOST mount | grep $GLUSTER_VOL_NAME
 
 !!! Tip:
     Answer the SSH clients question *"Are you sure you want to continue connecting (yes/no)?"* with *yes*.
@@ -602,15 +606,17 @@ The host should have mounted this GlusterFS volume, for example:
 
     10.0.2.201:vol_4b22dda4c9681f4325ba5e24cb4f64c6 on /var/lib/origin/openshift.local.volumes/pods/c7029a5a-a070-11e7-890c-02ed99595f95/volumes/kubernetes.io~glusterfs/pvc-c638ba71-a070-11e7-890c-02ed99595f95 type fuse.glusterfs (rw,relatime,user_id=0,group_id=0,default_permissions,allow_other,max_read=131072)
 
-The mounting and unmounting of GlusterFS volumes is faciliated by the GlusterFS mount plugin that ships with OpenShift.
+This sums up the relationship between `PVCs`, `PVs`, GlusterFS volumes and container mounts in CNS.
+
+The mounting and unmounting of GlusterFS volumes is faciliated automatically by the GlusterFS mount plugin that ships with OpenShift.
 
 ---
 
 Providing shared storage to multiple application instances
 ----------------------------------------------------------
 
-In the previous example we provisioned an RWO PV - the volume is only usable with one pod at a time. RWO is what most of the OpenShift storage backends support.
-So far only very few options, like the basic NFS support existed, to provide a `PersistentVolume` to more than one container at once. The reason is that most supported storage backends are actually *block-based*. That is a block device is made available to one of the container hosts and is then formatted with an XFS filesystem, which is inherently not cluster-compatible.
+In the previous example we provisioned an RWO PV - the volume is only usable with one pod at a time. RWO is what most of the OpenShift storage backends support and it just happened to be default in the example template.
+So far only very few options, like the basic NFS support existed, to provide a `PersistentVolume` to more than one container at once. The reason is that most supported storage backends are actually *block-based*. That is a block device is made available to one of the container hosts and is then formatted with an XFS filesystem, which is inherently not cluster-aware (cannot be safely written to from multiple Operating Systems / Containers).
 GlusterFS on the other hand is a true scale-out cluster filesystem with distributed locking. Hence we can use the access mode **ReadWriteMany** on OpenShift.
 
 With CNS this capability is now available to all OpenShift deployments, no matter where they are deployed. To demonstrate this capability with an application we will deploy a PHP-based file uploader that has multiple front-end instances sharing a common storage repository.
@@ -625,7 +631,6 @@ With CNS this capability is now available to all OpenShift deployments, no matte
 
 !!! Note
     This is yet another way to build and launch an application from source code in OpenShift. The content before the ~ is the name of a Source-to-Image builder (a container that knows how to build applications of a certain type from source, in this case PHP) and the URL following is a GitHub repository hosting the source code.
-    Feel free to check it out.
 
 Output:
 
@@ -718,7 +723,7 @@ Let's see how this is stored locally in the container.
 
 &#8680; List the running pods of our application:
 
-    oc get pods | grep file-uploader
+    oc get pods -l app=file-uploader
 
 You will see two entries:
 
@@ -738,7 +743,7 @@ UPLOADER_POD=$(oc get pods -l app=file-uploader -o jsonpath="{.items[0].metadata
 echo $UPLOADER_POD
 ~~~~
 
-&#8680; Use the remote shell capability of the `oc` client to list the content of `uploaded/` directory inside the up after you uploaded a file in the PHP app:
+&#8680; Use the remote shell capability of the `oc` client to list the content of `uploaded/` directory inside the pod after you uploaded a file in the PHP app:
 
     oc rsh $UPLOADER_POD ls -ahl /opt/app-root/src/uploaded
 
@@ -751,11 +756,11 @@ The app should also list the file in the overview:
 
 [![The file has been uploaded and can be downloaded again](img/uploader_screen_list.png)](img/uploader_screen_list.png)
 
-However, in it's default configuration his pod currently does not use any persistent storage. It uses it's local filesystem - that is stores the file in inside the container image' root filesystem.
+However, in it's default configuration his pod currently does not use any persistent storage. It uses it's local filesystem - that is stores the file in inside the container image's root filesystem.
 
 !!! Danger "Important"
     Never store important data inside a pods root filesystem or `emptyDir`. It’s ephemeral by definition and will be lost as soon as the pod terminates.
-    Worse, the container's root filesystem is even slower than `emptyDir` as it needs to traverse the `overlay2` stack, that Red Hat Enterprise Linux uses by default as of version 7.4
+    Worse, the container's root filesystem is even slower than `emptyDir` as it needs to traverse the `overlay2` stack, that Red Hat Enterprise Linux uses by default as of version 7.4 for running container images.
     Also, inherently pods using this kind of storage cannot be scaled out trivially.
 
 Let’s see when this become a problem.
@@ -773,9 +778,7 @@ You will see 2 additional pods being spawned:
     NAME                             READY     STATUS      RESTARTS   AGE
     file-uploader-1-3cgh1            1/1       Running     0          20s
     file-uploader-1-3hckj            1/1       Running     0          20s
-    file-uploader-1-build            0/1       Completed   0          4m
     file-uploader-1-g7b0h            1/1       Running     0          3m
-    ...
 
 !!! Note
     The pod names will be different in your environment since they are automatically generated. It takes a couple of seconds until they are ready.
@@ -842,7 +845,7 @@ Similarly, other users of the app will sometimes see your uploaded files and som
 
 The app is of course not usable like this. We can fix this by providing shared storage to this app.
 
-&#8680; First create a PVC with the appropriate setting in a file called `cns-rwx-pvc.yml` with below contents:
+&#8680; First create a `PVC` with the appropriate setting in a file called `cns-rwx-pvc.yml` with below contents:
 
 <kbd>cns-rwx-pvc.yml:</kbd>
 ```yaml
@@ -875,13 +878,13 @@ Notice the access mode explicitly requested to be `ReadWriteMany` (also referred
     my-shared-storage   Bound     pvc-62aa4dfe-4ad2-11e7-b56f-2cc2602a6dc8   10Gi       RWX           22s
     ...
 
-We can now update the `DeploymentConfig` of our application to use this PVC to provide the application with persistent, shared storage for uploads.
+We can now update the `DeploymentConfig` of our application to use this `PVC` to provide the application with persistent, shared storage for uploads.
 
 &#8680; Update the configuration of the application by adding a volume claim like this:
 
     oc volume dc/file-uploader --add --name=shared-storage --type=persistentVolumeClaim --claim-name=my-shared-storage --mount-path=/opt/app-root/src/uploaded
 
-Our app will now re-deploy (in a rolling fashion) with the new settings - all pods will mount the volume identified by the `PVC` under /opt/app-root/src/upload (the path is predictable so we can hard-code it here).
+Our app will now re-deploy (in a rolling fashion) with the new settings - all pods will mount the volume identified by the `PVC` under `/opt/app-root/src/upload` (the path is predictable so we can hard-code it here).
 
 &#8680; You can watch it like this:
 
@@ -904,13 +907,13 @@ Exit out of the follow mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd>
 
 !!! Warning
     Changing the storage settings of a pod can be destructive. Any existing data will **not be preserved**. You are responsible to care for data migration.
-    One strategy here could have been using `oc rsync` to save the data to a local directory on a machine running the `oc` client.
+    One strategy here could have been to use `oc rsync` saving the data to a local directory on the machine running the `oc` client.
 
 You can also observe the rolling upgrade of the file uploader application in the OpenShift UI:
 
 [![The file uploader application is being scaled](img/uploader_upgrade.png)](img/uploader_upgrade.png)
 
-The new config `file-uploader-2` will have 3 pods all sharing the same storage.
+The new `DeploymentConfig` named `file-uploader-2` will have 3 pods all sharing the same storage.
 
 &#8680; Get the names of the new pods:
 

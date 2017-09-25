@@ -1,5 +1,6 @@
 !!! Summary "Overview"
     This module introduces you to the pre-installed OpenShift Container Platform environment in it's default state. No Container-Native Storage components are in place. You may refer back to this chapter for a before-after comparison after completing Module 2 and Module 5.
+    There are no pre-requisites for this module.
 
 
 The OpenShift Lab Environment
@@ -9,7 +10,7 @@ Your lab environment has *OpenShift Container Platform 3.6* pre-installed. It co
 
  - 1 Master node, running the master services and the router
  - 3 Infra nodes, running the registry
- - 7 App nodes, without any pods
+ - 6 App nodes, without any pods
 
 The Master is the only node that's accessible via a public IP. All CLI commands in this lab will be done from this node.
 
@@ -18,7 +19,7 @@ OpenShift has been configured with local authentication, the following users are
 |User name | Password | OpenShift privileges |
 |------------| -------- |-------- |
 |operator| r3dh4t | cluster-admin |
-|developer| r3dh4t | default SCC |
+|developer| r3dh4t | regular user |
 
 ---
 
@@ -78,7 +79,7 @@ svc/router - 172.30.131.155 ports 80, 443, 1936
 
     oc get nodes
 
-You should see 7 nodes in **READY** state:
+You should see 9 nodes in **READY** state:
 
 ~~~~
 NAME          STATUS                     AGE       VERSION
@@ -120,7 +121,7 @@ node-6.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kube
 
     oc describe deploymentconfig/docker-registry
 
-There is a single instance of the registry because there is no shared storage in this environment:
+There is a single instance of the registry because there is so far no shared storage in this environment:
 
 ~~~~ hl_lines="34 36 37"
 Name:		docker-registry
@@ -208,7 +209,7 @@ Log aggregation components will normally be deployed in the `logging` namespace.
 
 For operating OpenShift in production environments these services however are very valuable. By nature they do not need shared storage like CNS can provide. They however do **benefit from the scale-out capabilities of CNS** which typically offers capacity beyond what's available in a single infrastructure node - these nodes will run logging and Metrics components in OpenShift.
 
-Although not supported until the official release of CNS 3.6, in Module 6 you will get a general idea of how Logging and Metrics are deployed with CNS.
+Although not supported until the official release of CNS 3.6, in Module 5 you will get a general idea of how Logging and Metrics are deployed with CNS.
 
 #### Login via the Web UI
 

@@ -244,19 +244,19 @@ OpenShift Logging/Metrics on CNS
 
 OpenShift Logging (Kibana) and Metrics (Cassandra) are also components that require persistent storage. Typically so far external block storage providers had to be used in order to get these services to work reliably.
 
-It might seem counter-intuitive to consider CNS to serve these systems, mainly because:
+It might seem counter-intuitive at first to consider CNS to serve these systems, mainly because:
 
   - Kibana and Cassandra are shared-nothing scale-out services
-  - CNS provides shared filesystem storage whereas for Kibana/Cassandra a block storage device formatted with a local filesystem like XFS is enough
+  - CNS provides shared filesystem storage whereas for Kibana/Cassandra a block storage device formatted with a local filesystem like XFS would be enough
 
 Here are a couple of reasons why it is still a good idea to run those on CNS:
 
   - the total amount of storage available infra nodes is typically limited in capacity (CNS can scale beyond that)
   - the storage type available in infra nodes is most likely not suitable for performant long-term operations of these services (CNS uses aggregate performance of multiple devices and hosts)
-  - without CNS an external storage system is required, you should not use `emptyDir`
+  - without CNS some sort external storage system is required that requires additional manual configuration steps, in any case you should not use `emptyDir`
 
 !!! Important
-    In the next couple of steps we will deploy Logging/Metrics on CNS. This is will be supported with the upcoming release of CNS 3.6 in production. However the instructions will slightly vary because the `PersistentVolumes` will not be backed by a normal GlusterFS volume but by `gluster-block` to achieve high performance.
+    In the next couple of steps we will deploy Logging/Metrics on CNS. This is will be supported with the upcoming release of CNS 3.6 (early October 2017) in production. However the instructions will slightly vary because the `PersistentVolumes` will not be backed by a normal GlusterFS volume but by `gluster-block` to achieve high performance.
     It will not be supported to run these services on standard `gluster-fuse` based CNS.
 
 To review the required configuration sections in the `openshift-ansible` inventory file, open the standard inventory file `/etc/ansible/hosts/` that was used to deploy this OCP cluster initially:
@@ -283,41 +283,20 @@ openshift_metrics_cassandra_pvc_size=10Gi
 openshift_hosted_logging_deploy=false
 openshift_logging_es_pvc_size=10Gi
 openshift_logging_es_pvc_dynamic=true
-openshift_docker_additional_registries=mirror.lab:5555
-openshift_docker_insecure_registries=mirror.lab:5555
-oreg_url=mirror.lab:5555/openshift3/ose-${component}:${version}
-openshift_examples_modify_imagestreams=false
-openshift_disable_check=disk_availability,memory_availability
 
-[masters]
-master.lab openshift_public_hostname=52.59.170.248.nip.io openshift_hostname=master.lab openshift_ip=10.0.1.100 openshift_public_ip=52.59.170.248
-
-[masters:vars]
-openshift_schedulable=true
-openshift_node_labels="{'role': 'master'}"
-
-[nodes]
-master.lab openshift_public_hostname=52.59.170.248.nip.io openshift_hostname=master.lab  openshift_ip=10.0.1.100 openshift_public_ip=52.59.170.248
-infra-1.lab openshift_hostname=infra-1.lab openshift_ip=10.0.2.101 openshift_node_labels="{'role': 'infra'}"
-infra-2.lab openshift_hostname=infra-2.lab openshift_ip=10.0.3.102 openshift_node_labels="{'role': 'infra'}"
-infra-3.lab openshift_hostname=infra-3.lab openshift_ip=10.0.4.103 openshift_node_labels="{'role': 'infra'}"
-node-1.lab openshift_hostname=node-1.lab openshift_ip=10.0.2.201 openshift_node_labels="{'role': 'app'}"
-node-2.lab openshift_hostname=node-2.lab openshift_ip=10.0.3.202 openshift_node_labels="{'role': 'app'}"
-node-3.lab openshift_hostname=node-3.lab openshift_ip=10.0.4.203 openshift_node_labels="{'role': 'app'}"
-node-4.lab openshift_hostname=node-4.lab openshift_ip=10.0.2.204 openshift_node_labels="{'role': 'app'}"
-node-5.lab openshift_hostname=node-5.lab openshift_ip=10.0.3.205 openshift_node_labels="{'role': 'app'}"
-node-6.lab openshift_hostname=node-6.lab openshift_ip=10.0.4.206 openshift_node_labels="{'role': 'app'}"
+[... output omitted... ]
 ~~~~
 
 The highlighted lines indicate the settings that are required in order to put the Cassandra database of the OpenShift Metrics service on a `PersistentVolume` (`openshift_metrics_cassandra_storage_type=pv`) and how large this volume should be (`openshift_metrics_cassandra_pvc_size=10Gi`).
 Similarly the backend for the ElasticSearch component of OpenShift Logging is set to `PersistentVolume` (`openshift_logging_es_pvc_dynamic=true`) and the size is specifed (`openshift_logging_es_pvc_size=10Gi`).
+With these settings in place `openshift-ansible` will request `PVC` object for these services.
 
-Unfortunately `openshift-ansible` today is lacking the ability to specify a certain `StorageClass`, so we have to make the CNS cluster that was created above the default:
+Unfortunately `openshift-ansible` today is lacking the ability to specify a certain `StorageClass` with those `PVCs`, so we have to make the CNS cluster that was created above temporarily the system-wide default:
 
-&#8680; Use the `oc patch` command to change the definition of the `StorageClass` at on the fly:
+&#8680; Use the `oc patch` command to change the definition of the `StorageClass` on the fly:
 
     oc patch storageclass glusterfs-registry-storage -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
 
-&#8680; If you completed Module 2, you need to disable the `is-default` setting on the `StorageClass` `glusterfs-storage` from the other CNS stack:
+&#8680; If you deployed the general-purpose CNS cluster in [Module 2](../module-2-deploy-cns/), you need to disable the other `StorageClass` `glusterfs-storage` from the other CNS stack as being the default:
 
     oc patch storageclass glusterfs-storage -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "false"}}}'

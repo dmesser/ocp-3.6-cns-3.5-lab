@@ -1,17 +1,23 @@
 !!! Summary "Overview"
-    In this module you will set up container-native storage (CNS) in your OpenShift environment. You will use this to dynamically provision storage to be available to workloads in OpenShift. It is provided by GlusterFS running in containers. GlusterFS in turn is backed by local storage available to the OpenShift nodes.
-    All of the following tasks are carried out as the ec2-user from the master node. For Copy & Paste convenience we will omit the shell prompt unless necessary.
+    In this module you will set up Container-Native Storage (CNS) in your OpenShift environment. You will use this in later modules to dynamically provision storage to be available to workloads in OpenShift.
+    CNS is GlusterFS running in containers, orchestrated by OpenShift via a REST API. GlusterFS in turn is backed by local storage available to the OpenShift nodes.
+    This module has no pre-requisites.
+
+All of the following tasks are carried out as the `ec2-user` from the master node. For copy&paste convenience we will omit the shell prompt unless necessary.
 
 &#8680; Make sure you are logged on as the `ec2-user` to the master node:
 
-    [ec2-user@master ~]$ hostname -f
+    hostname -f
+
+As the output indicates, you should be on the master node:
+
     master.lab
 
 &#8680; First ensure you have the correct openshift-ansible version installed on the system.
 
     yum list installed openshift-ansible
 
-A version higher than 3.6.173.0.5-3 is required to utilize the **OpenShift Advanced Installer** to deploy CNS.
+A version higher than or equals to `3.6.173.0.5-3` is required to utilize the **OpenShift Advanced Installer** to deploy CNS.
 
 ~~~~
 Installed Packages
@@ -24,9 +30,10 @@ Review the Ansible Inventory Configuration
 ------------------------------------------
 
 !!! Hint
-    As of OpenShift Container Platform 3.6 it's possible to deploy CNS using `openshift-ansible` - advanced installation method of OpenShift. The method of using the `cns-deploy` utility to install CNS components in an existing OpenShift cluster remains available.
+    As of OpenShift Container Platform 3.6 it's possible to deploy CNS using `openshift-ansible` - the *advanced installation method* of OpenShift. The method of using the `cns-deploy` utility to install CNS components in an existing OpenShift cluster remains available but is not covered in this lab.
 
-Installing CNS with `openshift-ansible` means all configuration options for CNS are now managed in the Ansible inventory, a text file by which the installer determines what it should install where.
+Installing CNS with `openshift-ansible` means all configuration options for CNS are now managed in the Ansible inventory, a text file by which the installer determines what should be installed and where.
+
 An inventory file with the correct settings for CNS has been provided for you in `/etc/ansible/ocp-with-glusterfs`
 
 <kbd>/etc/ansible/ocp-with-glusterfs:</kbd>
@@ -101,9 +108,9 @@ In every environment the following pre-requisites need to be met:
 
 !!! Tip "What is the zone ID for?"
 
-    A zone identifies a failure domain in GlusterFS. In CNS data is always replicated 3 times. Reflecting these failure domains by zone IDs as arbitrary but distinct numerical values allows CNS to ensure that two copies are never stored on nodes in the same failure domain.
+    A zone identifies a failure domain in GlusterFS. In CNS data is by default always replicated 3 times. Reflecting these failure domains by zone IDs as arbitrary but distinct numerical values allows CNS to ensure that two copies are never stored on nodes in the same failure domain.
 
-    This information is considered when building new volumes, expanding existing volumes or replacing bricks in degraded volumes.
+    CNS will also work without zone definitions, but it's less smart. This information is considered when building new volumes, expanding existing volumes or replacing bricks in degraded volumes.
     An example for failure domains are AWS Availability Zones or physical servers sharing the same PDU.
 
     In this lab environment we have 3 different zones, because the nodes are residing in 3 distinct AWS Availability Zones.
@@ -113,7 +120,7 @@ In every environment the following pre-requisites need to be met:
 Run the installer
 -----------------
 
-&#8680; First ensure that from an Ansible-perspective the required nodes are reachable
+&#8680; First ensure that from an Ansible-perspective the required nodes are reachable:
 
     ansible -i /etc/ansible/ocp-with-glusterfs glusterfs -m ping
 
@@ -136,11 +143,13 @@ node-2.lab | SUCCESS => {
 
 &#8680; Run the CNS installation playbook that ships as part of `openshift-ansible`:
 
-    ansible-playbook -i /etc/ansible/ocp-with-glusterfs /usr/share/ansible/openshift-ansible/playbooks/byo/openshift-glusterfs/config.yml
+    ansible-playbook -i /etc/ansible/ocp-with-glusterfs \
+    /usr/share/ansible/openshift-ansible/playbooks/byo/openshift-glusterfs/config.yml
 
 !!! Danger "Important":
     In this lab exercise you are directly invoking the CNS-related playbooks of `openshift-ansible`. This is **not supported** in production as of yet.
-    The correct way to deploy CNS with `openshift-ansible` is to include the configuration in the inventory file from the very beginning and deploy it with OpenShift.
+    The supported way to deploy CNS with `openshift-ansible` is to include the configuration in the inventory file from the very beginning and deploy it with OpenShift. Special care has been taken in this lab so that it works with an existint OCP deployment.
+
     Official support for post-deploy CNS installation with this method is planned for one of the next minor releases.
 
 The installation will take approximately 4-5 minutes. In the meantime proceed with the next paragraph.
@@ -151,7 +160,7 @@ What happens in the background
 ------------------------------
 
 CNS provides software-defined storage hosted on OpenShift used by OpenShift. In particular it's based on *Red Hat Gluster Storage* running in OpenShift pods with direct access the host's network and storage device.
-Gluster effectively virtualizes the local storage capacity of each node into a flat namespace provides scale-out file storage transparently as a single mount point across the network.
+Gluster effectively virtualizes the local storage capacity of each node into a flat namespace providing scale-out, federated file storage transparently as a single mount point across the network.
 
 During the deployment you can either use the web console or the CLI tools to monitor what's created.
 
@@ -163,13 +172,13 @@ When done, going back to the **Overview** page it should look like this:
 
 [![CNS Deployment](img/openshift_cns_deploy_2.png)](img/openshift_cns_deploy_2.png)
 
-The pods named `glusterfs-...` are running GlusterFS in containers which super-privleged access to the block device and networking device (shares same IP address, reserves certain ports) of the host:
+The pods named `glusterfs-...` are running GlusterFS in containers which have super-privileged access to the block device(s) and networking device (shares same IP address, reserves certain ports) of the container host:
 
 [![GlusterFS pods in CNS in detail.](img/cns_diagram_pod.svg)](img/cns_diagram_pod.svg)
 
-At least 3, but potentially more, GlusterFS pods form a cluster across which storage will be replicated in a synchronous fashion.
+At least 3, but potentially more, GlusterFS pods form a cluster (a *Trusted Storage Pool* in GlusterFS terminology) across which storage will transparently be replicated in a synchronous fashion.
 
-After some time you will see a 4th pod come up. *heketi* is a component that will expose an API for GlusterFS to OpenShift. This allows OpenShift to dynamically allocate storage from CNS in a programmatic fashion. See below for a visualization. Note that for simplicity, in our lab environment heketi runs on the OpenShift App nodes, not on the Infra node.
+After some time you will see a 4th pod come up. *heketi* is a component that will expose an API for GlusterFS to OpenShift. This allows OpenShift to dynamically allocate storage from CNS in a programmatic fashion. See below for a visualization. Note that for simplicity, in our lab environment heketi may be scheduled on one of the OpenShift App nodes. In production `heketi` should be configured to run on OpenShift Infrastructure nodes.
 
 [![heketi pod running in CNS](img/cns_diagram_heketi.svg)](img/cns_diagram_heketi.svg)
 
@@ -178,14 +187,14 @@ After some time you will see a 4th pod come up. *heketi* is a component that wil
 
     - an OpenShift namespace is selected / created for the CNS pods
     - the permission to run CNS pods in `privileged` mode is added to the *ServiceAccount* used by CNS
-    - a JSON structure is created that lays out a map of OpenShift nodes that will run CNS, including information about their network and available disk devices
-    - passwords are generated for user and administrative accounts of the CNS API server (heketi)
+    - a JSON structure is created that lays out a map of OpenShift nodes that will run CNS (called a `topology`), including information about their network and available disk devices
+    - passwords are generated for user and administrative accounts of the CNS API server (`heketi`)
     - a set of templates are used to create an intermediary instance of *heketi*
     - the designated CNS nodes are labeled with a specific key-value pair
-    - a `DaemonSet` configuration is created that causes a CNS pod to launch on eveyr node matching that key-value pair
+    - a `DaemonSet` configuration is created that causes a CNS pod to launch on every node matching that key-value pair
     - the intermediary instance of *heketi* uses the JSON-formatted topology to initialize the CNS pods (creating LVM and directory structures on the supplied block devices)
-    - the intermediary instance of *heketi* is used to initiate GlusterFS peering so the CNS pods form a GlusterFS Trusted Storage Pool
-    - the intermediary instance of *heketi* is used to create a GlusterFS volume to host the *heketi*-internal database (`BoltDB`)
+    - the intermediary instance of *heketi* is used to initiate GlusterFS peering so the CNS pods form a GlusterFS *Trusted Storage Pool*
+    - the intermediary instance of *heketi* is used to create a GlusterFS volume to host the *heketi*-internal database (based on `BoltDB`)
     - a copy of the database of the intermediary *heketi* instance is created on that volume
     - the intermediary instance is terminated and a new *heketi* instance is deployed mounting the GlusterFS volume and the database
     - a `Service` is created in OpenShift to expose the API of *heketi* to the network
@@ -284,7 +293,7 @@ The output should look similar to the below:
     NAME             CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
     heketi-storage   172.30.225.240   <none>        8080/TCP   1h
 
-To also use heketi outside of OpenShift in addition to the service a route has been deployed.
+To also use heketi outside of OpenShift in addition to the `Service` a `Route` has been deployed.
 
 &#8680; Display the route with:
 
@@ -295,13 +304,13 @@ The output should look similar to the below:
     NAME             HOST/PORT                                                   PATH      SERVICES         PORT      TERMINATION   WILDCARD
     heketi-storage   heketi-storage-app-storage.cloudapps.35.158.172.55.nip.io             heketi-storage   <all>                   None
 
-Based on this *heketi* will be available on the heketi API URL:
+Based on this *heketi* will be available on the heketi API URL, in this example:
 http://*heketi-storage-app-storage.cloudapps.35.158.172.55.nip.io*
 
 !!! Note:
     In your environment the URL will be slightly different. It will contain the public IPv4 address of your deployment, dynamically resolved by the nip.io service.
 
-&#8680; You may verify this trivial health check using `curl` (and an in-line shell command to dynamically retrieve the `route` for easy copy&paste):
+&#8680; You may verify this trivial health check using `curl` (and an in-line `oc` command to dynamically retrieve the `route` for easy copy&paste):
 
     curl http://$(oc get route/heketi-storage -o jsonpath='{.spec.host}')/hello
 
@@ -311,7 +320,7 @@ This should say:
 
 This verifies heketi is running. To ensure it's functional and has been set up with authentication we are going to query it with the heketi CLI client.
 
-The client needs to know the heketi API URL above and the password for the built-in `admin` user.
+First, the client needs to know the heketi API URL above and the password for the built-in `admin` user.
 
 <a name="heketi-env-setup"></a>
 
@@ -325,7 +334,7 @@ Example output:
 
 This information, the heketi user name, the API URL, and the password is needed whenever you want to use the `heketi-cli` client. So it's a good idea to store this in environment variables.
 
-&#8680; Enter the following lines in your shell to conveniently get and store the heketi API URL, the password of of the `admin` user and the user name set to `admin`:
+&#8680; Enter the following lines in your shell to conveniently retrieve and store the heketi API URL, the password of of the `admin` user and the user name set to `admin`:
 
 ~~~~
 HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -o jsonpath="{.items[0].metadata.name}")
@@ -346,7 +355,7 @@ This should list at least one cluster by it's UUID:
 !!! Note:
     The UUID is auto-generated and will be different for you.
 
-&#8680; Use the UUID unique to your environment and obtain more information about it:
+&#8680; Use the **UUID unique to your environment** and obtain more information about it:
 
     heketi-cli cluster info fb67f97166c58f161b85201e1fd9b8e
 
