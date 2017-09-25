@@ -654,6 +654,7 @@ Resources:
                   openshift_router_selector='role=master'
                   openshift_registry_selector='role=infra'
                   openshift_hosted_registry_storage_kind=glusterfs
+                  openshift_storage_glusterfs_registry_storageclass=True
                   openshift_metrics_install_metrics=false
                   openshift_metrics_hawkular_hostname="hawkular-metrics.{{ openshift_master_default_subdomain }}"
                   openshift_metrics_cassandra_storage_type=pv
