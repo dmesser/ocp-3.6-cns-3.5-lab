@@ -86,7 +86,7 @@ NAME          STATUS                     AGE       VERSION
 infra-1.lab   Ready                      14m       v1.6.1+5115d708d7
 infra-2.lab   Ready                      14m       v1.6.1+5115d708d7
 infra-3.lab   Ready                      14m       v1.6.1+5115d708d7
-master.lab    Ready,SchedulingDisabled   19m       v1.6.1+5115d708d7
+master.lab    Ready                      19m       v1.6.1+5115d708d7
 node-1.lab    Ready                      14m       v1.6.1+5115d708d7
 node-2.lab    Ready                      14m       v1.6.1+5115d708d7
 node-3.lab    Ready                      14m       v1.6.1+5115d708d7
@@ -99,7 +99,7 @@ node-6.lab    Ready                      14m       v1.6.1+5115d708d7
 
     oc get nodes --show-labels
 
-You should see that 3 node have the label `role=infra` applied whereas the other 6 have `role=apps` set. The master node has scheduling disabled so it is not burdened with additional workloads.
+You should see that 3 node have the label `role=infra` applied whereas the other 6 have `role=apps` set.
 
 ~~~~
 NAME          STATUS                     AGE       VERSION             LABELS

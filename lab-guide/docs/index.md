@@ -86,7 +86,8 @@ The lab environment has 10 nodes in total with stable, internal IP addresses and
 |OpenShift App Node 5| node-5.lab | 10.0.3.205 |
 |OpenShift App Node 6| node-6.lab | 10.0.4.206 |
 
-This lab topology roughly looks like this:
+You don't need to remember this - this is purely informational.
+This labs topology roughly looks like this:
 
 [![CNS Lab Infrastructure](img/cns_infrastructure_aws.svg)](img/cns_infrastructure_aws.svg)
 
@@ -98,4 +99,5 @@ You might these hints useful:
 
 - almost all of the commands/files don't contain environment-specific content, there is a <kbd>copy-to-clipboard</kbd> button on the right end of every code block for your convenience
 - this lab uses nip.io for DNS resolution of the public IP specific to your lab, keep that in mind when working with URLs in the lab
+- you can skip modules in this lab, unless stated otherwise in the *Overview* section they are independent of each other
 - if you want to look at this lab guide in a separate window: this documentation is hosted at <a href="https://dmesser.github.io/ocp-3.6-cns-3.5-lab/" target="_blank">https://dmesser.github.io/ocp-3.6-cns-3.5-lab</a>
