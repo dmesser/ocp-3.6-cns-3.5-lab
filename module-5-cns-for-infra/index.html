@@ -475,7 +475,7 @@ infra-2.lab | SUCCESS =&gt; {
 </pre></div>
 
 
-<p>This will take about 6 minutes to complete.</p>
+<p>This will take about 6-7 minutes to complete.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>As in Module 2, executing the playbook in <code>byo/openshift-glusterfs/registry.yml</code> directly post-deployment is not supported in production as of yet. Special care has been taken in this lab so that it works here.<br />
@@ -718,7 +718,7 @@ heapster-pjxpp               1/1       Running   0          5m
 <p>This was a preview of the general process. Note that this will be supported for production with the release of CNS 3.6.</p>
 </div>
 <h4 id="deploying-openshift-logging-with-persistent-storage-from-cns">Deploying OpenShift Logging with Persistent Storage from CNS<a class="headerlink" href="#deploying-openshift-logging-with-persistent-storage-from-cns" title="Permanent link">#</a></h4>
-<p>In a very similar fashion you can install OpenShift Logging Services, run by Kibana.</p>
+<p>In a very similar fashion you can install OpenShift Logging Services, run by Kibana and ElasticSearch.</p>
 <p>&#8680; As <code>operator</code>, login in to the <code>logging</code> namespace:</p>
 <div class="codehilite"><pre><span></span>oc login -u operator -n logging
 </pre></div>
@@ -744,7 +744,7 @@ logging-es-data-master-kcbtgll3-1-vb34h   1/1       Running   0          11m
 
 
 <p>List the Kibana pod:</p>
-<div class="codehilite"><pre><span></span>oc get pods -l component=Kibana
+<div class="codehilite"><pre><span></span>oc get pods -l component=kibana
 </pre></div>
 
 

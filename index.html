@@ -167,36 +167,50 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pre-requisites" title="Pre-requisites" class="md-nav__link">
-    Pre-requisites
+  <a href="#1-pre-requisites" title="1. Pre-requisites" class="md-nav__link">
+    1. Pre-requisites
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-lab-access-credentials" title="Get Lab Access Credentials" class="md-nav__link">
-    Get Lab Access Credentials
+  <a href="#2-how-to-start-your-lab" title="2. How to start your lab" class="md-nav__link">
+    2. How to start your lab
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#access-the-lab-environment" title="Access the Lab environment" class="md-nav__link">
-    Access the Lab environment
+  <a href="#3-download-access-key" title="3. Download Access Key" class="md-nav__link">
+    3. Download Access Key
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#lab-environment-ip-addresses" title="Lab Environment IP addresses" class="md-nav__link">
-    Lab Environment IP addresses
+  <a href="#4-wait-for-lab-provisioning-to-complete" title="4. Wait for lab provisioning to complete" class="md-nav__link">
+    4. Wait for lab provisioning to complete
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-started" title="Get Started" class="md-nav__link">
-    Get Started
+  <a href="#5-enter-the-lab-environment" title="5. Enter the lab environment" class="md-nav__link">
+    5. Enter the lab environment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-lab-environment-overview" title="6. Lab Environment Overview" class="md-nav__link">
+    6. Lab Environment Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-lab-tips" title="7. Lab tips" class="md-nav__link">
+    7. Lab tips
   </a>
   
 </li>
@@ -315,36 +329,50 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pre-requisites" title="Pre-requisites" class="md-nav__link">
-    Pre-requisites
+  <a href="#1-pre-requisites" title="1. Pre-requisites" class="md-nav__link">
+    1. Pre-requisites
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-lab-access-credentials" title="Get Lab Access Credentials" class="md-nav__link">
-    Get Lab Access Credentials
+  <a href="#2-how-to-start-your-lab" title="2. How to start your lab" class="md-nav__link">
+    2. How to start your lab
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#access-the-lab-environment" title="Access the Lab environment" class="md-nav__link">
-    Access the Lab environment
+  <a href="#3-download-access-key" title="3. Download Access Key" class="md-nav__link">
+    3. Download Access Key
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#lab-environment-ip-addresses" title="Lab Environment IP addresses" class="md-nav__link">
-    Lab Environment IP addresses
+  <a href="#4-wait-for-lab-provisioning-to-complete" title="4. Wait for lab provisioning to complete" class="md-nav__link">
+    4. Wait for lab provisioning to complete
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-started" title="Get Started" class="md-nav__link">
-    Get Started
+  <a href="#5-enter-the-lab-environment" title="5. Enter the lab environment" class="md-nav__link">
+    5. Enter the lab environment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-lab-environment-overview" title="6. Lab Environment Overview" class="md-nav__link">
+    6. Lab Environment Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-lab-tips" title="7. Lab tips" class="md-nav__link">
+    7. Lab tips
   </a>
   
 </li>
@@ -366,8 +394,9 @@
                 
                 <h1 id="welcome-to-container-native-storage-hands-on-lab">Welcome to Container-Native Storage Hands-on Lab<a class="headerlink" href="#welcome-to-container-native-storage-hands-on-lab" title="Permanent link">#</a></h1>
 <p>This lab guide is designed for self-paced walk-through of the &ldquo;Container-Native Storage 3.5 on OpenShift 3.6&rdquo; hosted on <a href="https://redhat.qwiklab.com">redhat.qwkilab.com</a>. This lab gives you access to a fully functional OpenShift Container Platform 3.6 environment hosted on AWS.<br />
-This is not a tutorial on OpenShift Container Platform. Basic familiarity is assumed.</p>
-<h4 id="pre-requisites">Pre-requisites<a class="headerlink" href="#pre-requisites" title="Permanent link">#</a></h4>
+This is not a tutorial on OpenShift Container Platform. Basic familiarity is assumed.<br />
+Completing the entire lab content will typically take between 2 and 3 hours.</p>
+<h2 id="1-pre-requisites">1. Pre-requisites<a class="headerlink" href="#1-pre-requisites" title="Permanent link">#</a></h2>
 <p>For this lab you need to fulfill the following pre-requisites:</p>
 <ul>
 <li>
@@ -377,13 +406,25 @@ This is not a tutorial on OpenShift Container Platform. Basic familiarity is ass
 <p>SSH client supporting authentication with a private key</p>
 </li>
 </ul>
-<p>To start the lab press  <b><span style="background-color:#909e33; color:white; font-size: 120%">&nbsp;&nbsp;Start Lab&nbsp;&nbsp;</span></b> button in the top bar.</p>
 <hr />
-<h4 id="get-lab-access-credentials">Get Lab Access Credentials<a class="headerlink" href="#get-lab-access-credentials" title="Permanent link">#</a></h4>
-<p>Your lab should be pre-provisioned. If that&rsquo;s for some reason not the case you&rsquo;ll see this progress bar:</p>
-<p><a href="./img/qwiklab_progress_bar.png"><img alt="CNS Lab Infrastructure" src="./img/qwiklab_progress_bar.png" /></a></p>
-<p>If you don&rsquo;t see that your lab infrastructure is ready. When this is the case you will additional blue buttons (3 in total) on the right.</p>
-<p>In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span> button and the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;Addl. Info&nbsp;&nbsp;</span> (will be visible when the lab is readily provisioned) on the right side of the screen to obtain the following access information:</p>
+<h2 id="2-how-to-start-your-lab">2. How to start your lab<a class="headerlink" href="#2-how-to-start-your-lab" title="Permanent link">#</a></h2>
+<p>To start the Test Drive press <b><span style="background-color:#909e33; color:white; font-size: 120%">&nbsp;&nbsp;Start Lab&nbsp;&nbsp;</span></b> button in the top bar.</p>
+<hr />
+<h2 id="3-download-access-key">3. Download Access Key<a class="headerlink" href="#3-download-access-key" title="Permanent link">#</a></h2>
+<p>Immediately after pressing the <b><span style="background-color:#909e33; color:white; font-size: 120%">&nbsp;&nbsp;Start Lab&nbsp;&nbsp;</span></b> button, a pane labeled <b><span style="background-color:#777777; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span></b> will rollover presenting your custom SSH access key to download.</p>
+<p><img alt="Download SSH access keys" src="./img/qwiklab-pem-key.png" /></p>
+<p>Download the <em>PEM</em> key to your computer if you are using regular OpenSSH on the command line Linux or macOS. Choose <em>PPK</em> if you are using PuTTY on Windows.</p>
+<p>Click <b><span style="background-color:#777777; color:white; font-size: 120%">&nbsp;&nbsp;Connect&nbsp;&nbsp;</span></b> button again to hide the pane.</p>
+<hr />
+<h2 id="4-wait-for-lab-provisioning-to-complete">4. Wait for lab provisioning to complete<a class="headerlink" href="#4-wait-for-lab-provisioning-to-complete" title="Permanent link">#</a></h2>
+<p>When you started your Test Drive the lab environment provision process initiated in the background. During provisioning you can monitor progress in the top navigation bar</p>
+<p><img alt="Monitoring Lab Provisioning Progress" src="./img/qwiklab-progress-bar.png" /></p>
+<p><strong>When there is no progress bar you can start immediately</strong>. In this case your lab was pre-provisioned.</p>
+<p>When there is a progress bar your lab is currently provisioning. The progress bar will disappear as soon as that is done. Also, upon launch you will see a button to end your lab session and countdown until automatic shutdown:</p>
+<p><img alt="Lab timer" src="./img/qwiklab-end-button.png" /></p>
+<hr />
+<h2 id="5-enter-the-lab-environment">5. Enter the lab environment<a class="headerlink" href="#5-enter-the-lab-environment" title="Permanent link">#</a></h2>
+<p>In order to access the lab infrastructure click the <span style="background-color:#0087cf; color:white; font-size: 120%">&nbsp;&nbsp;<b>Addl. Info</b>&nbsp;&nbsp;</span> (will be visible when the lab is readily provisioned) on the right side of the screen to obtain the following access information:</p>
 <table>
 <thead>
 <tr>
@@ -394,11 +435,6 @@ This is not a tutorial on OpenShift Container Platform. Basic familiarity is ass
 </thead>
 <tbody>
 <tr>
-<td>SSH Key</td>
-<td>PEM File</td>
-<td><em>download this file by clicking <kbd>Download PEM/PPK</kbd> &gt; <kbd>Download PEM</kbd></em> in the &ldquo;Connect&rdquo; pane</td>
-</tr>
-<tr>
 <td>URL to OpenShift UI</td>
 <td>OpenShiftLoginURL</td>
 <td>e.g. <em>https://34.226.81.9.nip.io:8443/</em></td>
@@ -408,51 +444,13 @@ This is not a tutorial on OpenShift Container Platform. Basic familiarity is ass
 <td>MasterNodePublicIP</td>
 <td>e.g. <em>34.226.81.9</em></td>
 </tr>
-</tbody>
-</table>
-<p>The lab has a number of user account definitions:</p>
-<table>
-<thead>
 <tr>
-<th>Type</th>
-<th>Username</th>
-<th>Password</th>
-<th>notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Linux user on Master node</td>
-<td>ec2-user</td>
-<td><em>authenticated via SSH by PEM file</em></td>
-<td>passwordless sudo access on all systems</td>
-</tr>
-<tr>
-<td>OpenShift Admin-persona User</td>
-<td>operator</td>
-<td><code>r3dh4t</code></td>
-<td>will get cluster-admin privileges in the lab</td>
-</tr>
-<tr>
-<td>OpenShift Developer-persona User</td>
-<td>developer</td>
-<td><code>r3dh4t</code></td>
-<td>no special permissions</td>
+<td>SSH user on master node</td>
+<td>SSHLoginUser</td>
+<td><code>ec2-user</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h4 id="access-the-lab-environment">Access the Lab environment<a class="headerlink" href="#access-the-lab-environment" title="Permanent link">#</a></h4>
-<p>The lab will provision a readily installed OpenShift environment.</p>
-<p>You access the lab environment in two ways:</p>
-<ul>
-<li>
-<p>via the web-based OpenShift UI using your browser pointing to the <em>OpenShiftLoginURL</em> using either of the two OpenShift users defined above</p>
-</li>
-<li>
-<p>via SSH to the OpenShift Master node with the <em>MasterNodePublicIP</em> using the <code>ec2-user</code> and the PEM file</p>
-</li>
-</ul>
 <p>&#8680; To login via SSH download the PEM file to your machine and change the permissions:</p>
 <div class="codehilite"><pre><span></span>chmod 0400 ~/Downloads/&lt;pem-file-name&gt;
 </pre></div>
@@ -465,14 +463,14 @@ This is not a tutorial on OpenShift Container Platform. Basic familiarity is ass
 
 <p>The Master node also functions as your <em>jumpserver</em>. Once you are logged on to it you have access to all systems with the <code>ec2-user</code> who has passwordless authentication and passwordless sudo capabilities set up everywhere.</p>
 <hr />
-<h4 id="lab-environment-ip-addresses">Lab Environment IP addresses<a class="headerlink" href="#lab-environment-ip-addresses" title="Permanent link">#</a></h4>
-<p>The lab environment has 11 nodes in total with stable, internal IP addresses and <code>/etc/hosts</code>-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet via it&rsquo;s public IP however.</p>
+<h2 id="6-lab-environment-overview">6. Lab Environment Overview<a class="headerlink" href="#6-lab-environment-overview" title="Permanent link">#</a></h2>
+<p>The lab environment has 10 nodes in total with stable, internal IP addresses and <code>/etc/hosts</code>-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet via it&rsquo;s public IP however.</p>
 <table>
 <thead>
 <tr>
 <th>Host</th>
-<th>FQDN</th>
-<th>IP address</th>
+<th>Interal FQDN</th>
+<th>Internal IP address</th>
 </tr>
 </thead>
 <tbody>
@@ -526,22 +524,15 @@ This is not a tutorial on OpenShift Container Platform. Basic familiarity is ass
 <td>node-6.lab</td>
 <td>10.0.4.206</td>
 </tr>
-<tr>
-<td>OpenShift App Node 7</td>
-<td>node-7.lab</td>
-<td>10.0.4.207</td>
-</tr>
 </tbody>
 </table>
 <p>This lab topology roughly looks like this:</p>
 <p><a href="./img/cns_infrastructure_aws.svg"><img alt="CNS Lab Infrastructure" src="./img/cns_infrastructure_aws.svg" /></a></p>
 <hr />
-<h4 id="get-started">Get Started<a class="headerlink" href="#get-started" title="Permanent link">#</a></h4>
-<p>Once you are on the Master node you are ready to start the lab with Module 1.</p>
+<h2 id="7-lab-tips">7. Lab tips<a class="headerlink" href="#7-lab-tips" title="Permanent link">#</a></h2>
 <p>You might these hints useful:</p>
 <ul>
-<li>many of the commands/files don&rsquo;t contain environment-specific content, there is a <kbd>copy-to-clipboard</kbd> button on the right end of every code block for your convenience</li>
-<li>keep a text editor open to store some outputs that are specific to your environment like the URL and public IP of the Master</li>
+<li>almost all of the commands/files don&rsquo;t contain environment-specific content, there is a <kbd>copy-to-clipboard</kbd> button on the right end of every code block for your convenience</li>
 <li>this lab uses nip.io for DNS resolution of the public IP specific to your lab, keep that in mind when working with URLs in the lab</li>
 <li>if you want to look at this lab guide in a separate window: this documentation is hosted at <a href="https://dmesser.github.io/ocp-3.6-cns-3.5-lab/" target="_blank">https://dmesser.github.io/ocp-3.6-cns-3.5-lab</a></li>
 </ul>

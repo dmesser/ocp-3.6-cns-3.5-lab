@@ -236,8 +236,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#running-multiple-glusterfs-pools" title="Running multiple GlusterFS pools" class="md-nav__link">
-    Running multiple GlusterFS pools
+  <a href="#running-multiple-storage-pools" title="Running multiple storage pools" class="md-nav__link">
+    Running multiple storage pools
   </a>
   
 </li>
@@ -315,8 +315,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#running-multiple-glusterfs-pools" title="Running multiple GlusterFS pools" class="md-nav__link">
-    Running multiple GlusterFS pools
+  <a href="#running-multiple-storage-pools" title="Running multiple storage pools" class="md-nav__link">
+    Running multiple storage pools
   </a>
   
 </li>
@@ -372,7 +372,7 @@
 <p>Herein, we will use the term pool (GlusterFS terminology) and cluster (<code>heketi</code> terminology) interchangeably.</p>
 <p>This module requires that you have completed <a href="../../module-2-deploy-cns/">Module 2</a>.</p>
 </div>
-<h2 id="running-multiple-glusterfs-pools">Running multiple GlusterFS pools<a class="headerlink" href="#running-multiple-glusterfs-pools" title="Permanent link">#</a></h2>
+<h2 id="running-multiple-storage-pools">Running multiple storage pools<a class="headerlink" href="#running-multiple-storage-pools" title="Permanent link">#</a></h2>
 <p>In the previous modules a single GlusterFS cluster was used to supply <code>PersistentVolumes</code> to applications. CNS allows for multiple clusters to run in a single OpenShift deployment, controlled by a central <code>heketi</code> API:</p>
 <p>There are several use cases for this:</p>
 <ol>
@@ -611,7 +611,7 @@ oc label node/node-6.lab glusterfs=storage-host
 <p>When loading this topology to <code>heketi</code>, it will recognize the existing cluster (leaving it unchanged) and start creating the new one, with the same bootstrapping process used to initialize the first cluster.<br />
 That is: the <code>glusterd</code> process running in the pods will form a new 3-node cluster and the supplied block storage device <code>/dev/xvdc</code> will be formatted.</p>
 <p>&#8680; Prepare the heketi CLI tool like previously in <a href="../module-2-deploy-cns/#heketi-env-setup">Module 2</a>.</p>
-<div class="codehilite"><pre><span></span>HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -o jsonpath=&quot;{.items[0].metadata.name}&quot;)
+<div class="codehilite"><pre><span></span>HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -n app-storage -o jsonpath=&quot;{.items[0].metadata.name}&quot;)
 export HEKETI_CLI_SERVER=http://$(oc get route/heketi-storage -o jsonpath=&#39;{.spec.host}&#39;)
 export HEKETI_CLI_USER=admin
 export HEKETI_CLI_KEY=$(oc get pod/$HEKETI_POD -o jsonpath=&#39;{.spec.containers[0].env[?(@.name==&quot;HEKETI_ADMIN_KEY&quot;)].value}&#39;)
@@ -848,7 +848,7 @@ In order to request a volume from specific cluster you have to supply the cluste
 <p>Step 1 complete. The existing <code>StorageClass</code> is &ldquo;updated&rdquo;. <code>PVC</code> using the <code>StorageClass</code> <em>glusterfs-storage</em> will now specifically get served by the first CNS cluster, and only the first cluster.</p>
 <p>To relieve you from manually editing JSON files, we will again use some <code>jq</code> magic to generate the correct JSON structure for our second <code>StorageClass</code>, this time using the second CNS cluster&rsquo;s ID and a different name <code>glusterfs-storage-slow</code></p>
 <p>&#8680; Run the following command:</p>
-<div class="codehilite"><pre><span></span>oc get storageclass/glusterfs-storage -o json | jq &quot;.parameters=(.parameters + {\&quot;clusterid\&quot;: \&quot;$SECOND_CNS_CLUSTER\&quot;})&quot; | jq &#39;.metadata.name = &quot;glusterfs-storage-slow&quot;&#39; &gt; glusterfs-storage-slow.json&#39;
+<div class="codehilite"><pre><span></span>oc get storageclass/glusterfs-storage -o json | jq &quot;.parameters=(.parameters + {\&quot;clusterid\&quot;: \&quot;$SECOND_CNS_CLUSTER\&quot;})&quot; | jq &#39;.metadata.name = &quot;glusterfs-storage-slow&quot;&#39; &gt; glusterfs-storage-slow.json
 </pre></div>
 
 

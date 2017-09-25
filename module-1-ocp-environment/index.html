@@ -502,7 +502,7 @@ svc/router - 172.30.131.155 ports 80, 443, 1936
 infra-1.lab   Ready                      14m       v1.6.1+5115d708d7
 infra-2.lab   Ready                      14m       v1.6.1+5115d708d7
 infra-3.lab   Ready                      14m       v1.6.1+5115d708d7
-master.lab    Ready,SchedulingDisabled   19m       v1.6.1+5115d708d7
+master.lab    Ready                      19m       v1.6.1+5115d708d7
 node-1.lab    Ready                      14m       v1.6.1+5115d708d7
 node-2.lab    Ready                      14m       v1.6.1+5115d708d7
 node-3.lab    Ready                      14m       v1.6.1+5115d708d7
@@ -517,7 +517,7 @@ node-6.lab    Ready                      14m       v1.6.1+5115d708d7
 </pre></div>
 
 
-<p>You should see that 3 node have the label <code>role=infra</code> applied whereas the other 6 have <code>role=apps</code> set. The master node has scheduling disabled so it is not burdened with additional workloads.</p>
+<p>You should see that 3 node have the label <code>role=infra</code> applied whereas the other 6 have <code>role=apps</code> set.</p>
 <div class="codehilite"><pre><span></span>NAME          STATUS                     AGE       VERSION             LABELS
 infra-1.lab   Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-1.lab,role=infra
 infra-2.lab   Ready                      21m       v1.6.1+5115d708d7   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=infra-2.lab,role=infra
