@@ -305,8 +305,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-5-advanced/" title="Module 5 - Advanced Topics" class="md-nav__link">
-      Module 5 - Advanced Topics
+    <a href="../module-5-cns-for-infra/" title="Module 5 - Persistent Storage for Infrastructure" class="md-nav__link">
+      Module 5 - Persistent Storage for Infrastructure
     </a>
   </li>
 
@@ -408,14 +408,15 @@
                 
                 <div class="admonition summary">
 <p class="admonition-title">Overview</p>
-<p>This module introduces you to the pre-installed OpenShift Container Platform environment in it&rsquo;s default state. No Container-Native Storage components are in place. You may refer back to this chapter for a before-after comparison after completing Module 2 and Module 5.</p>
+<p>This module introduces you to the pre-installed OpenShift Container Platform environment in it&rsquo;s default state. No Container-Native Storage components are in place. You may refer back to this chapter for a before-after comparison after completing Module 2 and Module 5.<br />
+There are no pre-requisites for this module.</p>
 </div>
 <h2 id="the-openshift-lab-environment">The OpenShift Lab Environment<a class="headerlink" href="#the-openshift-lab-environment" title="Permanent link">#</a></h2>
 <p>Your lab environment has <em>OpenShift Container Platform 3.6</em> pre-installed. It consists of:</p>
 <ul>
 <li>1 Master node, running the master services and the router</li>
 <li>3 Infra nodes, running the registry</li>
-<li>7 App nodes, without any pods</li>
+<li>6 App nodes, without any pods</li>
 </ul>
 <p>The Master is the only node that&rsquo;s accessible via a public IP. All CLI commands in this lab will be done from this node.</p>
 <p>OpenShift has been configured with local authentication, the following users are defined:</p>
@@ -436,7 +437,7 @@
 <tr>
 <td>developer</td>
 <td>r3dh4t</td>
-<td>default SCC</td>
+<td>regular user</td>
 </tr>
 </tbody>
 </table>
@@ -496,7 +497,7 @@ svc/router - 172.30.131.155 ports 80, 443, 1936
 </pre></div>
 
 
-<p>You should see 7 nodes in <strong>READY</strong> state:</p>
+<p>You should see 9 nodes in <strong>READY</strong> state:</p>
 <div class="codehilite"><pre><span></span>NAME          STATUS                     AGE       VERSION
 infra-1.lab   Ready                      14m       v1.6.1+5115d708d7
 infra-2.lab   Ready                      14m       v1.6.1+5115d708d7
@@ -537,7 +538,7 @@ node-6.lab    Ready                      21m       v1.6.1+5115d708d7   beta.kube
 </pre></div>
 
 
-<p>There is a single instance of the registry because there is no shared storage in this environment:</p>
+<p>There is a single instance of the registry because there is so far no shared storage in this environment:</p>
 <div class="codehilite"><pre><span></span>Name:       docker-registry
 Namespace:  default
 Created:    16 minutes ago
@@ -623,7 +624,7 @@ This prevents the registry from being scaled out and you will loose all the data
 
 
 <p>For operating OpenShift in production environments these services however are very valuable. By nature they do not need shared storage like CNS can provide. They however do <strong>benefit from the scale-out capabilities of CNS</strong> which typically offers capacity beyond what&rsquo;s available in a single infrastructure node - these nodes will run logging and Metrics components in OpenShift.</p>
-<p>Although not supported until the official release of CNS 3.6, in Module 6 you will get a general idea of how Logging and Metrics are deployed with CNS.</p>
+<p>Although not supported until the official release of CNS 3.6, in Module 5 you will get a general idea of how Logging and Metrics are deployed with CNS.</p>
 <h4 id="login-via-the-web-ui">Login via the Web UI<a class="headerlink" href="#login-via-the-web-ui" title="Permanent link">#</a></h4>
 <p>Lastly, you can also review the environment by logging on to the Web UI of OpenShift. You can retrieve the URL from this lab environments user interface as described in the <a href="../../">Overview section</a> section.</p>
 <p>&#8680; Point your browser to the URL and log in as user <code>operator</code> with password <code>r3dh4t</code>:</p>

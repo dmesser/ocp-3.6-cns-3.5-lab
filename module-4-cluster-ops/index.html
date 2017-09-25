@@ -285,8 +285,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../module-5-advanced/" title="Module 5 - Advanced Topics" class="md-nav__link">
-      Module 5 - Advanced Topics
+    <a href="../module-5-cns-for-infra/" title="Module 5 - Persistent Storage for Infrastructure" class="md-nav__link">
+      Module 5 - Persistent Storage for Infrastructure
     </a>
   </li>
 
@@ -369,10 +369,11 @@
                 <div class="admonition summary">
 <p class="admonition-title">Overview</p>
 <p>In this module you be introduced to some standard operational procedures. You will learn how to run multiple GlusterFS <em>Trusted Storage Pools</em> on OpenShift and how to expand and maintain deployments.</p>
-<p>Herein, we will use the term pool (GlusterFS terminology) and cluster (heketi terminology) interchangeably.</p>
+<p>Herein, we will use the term pool (GlusterFS terminology) and cluster (<code>heketi</code> terminology) interchangeably.</p>
+<p>This module requires that you have completed <a href="../../module-2-deploy-cns/">Module 2</a>.</p>
 </div>
 <h2 id="running-multiple-glusterfs-pools">Running multiple GlusterFS pools<a class="headerlink" href="#running-multiple-glusterfs-pools" title="Permanent link">#</a></h2>
-<p>In the previous modules a single GlusterFS clusters was used to supply <em>PersistentVolumes</em> to applications. CNS allows for multiple clusters to run in a single OpenShift deployment.</p>
+<p>In the previous modules a single GlusterFS cluster was used to supply <code>PersistentVolumes</code> to applications. CNS allows for multiple clusters to run in a single OpenShift deployment, controlled by a central <code>heketi</code> API:</p>
 <p>There are several use cases for this:</p>
 <ol>
 <li>
@@ -382,7 +383,7 @@
 <p>Provide multiple performance tiers of CNS, i.e. HDD-based vs. SSD-based</p>
 </li>
 <li>
-<p>Run a OpenShift across large geo-graphical distances where latency prohibits synchronous data replication</p>
+<p>Run OpenShift across large geo-graphical distances with a CNS cluster per region whereas otherwise latency prohibits synchronous data replication in  a stretched setup</p>
 </li>
 </ol>
 <div class="admonition note">
@@ -398,7 +399,7 @@
 
 <p>Your deployment has 6 OpenShift Application Nodes in total, <code>node-1</code>, <code>node-2</code> and <code>node-3</code> currently setup running CNS. We will now set up a <strong>second CNS cluster</strong>* using <code>node-4</code>, <code>node-5</code> and <code>node-6</code>.</p>
 <p>First we need to make sure the firewall on those systems is updated. Without <code>openshift-ansible</code> automating CNS deployment the ports necessary for running GlusterFS are not yet opened.</p>
-<p>&#8680; Next, create a file called <code>configure-firewall.yml</code> and copy&amp;paste the following contents:</p>
+<p>&#8680; First, create a file called <code>configure-firewall.yml</code> and copy&amp;paste the following contents:</p>
 <p><kbd>configure-firewall.yml:</kbd></p>
 <div class="codehilite"><pre><span></span><span class="nn">---</span>
 
@@ -474,7 +475,7 @@ oc label node/node-6.lab glusterfs=storage-host
 </pre></div>
 
 
-<p>The label will be used to control GlusterFS pod placement and availability. They are part of a DaemonSet definition that is looking for hosts with this particular label.</p>
+<p>The label will be used to control GlusterFS pod placement and availability. They are part of a <code>DaemonSet</code> definition that is looking for hosts with this particular label.</p>
 <p>&#8680; Wait for all pods to show <code>1/1</code> in the <code>READY</code> column:</p>
 <div class="codehilite"><pre><span></span> oc get pods -o wide -n app-storage
 </pre></div>
@@ -493,7 +494,7 @@ oc label node/node-6.lab glusterfs=storage-host
 
 <p>You will see that now also app nodes <code>node-4</code>, <code>node-5</code> and <code>node-6</code> run GlusterFS pods, although they are unitialized and not yet ready to use by CNS yet.</p>
 <p>For manual bulk import of new nodes like this, a JSON topology file is used which includes the existing cluster as well as the new, second cluster with a separate set of nodes.</p>
-<p>&#8680; Create a new file named 2-clusters-topology.json with the content below (use copy&amp;paste):</p>
+<p>&#8680; Create a new file named <code>2-clusters-topology.json</code> with the content below (use copy&amp;paste):</p>
 <p><kbd>2-clusters-topology.json:</kbd></p>
 <div class="codehilite"><pre><span></span><span class="p">{</span>
     <span class="nt">&quot;clusters&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -607,7 +608,7 @@ oc label node/node-6.lab glusterfs=storage-host
 
 
 <p>The file contains the same content as the dynamically generated JSON structure <code>openshift-ansible</code> used, but with a second cluster specification (beginning at the highlighted line).</p>
-<p>When loading this topology to heketi, it will recognize the existing cluster (leaving it unchanged) and start creating the new one, with the same bootstrapping process used to initialize the first cluster.<br />
+<p>When loading this topology to <code>heketi</code>, it will recognize the existing cluster (leaving it unchanged) and start creating the new one, with the same bootstrapping process used to initialize the first cluster.<br />
 That is: the <code>glusterd</code> process running in the pods will form a new 3-node cluster and the supplied block storage device <code>/dev/xvdc</code> will be formatted.</p>
 <p>&#8680; Prepare the heketi CLI tool like previously in <a href="../module-2-deploy-cns/#heketi-env-setup">Module 2</a>.</p>
 <div class="codehilite"><pre><span></span>HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -o jsonpath=&quot;{.items[0].metadata.name}&quot;)
@@ -1563,18 +1564,18 @@ nfs.disable: on
 </pre></div>
 
 
-<p>&#8680; Safe the hightlighted brick directory in an environment variable:</p>
+<p>&#8680; Safe the brick directory served by <code>node-6.lab</code> in an environment variable:</p>
 <div class="codehilite"><pre><span></span>BRICK_DIR=$(echo -n $(oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME | grep $NODE_IP_6) | cut -d &#39;:&#39; -f 3 | tr -d $&#39;\r&#39; )
 echo $BRICK_DIR
 </pre></div>
 
 
-<p>&#8680; Using the full path of <code>Brick3</code> we cross-check with heketi&rsquo;s topology on which device it is based on:</p>
+<p>&#8680; Using the full path of brick you can cross-check with heketi&rsquo;s topology on which device it is based on:</p>
 <div class="codehilite"><pre><span></span>heketi-cli topology info | grep -B2 $BRICK_DIR
 </pre></div>
 
 
-<p>Among other data grep will show the physical backing device of this brick&rsquo;s mount path:</p>
+<p>Among other data <code>grep</code> will show the physical backing device of this brick&rsquo;s mount path:</p>
 <div class="codehilite"><pre><span></span><span class="hll">Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):499     Used (GiB):201     Free (GiB):298
 </span>            Bricks:
                 Id:a6c92b6a07983e9b8386871f5b82497f   Size (GiB):200     Path: /var/lib/heketi/mounts/vg_62cbae7a3f6faac38a551a614419cca3/brick_a6c92b6a07983e9b8386871f5b82497f/brick
@@ -1586,26 +1587,26 @@ echo $BRICK_DIR
 <p class="admonition-title">Note</p>
 <p>The device might be different for you. This is subject to heketi&rsquo;s dynamic scheduling.</p>
 </div>
-<p>Safe the device&rsquo;s ID in <code>heketi</code> use the following definition of an environment variable:</p>
-<div class="codehilite"><pre><span></span>FAILED_DEVICE=$(heketi-cli topology info --json | jq &quot;.clusters[] | select(.id==\&quot;$FIRST_CNS_CLUSTER\&quot;) | .nodes[] | select(.hostnames.manage[0] == \&quot;node-6.lab\&quot;) | .devices &quot; | jq -r &quot;.[] | select (.bricks[0].path ==\&quot;$BRICK_DIR\&quot;) | .id&quot;)
+<p>Safe the <code>heketi</code> device&rsquo;s ID from the brick on <code>node-6.lab</code> using the following definition of an environment variable, again by leveraging <code>jq</code> to parse the JSON output of <code>heketi topology info</code>:</p>
+<div class="codehilite"><pre><span></span>FAILED_DEVICE_ID=$(heketi-cli topology info --json | \ jq &quot;.clusters[] | select(.id==\&quot;$FIRST_CNS_CLUSTER\&quot;) | .nodes[] | select(.hostnames.manage[0] == \&quot;node-6.lab\&quot;) | .devices &quot; | jq -r &quot;.[] | select (.bricks[0].path ==\&quot;$BRICK_DIR\&quot;) | .id&quot;)
 </pre></div>
 
 
-<p>&#8680; Check programmatically the device that we have selected:</p>
-<div class="codehilite"><pre><span></span>echo $FAILED_DEVICE
+<p>&#8680; Check the device ID that you have selected:</p>
+<div class="codehilite"><pre><span></span>echo $FAILED_DEVICE_ID
 </pre></div>
 
 
-<p>Let&rsquo;s assume the device that makes up the brick from the <code>PVC</code> just created on <code>node-6.lab</code> has failed and needs to be replaced.</p>
+<p>Let&rsquo;s assume this device on <code>node-6.lab</code> has failed and needs to be replaced.</p>
 <p>In such a case you&rsquo;ll take the device&rsquo;s ID and go through the following steps:</p>
 <p>&#8680; First, disable the device in heketi</p>
-<div class="codehilite"><pre><span></span>heketi-cli device disable $FAILED_DEVICE
+<div class="codehilite"><pre><span></span>heketi-cli device disable $FAILED_DEVICE_ID
 </pre></div>
 
 
 <p>This will take the device offline and exclude it from future volume creation requests.</p>
 <p>&#8680; Now remove the device in heketi</p>
-<div class="codehilite"><pre><span></span>heketi-cli device remove $FAILED_DEVICE
+<div class="codehilite"><pre><span></span>heketi-cli device remove $FAILED_DEVICE_ID
 </pre></div>
 
 
@@ -1613,7 +1614,7 @@ echo $BRICK_DIR
 That&rsquo;s because it will trigger a brick-replacement in GlusterFS. The command will block and heketi in the background will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.<br />
 The new bricks, if possible, will automatically be created in zones different from the remaining bricks to maintain equal balancing and cross-zone availability.</p>
 <p>&#8680; Finally, you are now able to delete the device in heketi entirely</p>
-<div class="codehilite"><pre><span></span>heketi-cli device delete $FAILED_DEVICE
+<div class="codehilite"><pre><span></span>heketi-cli device delete $FAILED_DEVICE_ID
 </pre></div>
 
 
@@ -1670,13 +1671,13 @@ echo $NEW_DEVICE
           </a>
         
         
-          <a href="../module-5-advanced/" title="Module 5 - Advanced Topics" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../module-5-cns-for-infra/" title="Module 5 - Persistent Storage for Infrastructure" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Module 5 - Advanced Topics
+                Module 5 - Persistent Storage for Infrastructure
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
