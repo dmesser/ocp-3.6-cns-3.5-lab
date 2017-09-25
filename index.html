@@ -235,8 +235,8 @@
 
 
   <li class="md-nav__item">
-    <a href="module-1-ocp-in-5/" title="Module 1 - OpenShift in 5 Minutes" class="md-nav__link">
-      Module 1 - OpenShift in 5 Minutes
+    <a href="module-1-ocp-environment/" title="Module 1 - Examine OpenShift Installation" class="md-nav__link">
+      Module 1 - Examine OpenShift Installation
     </a>
   </li>
 
@@ -259,8 +259,8 @@
 
 
   <li class="md-nav__item">
-    <a href="module-3-using-cns/" title="Module 3 - Using Persistent Storage" class="md-nav__link">
-      Module 3 - Using Persistent Storage
+    <a href="module-3-cns-for-apps/" title="Module 3 - Persistent Storage for Apps" class="md-nav__link">
+      Module 3 - Persistent Storage for Apps
     </a>
   </li>
 
@@ -365,7 +365,8 @@
                 
                 
                 <h1 id="welcome-to-container-native-storage-hands-on-lab">Welcome to Container-Native Storage Hands-on Lab<a class="headerlink" href="#welcome-to-container-native-storage-hands-on-lab" title="Permanent link">#</a></h1>
-<p>This lab guide is designed for self-paced walk-through of the &ldquo;Container-Native Storage on OpenShift 3.5&rdquo; hosted on <a href="https://redhat.qwiklab.com">redhat.qwkilab.com</a>. This lab gives you access to a fully functional OpenShift Container Platform 3.5 environment hosted on AWS.</p>
+<p>This lab guide is designed for self-paced walk-through of the &ldquo;Container-Native Storage 3.5 on OpenShift 3.6&rdquo; hosted on <a href="https://redhat.qwiklab.com">redhat.qwkilab.com</a>. This lab gives you access to a fully functional OpenShift Container Platform 3.6 environment hosted on AWS.<br />
+This is not a tutorial on OpenShift Container Platform. Basic familiarity is assumed.</p>
 <h4 id="pre-requisites">Pre-requisites<a class="headerlink" href="#pre-requisites" title="Permanent link">#</a></h4>
 <p>For this lab you need to fulfill the following pre-requisites:</p>
 <ul>
@@ -465,7 +466,7 @@
 <p>The Master node also functions as your <em>jumpserver</em>. Once you are logged on to it you have access to all systems with the <code>ec2-user</code> who has passwordless authentication and passwordless sudo capabilities set up everywhere.</p>
 <hr />
 <h4 id="lab-environment-ip-addresses">Lab Environment IP addresses<a class="headerlink" href="#lab-environment-ip-addresses" title="Permanent link">#</a></h4>
-<p>The lab environment has 7 nodes in total with stable, internal IP addresses and <code>/etc/hosts</code>-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet via it&rsquo;s public IP however.</p>
+<p>The lab environment has 11 nodes in total with stable, internal IP addresses and <code>/etc/hosts</code>-based DNS resolution. All nodes have internet access. Only the Master can be reached from the Internet via it&rsquo;s public IP however.</p>
 <table>
 <thead>
 <tr>
@@ -481,34 +482,54 @@
 <td>10.0.1.100</td>
 </tr>
 <tr>
+<td>OpenShift Infra Node 1</td>
+<td>infra-1.lab</td>
+<td>10.0.2.101</td>
+</tr>
+<tr>
+<td>OpenShift Infra Node 2</td>
+<td>infra-2.lab</td>
+<td>10.0.3.102</td>
+</tr>
+<tr>
+<td>OpenShift Infra Node 3</td>
+<td>infra-3.lab</td>
+<td>10.0.4.103</td>
+</tr>
+<tr>
 <td>OpenShift App Node 1</td>
 <td>node-1.lab</td>
-<td>10.0.2.101</td>
+<td>10.0.2.201</td>
 </tr>
 <tr>
 <td>OpenShift App Node 2</td>
 <td>node-2.lab</td>
-<td>10.0.3.102</td>
+<td>10.0.3.202</td>
 </tr>
 <tr>
 <td>OpenShift App Node 3</td>
 <td>node-3.lab</td>
-<td>10.0.4.103</td>
+<td>10.0.4.203</td>
 </tr>
 <tr>
 <td>OpenShift App Node 4</td>
 <td>node-4.lab</td>
-<td>10.0.2.104</td>
+<td>10.0.4.204</td>
 </tr>
 <tr>
 <td>OpenShift App Node 5</td>
 <td>node-5.lab</td>
-<td>10.0.3.105</td>
+<td>10.0.3.205</td>
 </tr>
 <tr>
 <td>OpenShift App Node 6</td>
 <td>node-6.lab</td>
-<td>10.0.4.106</td>
+<td>10.0.4.206</td>
+</tr>
+<tr>
+<td>OpenShift App Node 7</td>
+<td>node-7.lab</td>
+<td>10.0.4.207</td>
 </tr>
 </tbody>
 </table>
@@ -522,7 +543,7 @@
 <li>many of the commands/files don&rsquo;t contain environment-specific content, there is a <kbd>copy-to-clipboard</kbd> button on the right end of every code block for your convenience</li>
 <li>keep a text editor open to store some outputs that are specific to your environment like the URL and public IP of the Master</li>
 <li>this lab uses nip.io for DNS resolution of the public IP specific to your lab, keep that in mind when working with URLs in the lab</li>
-<li>if you want to look at this lab guide in a separate window: this documentation is hosted at <a href="https://dmesser.github.io/cns-lab-sa-summit/" target="_blank">https://dmesser.github.io/cns-lab-sa-summit/</a></li>
+<li>if you want to look at this lab guide in a separate window: this documentation is hosted at <a href="https://dmesser.github.io/ocp-3.6-cns-3.5-lab/" target="_blank">https://dmesser.github.io/ocp-3.6-cns-3.5-lab</a></li>
 </ul>
                 
                   
@@ -543,13 +564,13 @@
       <nav class="md-footer-nav__inner md-grid">
         
         
-          <a href="module-1-ocp-in-5/" title="Module 1 - OpenShift in 5 Minutes" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="module-1-ocp-environment/" title="Module 1 - Examine OpenShift Installation" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Module 1 - OpenShift in 5 Minutes
+                Module 1 - Examine OpenShift Installation
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
