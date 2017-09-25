@@ -5,8 +5,8 @@
 
     This module requires that you have completed [Module 2](../module-2-deploy-cns/).
 
-Running multiple GlusterFS pools
---------------------------------
+Running multiple storage pools
+------------------------------
 
 In the previous modules a single GlusterFS cluster was used to supply `PersistentVolumes` to applications. CNS allows for multiple clusters to run in a single OpenShift deployment, controlled by a central `heketi` API:
 
@@ -255,7 +255,7 @@ That is: the `glusterd` process running in the pods will form a new 3-node clust
 &#8680; Prepare the heketi CLI tool like previously in [Module 2](module-2-deploy-cns.md#heketi-env-setup).
 
 ~~~~
-HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -o jsonpath="{.items[0].metadata.name}")
+HEKETI_POD=$(oc get pods -l glusterfs=heketi-storage-pod -n app-storage -o jsonpath="{.items[0].metadata.name}")
 export HEKETI_CLI_SERVER=http://$(oc get route/heketi-storage -o jsonpath='{.spec.host}')
 export HEKETI_CLI_USER=admin
 export HEKETI_CLI_KEY=$(oc get pod/$HEKETI_POD -o jsonpath='{.spec.containers[0].env[?(@.name=="HEKETI_ADMIN_KEY")].value}')
@@ -470,7 +470,7 @@ To relieve you from manually editing JSON files, we will again use some `jq` mag
 
 &#8680; Run the following command:
 
-    oc get storageclass/glusterfs-storage -o json | jq ".parameters=(.parameters + {\"clusterid\": \"$SECOND_CNS_CLUSTER\"})" | jq '.metadata.name = "glusterfs-storage-slow"' > glusterfs-storage-slow.json'
+    oc get storageclass/glusterfs-storage -o json | jq ".parameters=(.parameters + {\"clusterid\": \"$SECOND_CNS_CLUSTER\"})" | jq '.metadata.name = "glusterfs-storage-slow"' > glusterfs-storage-slow.json
 
 This creates a file, looking similar to the below:
 
