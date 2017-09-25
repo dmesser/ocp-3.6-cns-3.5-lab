@@ -394,6 +394,10 @@ Resources:
         ToPort: 4789
         CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
       - IpProtocol: tcp
+        FromPort: 9200
+        ToPort: 9200
+        CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
+      - IpProtocol: tcp
         FromPort: 10250
         ToPort: 10250
         CidrIp: !FindInMap [ Subnet2Cidr, vpc, cidr ]
