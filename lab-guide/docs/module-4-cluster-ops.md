@@ -1211,18 +1211,18 @@ performance.readdir-ahead: on
 nfs.disable: on
 ```
 
-&#8680; Safe the hightlighted brick directory in an environment variable:
+&#8680; Safe the brick directory served by `node-6.lab` in an environment variable:
 
 ~~~~
 BRICK_DIR=$(echo -n $(oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME | grep $NODE_IP_6) | cut -d ':' -f 3 | tr -d $'\r' )
 echo $BRICK_DIR
 ~~~~
 
-&#8680; Using the full path of `Brick3` we cross-check with heketi's topology on which device it is based on:
+&#8680; Using the full path of brick you can cross-check with heketi's topology on which device it is based on:
 
     heketi-cli topology info | grep -B2 $BRICK_DIR
 
-Among other data grep will show the physical backing device of this brick's mount path:
+Among other data `grep` will show the physical backing device of this brick's mount path:
 
 ``` hl_lines="1"
 Id:62cbae7a3f6faac38a551a614419cca3   Name:/dev/xvdd           State:online    Size (GiB):499     Used (GiB):201     Free (GiB):298
@@ -1235,27 +1235,27 @@ In this case it's `/dev/xvdd` of `node-6.lab`.
 !!! Note:
     The device might be different for you. This is subject to heketi's dynamic scheduling.
 
-Safe the device's ID in `heketi` use the following definition of an environment variable:
+Safe the `heketi` device's ID from the brick on `node-6.lab` using the following definition of an environment variable, again by leveraging `jq` to parse the JSON output of `heketi topology info`:
 
-    FAILED_DEVICE=$(heketi-cli topology info --json | jq ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .devices " | jq -r ".[] | select (.bricks[0].path ==\"$BRICK_DIR\") | .id")
+    FAILED_DEVICE_ID=$(heketi-cli topology info --json | \ jq ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .devices " | jq -r ".[] | select (.bricks[0].path ==\"$BRICK_DIR\") | .id")
 
-&#8680; Check programmatically the device that we have selected:
+&#8680; Check the device ID that you have selected:
 
-    echo $FAILED_DEVICE
+    echo $FAILED_DEVICE_ID
 
-Let's assume the device that makes up the brick from the `PVC` just created on `node-6.lab` has failed and needs to be replaced.
+Let's assume this device on `node-6.lab` has failed and needs to be replaced.
 
 In such a case you'll take the device's ID and go through the following steps:
 
 &#8680; First, disable the device in heketi
 
-    heketi-cli device disable $FAILED_DEVICE
+    heketi-cli device disable $FAILED_DEVICE_ID
 
 This will take the device offline and exclude it from future volume creation requests.
 
 &#8680; Now remove the device in heketi
 
-    heketi-cli device remove $FAILED_DEVICE
+    heketi-cli device remove $FAILED_DEVICE_ID
 
 You will notice this command takes a while.
 That's because it will trigger a brick-replacement in GlusterFS. The command will block and heketi in the background will transparently create new bricks for each brick on the device to be deleted. The replacement operation will be conducted with the new bricks replacing all bricks on the device to be deleted.
@@ -1263,15 +1263,15 @@ The new bricks, if possible, will automatically be created in zones different fr
 
 &#8680; Finally, you are now able to delete the device in heketi entirely
 
-    heketi-cli device delete $FAILED_DEVICE
+    heketi-cli device delete $FAILED_DEVICE_ID
 
 &#8680; Check again the volumes topology directly from GlusterFS
 
     oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME
 
-You will notice that `Brick3` is now a different mount path, but on the same node.
+You will notice that the brick from `node-6.lab` is now a different mount path, because it was backed by a new device.
 
-&#8680; Use the following to programmatically determine the new device:
+&#8680; Use the following to programmatically determine the new device heketi used to replace the one you just deleted:
 
 ~~~~
 NEW_BRICK_DIR=$(echo -n $(oc rsh $POD_NUMBER_SIX gluster vol info $LARGE_GLUSTER_VOLUME | grep $NODE_IP_6) | cut -d ':' -f 3 | tr -d $'\r' )
