@@ -346,7 +346,9 @@ This takes about 1-2 minutes to complete. However the deployment is not quite fi
 
 &#8680; Use the `watch` command to wait for the `hawkular-metrics` pod to be in `READY` state.
 
-    oc get pods -l name=hawkular-metrics
+    watch oc get pods -l name=hawkular-metrics
+
+Exit out of the watch mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd>
 
 It will be ready when the database (Cassandra) finished initializing. Alternatively in the UI observe the deployment in the **Overview** pane, focussing on the `hawkular-metrics` deployment:
 
