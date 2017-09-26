@@ -761,7 +761,7 @@ logging-es-data-master-kcbtgll3-1-vb34h   1/1       Running   0          11m
 </pre></div>
 
 
-<p>List the Kibana pod:</p>
+<p>&#8680; List the Kibana pod:</p>
 <div class="codehilite"><pre><span></span>oc get pods -l component=kibana
 </pre></div>
 
@@ -769,6 +769,26 @@ logging-es-data-master-kcbtgll3-1-vb34h   1/1       Running   0          11m
 <p>This pod runs the Kibana front-end to query and search through logs:</p>
 <div class="codehilite"><pre><span></span>NAME                     READY     STATUS    RESTARTS   AGE
 logging-kibana-1-1c2dj   2/2       Running   0          11m
+</pre></div>
+
+
+<p>&#8680; List all Fluentd pods:</p>
+<div class="codehilite"><pre><span></span>oc get pods -l component=fluentd
+</pre></div>
+
+
+<p>These pods run as part of a <code>DaemonSet</code> and are responsible for collecting and shipping the various logs from all nodes to the ElasticSearch instance.</p>
+<div class="codehilite"><pre><span></span>NAME                    READY     STATUS    RESTARTS   AGE
+logging-fluentd-3k7nh   1/1       Running   0          5m
+logging-fluentd-473cf   1/1       Running   0          4m
+logging-fluentd-9kgsv   1/1       Running   0          5m
+logging-fluentd-h8fhb   1/1       Running   0          4m
+logging-fluentd-pb6h8   1/1       Running   0          4m
+logging-fluentd-q6lv4   1/1       Running   0          4m
+logging-fluentd-r455n   1/1       Running   0          4m
+logging-fluentd-v34ll   1/1       Running   0          5m
+logging-fluentd-vxnd3   1/1       Running   0          5m
+logging-fluentd-wf3lr   1/1       Running   0          5m
 </pre></div>
 
 
