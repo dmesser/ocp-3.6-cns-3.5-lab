@@ -789,8 +789,9 @@ Alternatively, in the UI, wait for the `file-uploader` application reach 3 healt
 
 On the command line this will look like this:
 
+    oc get pods -l app=file-uploader
+
 ~~~~
-oc get pods -l app=file-uploader
 NAME                    READY     STATUS    RESTARTS   AGE
 file-uploader-1-98fwm   1/1       Running   0          2m
 file-uploader-1-g7b0h   1/1       Running   0          8m

@@ -509,6 +509,13 @@ Again note the `clusterid` in the `parameters` section referencing the second cl
 
     oc create -f glusterfs-storage-slow.json
 
+This creates the `StorageClass` named `glusterfs-storage-slow` and because we copied the settings from the first one it's now also set as system-wide default (yes, OpenShift allows you to do that).
+
+&#8680; Use the `oc patch` command to fix this:
+
+    oc patch storageclass glusterfs-storage-slow \
+    -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "false"}}}'
+
 &#8680; Display all `StorageClass` objects to verify:
 
     oc get storageclass
@@ -516,9 +523,9 @@ Again note the `clusterid` in the `parameters` section referencing the second cl
 That's it. You now have 2 `StorageClass` definitions, one for each CNS cluster, managed by the same `heketi` instance.
 
 ~~~~
-NAME                     TYPE
-glusterfs-storage        kubernetes.io/glusterfs
-glusterfs-storage-slow   kubernetes.io/glusterfs
+NAME                          TYPE
+glusterfs-storage (default)   kubernetes.io/glusterfs
+glusterfs-storage-slow        kubernetes.io/glusterfs
 ~~~~
 
 Let's verify both *StorageClasses* are working as expected:
@@ -762,7 +769,7 @@ Device 604d2eb15a5ca510ff3fc5ecf912d3c0 deleted
 Device 7736bd0cb6a84540860303a6479cacb2 deleted
 ~~~~
 
-&#8680; Since the nodes have no devices anymore we can delete those as well:
+&#8680; Since the nodes have no devices anymore we can delete those as well (you can't delete a node with a device still attached):
 
     for node in ${NODES} ; do heketi-cli node delete $node ; done
 
@@ -774,7 +781,7 @@ Node ed9c045f10a5c1f9057d07880543a461 deleted
 Node fd6ddca52c788e2d764fada1f4da2ce4 deleted
 ~~~~
 
-&#8680; Finally, without any nodes, you can also delete the second cluster:
+&#8680; Finally, without any nodes in the second cluster, you can also delete it (it won't work if there are nodes left):
 
     heketi-cli cluster delete $SECOND_CNS_CLUSTER
 
@@ -805,7 +812,7 @@ Contrary to the output of these commands the label `glusterfs` is actually remov
 !!! Note:
     It can take up to 2 minutes for the pods to terminate.
 
-You should be back down to 3 GlusterFS pods.
+You should be back down to 3 GlusterFS pods, e.g.
 
 ~~~~
 NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
@@ -960,7 +967,6 @@ This confirms all GlusterFS pods are ready to receive remote commands:
     glusterfs-8nrn0   1/1       Running   0          4m        10.0.2.104   node-4.lab
     glusterfs-jbvdk   1/1       Running   0          5h        10.0.3.102   node-2.lab
     glusterfs-rchtr   1/1       Running   0          5h        10.0.4.103   node-3.lab
-    heketi-1-tn0s9    1/1       Running   0          5h        10.130.2.3   node-6.lab
 
 &#8680; Ensure the environment variables for operating `heketi-cli` are still in place:
 
@@ -1175,7 +1181,8 @@ The GlusterFS volume name as it used by GlusterFS:
     No events.
 ```
 
-Let's programmatically determine and safe the relevant information: the `PV` name, the respective GlusterFS volume's, the name of the GlusterFS pod on the node `node-6.lab` and that node's id in `heketi` and IP address in environment variables:
+Let's programmatically determine and safe the relevant information so you don't have to type all this stuff.
+We need: the `PV` name, the respective GlusterFS volume's, the name of the GlusterFS pod on the node `node-6.lab` and that node's id in `heketi` and IP address in environment variables:
 
 ~~~~
 LARGE_PV=$(oc get pvc/my-large-container-store -o jsonpath="{.spec.volumeName}")
@@ -1243,9 +1250,11 @@ In this case it's `/dev/xvdd` of `node-6.lab`.
 !!! Note:
     The device might be different for you. This is subject to heketi's dynamic scheduling.
 
+We will now proceed to disable and delete this device. For that we have to find and use it's UUID in `heketi`.
+
 Safe the `heketi` device's ID from the brick on `node-6.lab` using the following definition of an environment variable, again by leveraging `jq` to parse the JSON output of `heketi topology info`:
 
-    FAILED_DEVICE_ID=$(heketi-cli topology info --json | \ jq ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .devices " | jq -r ".[] | select (.bricks[0].path ==\"$BRICK_DIR\") | .id")
+    FAILED_DEVICE_ID=$(heketi-cli topology info --json | jq ".clusters[] | select(.id==\"$FIRST_CNS_CLUSTER\") | .nodes[] | select(.hostnames.manage[0] == \"node-6.lab\") | .devices " | jq -r ".[] | select (.bricks[0].path ==\"$BRICK_DIR\") | .id")
 
 &#8680; Check the device ID that you have selected:
 
