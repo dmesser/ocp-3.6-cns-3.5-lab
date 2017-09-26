@@ -779,9 +779,7 @@ Resources:
               - ansible all -m shell -a "modprobe dm-thin-pool"
               - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml ; /opt/aws/bin/cfn-signal -e $? '${OpenShiftInstallerHandle}'"
               - oc --config=/home/ec2-user/.kube/config adm policy add-cluster-role-to-user cluster-admin operator
-              - "oc --config=/home/ec2-user/.kube/config patch namespace default -p '{\"metadata\": {\"annotations\": {\"openshift.io/node-selector\": \"role=infra\"}}}'"
-              - ansible masters -m lineinfile -a "line='  defaultNodeSelector: role=app' regexp='defaultNodeSelector' dest=/etc/origin/master/master-config.yaml"
-              - "ansible masters -m service -a 'name=atomic-openshift-master state=restarted' ; /opt/aws/bin/cfn-signal -e $? '${OpenShiftServiceHandle}'"
+              - oadm --config=/home/ec2-user/.kube/config manage-node master.lab --schedulable=false
 
   OpenShiftInstallerHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
@@ -791,16 +789,6 @@ Resources:
     DependsOn: MasterNode
     Properties:
       Handle: !Ref OpenShiftInstallerHandle
-      Timeout: '1800'
-
-  OpenShiftServiceHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-
-  OpenShiftService:
-    Type: AWS::CloudFormation::WaitCondition
-    DependsOn: MasterNode
-    Properties:
-      Handle: !Ref OpenShiftServiceHandle
       Timeout: '1800'
 
   MasterNodePublicIP:
