@@ -469,9 +469,25 @@ infra-2.lab | SUCCESS =&gt; {
 </pre></div>
 
 
+<p>&#8680; Enable the Master to be schedulable:</p>
+<div class="codehilite"><pre><span></span>oadm manage-node master.lab --schedulable=true
+</pre></div>
+
+
+<div class="admonition important">
+<p class="admonition-title">Why does the master need to be schedulable?</p>
+<p>This is a very simple lab environment :)<br />
+There is no sophisticated external load-balancing across the infrastructure nodes in place.<br />
+That&rsquo;s why the OpenShift router will run on the master node. The router will get re-deployed when executing the following playbook.</p>
+</div>
 <p>&#8680; Run the CNS registry playbook that ships with <code>openshift-ansible</code>:</p>
 <div class="codehilite"><pre><span></span>ansible-playbook -i /etc/ansible/ocp-with-glusterfs-registry \
 /usr/share/ansible/openshift-ansible/playbooks/byo/openshift-glusterfs/registry.yml
+</pre></div>
+
+
+<p>&#8680; Disable scheduling on the Master again:</p>
+<div class="codehilite"><pre><span></span>oadm manage-node master.lab --schedulable=true
 </pre></div>
 
 
