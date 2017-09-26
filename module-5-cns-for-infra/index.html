@@ -701,10 +701,11 @@ With these settings in place <code>openshift-ansible</code> will request <code>P
 
 <p>This takes about 1-2 minutes to complete. However the deployment is not quite finished yet.</p>
 <p>&#8680; Use the <code>watch</code> command to wait for the <code>hawkular-metrics</code> pod to be in <code>READY</code> state.</p>
-<div class="codehilite"><pre><span></span>oc get pods -l name=hawkular-metrics
+<div class="codehilite"><pre><span></span>watch oc get pods -l name=hawkular-metrics
 </pre></div>
 
 
+<p>Exit out of the watch mode with: <kbd>Ctrl</kbd> + <kbd>c</kbd></p>
 <p>It will be ready when the database (Cassandra) finished initializing. Alternatively in the UI observe the deployment in the <strong>Overview</strong> pane, focussing on the <code>hawkular-metrics</code> deployment:</p>
 <p><a href="../img/waiting_for_metrics_on_cns.png"><img alt="Waiting on OpenShift Metrics to be deployed" src="../img/waiting_for_metrics_on_cns.png" /></a></p>
 <p>After 2-3 minutes all 3 pods, that make up the OpenShift Metrics service, should be ready:</p>
