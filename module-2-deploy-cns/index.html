@@ -668,7 +668,7 @@ http://<em>heketi-storage-app-storage.cloudapps.35.158.172.55.nip.io</em></p>
 <p>This verifies heketi is running. To ensure it&rsquo;s functional and has been set up with authentication we are going to query it with the heketi CLI client.</p>
 <p>First, the client needs to know the heketi API URL above and the password for the built-in <code>admin</code> user.</p>
 <p><a name="heketi-env-setup"></a></p>
-<p>&#8680; View the generated <code>admin</code> password for <em>heketi</em> from the pod configuration:</p>
+<p>&#8680; View the generated <code>admin</code> password for <em>heketi</em> from the pod configuration using <strong>YOUR specific pod name</strong>, e.g.</p>
 <div class="codehilite"><pre><span></span>oc describe pod/heketi-storage-1-h27cg | grep HEKETI_ADMIN_KEY
 </pre></div>
 
