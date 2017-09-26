@@ -889,15 +889,22 @@ In order to request a volume from specific cluster you have to supply the cluste
 </pre></div>
 
 
+<p>This creates the <code>StorageClass</code> named <code>glusterfs-storage-slow</code> and because we copied the settings from the first one it&rsquo;s now also set as system-wide default (yes, OpenShift allows you to do that).</p>
+<p>&#8680; Use the <code>oc patch</code> command to fix this:</p>
+<div class="codehilite"><pre><span></span>oc patch storageclass glusterfs-storage-slow \
+-p &#39;{&quot;metadata&quot;: {&quot;annotations&quot;: {&quot;storageclass.kubernetes.io/is-default-class&quot;: &quot;false&quot;}}}&#39;
+</pre></div>
+
+
 <p>&#8680; Display all <code>StorageClass</code> objects to verify:</p>
 <div class="codehilite"><pre><span></span>oc get storageclass
 </pre></div>
 
 
 <p>That&rsquo;s it. You now have 2 <code>StorageClass</code> definitions, one for each CNS cluster, managed by the same <code>heketi</code> instance.</p>
-<div class="codehilite"><pre><span></span>NAME                     TYPE
-glusterfs-storage        kubernetes.io/glusterfs
-glusterfs-storage-slow   kubernetes.io/glusterfs
+<div class="codehilite"><pre><span></span>NAME                          TYPE
+glusterfs-storage (default)   kubernetes.io/glusterfs
+glusterfs-storage-slow        kubernetes.io/glusterfs
 </pre></div>
 
 
@@ -1129,7 +1136,7 @@ Device 7736bd0cb6a84540860303a6479cacb2 deleted
 </pre></div>
 
 
-<p>&#8680; Since the nodes have no devices anymore we can delete those as well:</p>
+<p>&#8680; Since the nodes have no devices anymore we can delete those as well (you can&rsquo;t delete a node with a device still attached):</p>
 <div class="codehilite"><pre><span></span>for node in ${NODES} ; do heketi-cli node delete $node ; done
 </pre></div>
 
@@ -1141,7 +1148,7 @@ Node fd6ddca52c788e2d764fada1f4da2ce4 deleted
 </pre></div>
 
 
-<p>&#8680; Finally, without any nodes, you can also delete the second cluster:</p>
+<p>&#8680; Finally, without any nodes in the second cluster, you can also delete it (it won&rsquo;t work if there are nodes left):</p>
 <div class="codehilite"><pre><span></span>heketi-cli cluster delete $SECOND_CNS_CLUSTER
 </pre></div>
 
@@ -1175,7 +1182,7 @@ oc label node/node-6.lab glusterfs-
 <p class="admonition-title">Note</p>
 <p>It can take up to 2 minutes for the pods to terminate.</p>
 </div>
-<p>You should be back down to 3 GlusterFS pods.</p>
+<p>You should be back down to 3 GlusterFS pods, e.g.</p>
 <div class="codehilite"><pre><span></span>NAME              READY     STATUS    RESTARTS   AGE       IP           NODE
 glusterfs-5rc2g   1/1       Running   0          5h        10.0.2.201   node-1.lab
 glusterfs-jbvdk   1/1       Running   0          5h        10.0.3.202   node-2.lab
@@ -1321,7 +1328,6 @@ glusterfs-5rc2g   1/1       Running   0          5h        10.0.2.101   node-1.l
 glusterfs-8nrn0   1/1       Running   0          4m        10.0.2.104   node-4.lab
 glusterfs-jbvdk   1/1       Running   0          5h        10.0.3.102   node-2.lab
 glusterfs-rchtr   1/1       Running   0          5h        10.0.4.103   node-3.lab
-heketi-1-tn0s9    1/1       Running   0          5h        10.130.2.3   node-6.lab
 </pre></div>
 
 
@@ -1527,7 +1533,8 @@ We will simulate this use case now.</p>
 </pre></div>
 
 
-<p>Let&rsquo;s programmatically determine and safe the relevant information: the <code>PV</code> name, the respective GlusterFS volume&rsquo;s, the name of the GlusterFS pod on the node <code>node-6.lab</code> and that node&rsquo;s id in <code>heketi</code> and IP address in environment variables:</p>
+<p>Let&rsquo;s programmatically determine and safe the relevant information so you don&rsquo;t have to type all this stuff.<br />
+We need: the <code>PV</code> name, the respective GlusterFS volume&rsquo;s, the name of the GlusterFS pod on the node <code>node-6.lab</code> and that node&rsquo;s id in <code>heketi</code> and IP address in environment variables:</p>
 <div class="codehilite"><pre><span></span>LARGE_PV=$(oc get pvc/my-large-container-store -o jsonpath=&quot;{.spec.volumeName}&quot;)
 LARGE_GLUSTER_VOLUME=$(oc get pv/$LARGE_PV -o jsonpath=&quot;{.spec.glusterfs.path}&quot;)
 POD_NUMBER_SIX=$(oc get pods -n app-storage -o jsonpath=&#39;{.items[?(@.status.hostIP==&quot;10.0.4.206&quot;)].metadata.name}&#39;)
@@ -1594,8 +1601,9 @@ echo $BRICK_DIR
 <p class="admonition-title">Note</p>
 <p>The device might be different for you. This is subject to heketi&rsquo;s dynamic scheduling.</p>
 </div>
+<p>We will now proceed to disable and delete this device. For that we have to find and use it&rsquo;s UUID in <code>heketi</code>.</p>
 <p>Safe the <code>heketi</code> device&rsquo;s ID from the brick on <code>node-6.lab</code> using the following definition of an environment variable, again by leveraging <code>jq</code> to parse the JSON output of <code>heketi topology info</code>:</p>
-<div class="codehilite"><pre><span></span>FAILED_DEVICE_ID=$(heketi-cli topology info --json | \ jq &quot;.clusters[] | select(.id==\&quot;$FIRST_CNS_CLUSTER\&quot;) | .nodes[] | select(.hostnames.manage[0] == \&quot;node-6.lab\&quot;) | .devices &quot; | jq -r &quot;.[] | select (.bricks[0].path ==\&quot;$BRICK_DIR\&quot;) | .id&quot;)
+<div class="codehilite"><pre><span></span>FAILED_DEVICE_ID=$(heketi-cli topology info --json | jq &quot;.clusters[] | select(.id==\&quot;$FIRST_CNS_CLUSTER\&quot;) | .nodes[] | select(.hostnames.manage[0] == \&quot;node-6.lab\&quot;) | .devices &quot; | jq -r &quot;.[] | select (.bricks[0].path ==\&quot;$BRICK_DIR\&quot;) | .id&quot;)
 </pre></div>
 
 

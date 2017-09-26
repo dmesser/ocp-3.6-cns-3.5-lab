@@ -597,12 +597,15 @@ registry-claim   Bound     registry-volume   5Gi        RWX                     
 </pre></div>
 
 
+<p>In the OpenShift UI you will see the new Registry configuration when you log on as <code>operator</code> and check the <strong>Overview</strong> page in the <code>default</code> namespace:</p>
+<p><a href="../img/registry_3way_dc.png"><img alt="Registry Deployment Scaled" src="../img/registry_3way_dc.png" /></a></p>
 <p><code>openshift-ansible</code> generated an independent set of GlusterFS pods, a separate instance of <code>heketi</code> and a separate <code>StorageClass</code> as well. These components were configured to use the <code>infra-storage</code> namespace. Refer to Module 2 to get an understanding of those components if you just skipped to here.</p>
 <p>&#8680; Verify there are at least 3 GlusterFS pods and one <code>heketi</code> pod:</p>
 <div class="codehilite"><pre><span></span>oc get pods -n infra-storage
 </pre></div>
 
 
+<p>There is now dedicated a CNS stack for OpenShift Infrastructure:</p>
 <div class="codehilite"><pre><span></span>NAME                       READY     STATUS    RESTARTS   AGE
 glusterfs-registry-1jct8   1/1       Running   0          33m
 glusterfs-registry-jp92q   1/1       Running   0          33m
