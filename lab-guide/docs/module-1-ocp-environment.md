@@ -36,14 +36,24 @@ In the previous chapter you logged on to the master node as `ec2-user`.
 
 Use `r3dh4t` as the password.
 
-    Authentication required for https://master.lab:8443 (openshift)
-    Username: operator
-    Password:
-    Login successful.
+~~~~
+Authentication required for https://master.lab:8443 (openshift)
+Username: operator
+Password:
+Login successful.
 
-    You don't have any projects. You can try to create a new project, by running
+You have access to the following projects and can switch between them with 'oc project <projectname>':
 
-        oc new-project <projectname>
+  * default
+    kube-public
+    kube-system
+    logging
+    management-infra
+    openshift
+    openshift-infra
+
+Using project "default".
+~~~~
 
 &#8680; Switch to the `default` namespace:
 
