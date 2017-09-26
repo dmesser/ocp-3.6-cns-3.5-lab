@@ -324,7 +324,7 @@ First, the client needs to know the heketi API URL above and the password for th
 
 <a name="heketi-env-setup"></a>
 
-&#8680; View the generated `admin` password for *heketi* from the pod configuration:
+&#8680; View the generated `admin` password for *heketi* from the pod configuration using **YOUR specific pod name**, e.g.
 
     oc describe pod/heketi-storage-1-h27cg | grep HEKETI_ADMIN_KEY
 

@@ -449,3 +449,18 @@ logging-fluentd-wf3lr   1/1       Running   0          5m
 ~~~~
 
 Switch to the OpenShift UI and as `operator` select the `logging` project. In the **Overview** section you'll a `Route` for the Kibana deployment created. **Click** the link on the `Route` to open the Kibana UI in a new browser tab and verify the Kibana deployment is healthy.
+
+[![OpenShift Logging Pods](img/kibana_pod_ready.png)](img/kibana_pod_ready.png)
+
+The public URL for the Kibana UI will be visible in the **ROUTES** section of the `logging-kibana` deployment.
+
+[![OpenShift Logging UI](img/kibana_ui_loading.png)](img/kibana_ui_loading.png)
+
+When you are logging on for the first time Kibana will ask for credentials.
+Use your OpenShift `operator` account with the password `r3dh4t`.
+
+After logging in you will see that Kibana has started indexing the database, which is hosted on CNS by ElasticSearch.
+
+[![OpenShift Logging Indexing](img/kibana_es_indexing.png)](img/kibana_es_indexing.png)
+
+This shows that ElasticSearch search running of CNS-provided `PersistentVolume` successfully. It will take some time to complete the first indexing.
