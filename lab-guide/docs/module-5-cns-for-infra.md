@@ -424,3 +424,5 @@ This pod runs the Kibana front-end to query and search through logs:
 NAME                     READY     STATUS    RESTARTS   AGE
 logging-kibana-1-1c2dj   2/2       Running   0          11m
 ~~~~
+
+Switch to the OpenShift UI and as `operator` select the `logging` project. In the **Overview** section you'll a `Route` for the Kibana deployment created. **Click** the link on the `Route` to open the Kibana UI in a new browser tab and verify the Kibana deployment is healthy.
