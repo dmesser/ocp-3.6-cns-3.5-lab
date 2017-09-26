@@ -417,7 +417,7 @@ NAME                                      READY     STATUS    RESTARTS   AGE
 logging-es-data-master-kcbtgll3-1-vb34h   1/1       Running   0          11m
 ~~~~
 
-List the Kibana pod:
+&#8680; List the Kibana pod:
 
     oc get pods -l component=kibana
 
@@ -426,6 +426,26 @@ This pod runs the Kibana front-end to query and search through logs:
 ~~~~
 NAME                     READY     STATUS    RESTARTS   AGE
 logging-kibana-1-1c2dj   2/2       Running   0          11m
+~~~~
+
+&#8680; List all Fluentd pods:
+
+    oc get pods -l component=fluentd
+
+These pods run as part of a `DaemonSet` and are responsible for collecting and shipping the various logs from all nodes to the ElasticSearch instance.
+
+~~~~
+NAME                    READY     STATUS    RESTARTS   AGE
+logging-fluentd-3k7nh   1/1       Running   0          5m
+logging-fluentd-473cf   1/1       Running   0          4m
+logging-fluentd-9kgsv   1/1       Running   0          5m
+logging-fluentd-h8fhb   1/1       Running   0          4m
+logging-fluentd-pb6h8   1/1       Running   0          4m
+logging-fluentd-q6lv4   1/1       Running   0          4m
+logging-fluentd-r455n   1/1       Running   0          4m
+logging-fluentd-v34ll   1/1       Running   0          5m
+logging-fluentd-vxnd3   1/1       Running   0          5m
+logging-fluentd-wf3lr   1/1       Running   0          5m
 ~~~~
 
 Switch to the OpenShift UI and as `operator` select the `logging` project. In the **Overview** section you'll a `Route` for the Kibana deployment created. **Click** the link on the `Route` to open the Kibana UI in a new browser tab and verify the Kibana deployment is healthy.
