@@ -120,6 +120,7 @@ infra-2.lab | SUCCESS => {
     This is a very simple lab environment :)
     There is no sophisticated external load-balancing across the infrastructure nodes in place.
     That's why the OpenShift router will run on the master node. The router will get re-deployed when executing the following playbook.
+    So making the master accept pods again we ensure the re-deployed router finds it's place again.
 
 &#8680; Run the CNS registry playbook that ships with `openshift-ansible`:
 
@@ -128,7 +129,7 @@ infra-2.lab | SUCCESS => {
 
 &#8680; Disable scheduling on the Master again:
 
-    oadm manage-node master.lab --schedulable=true
+    oadm manage-node master.lab --schedulable=false
 
 This will take about 6-7 minutes to complete.
 
