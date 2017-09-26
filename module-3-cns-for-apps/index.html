@@ -824,7 +824,7 @@ glusterfs-storage-68lxn   1/1       Running   0          23m       10.0.3.202   
 
 
 <p>Pick the first the pod in the list, in this example <em>glusterfs-storage-16pb0</em> and note it&rsquo;s host IP address.</p>
-<p>&#8680; Use the following command to conveniently safe it&rsquo;s name and host IP address in a shell variable for later use (copy &amp; paste those lines in your shell):</p>
+<p>&#8680; Use the following command to conveniently save it&rsquo;s name and host IP address in a shell variable for later use (copy &amp; paste those lines in your shell):</p>
 <div class="codehilite"><pre><span></span>FIRST_GLUSTER_POD=$(oc get pods -l glusterfs=storage-pod -o jsonpath=&quot;{.items[0].metadata.name}&quot;)
 HOST_IP=$(oc get pod/$FIRST_GLUSTER_POD -o jsonpath=&quot;{.status.hostIP}&quot;)
 echo $FIRST_GLUSTER_POD
