@@ -407,7 +407,7 @@ Resources:
         - cidr
       AvailabilityZone:
         Fn::Select:
-          - 0
+          - 1
           - Fn::GetAZs: ""
       Tags:
       - Key: Application
@@ -434,7 +434,7 @@ Resources:
         - cidr
       AvailabilityZone:
         Fn::Select:
-          - 0
+          - 2
           - Fn::GetAZs: ""
       Tags:
       - Key: Application
