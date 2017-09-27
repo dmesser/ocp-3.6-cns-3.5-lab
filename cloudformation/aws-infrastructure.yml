@@ -420,7 +420,7 @@ Resources:
       SubnetId:
         Ref: PrivateSubnet5
       RouteTableId:
-        Ref: PrivateRouteTable1
+        Ref: PrivateRouteTable2
 
   PrivateSubnet6:
     Type: AWS::EC2::Subnet
@@ -447,7 +447,7 @@ Resources:
       SubnetId:
         Ref: PrivateSubnet6
       RouteTableId:
-        Ref: PrivateRouteTable1
+        Ref: PrivateRouteTable3
 
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
