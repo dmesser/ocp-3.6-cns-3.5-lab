@@ -125,6 +125,12 @@ Mappings:
       cidr: 10.0.3.0/24
     private3:
       cidr: 10.0.4.0/24
+    private4:
+      cidr: 10.0.5.0/24
+    private5:
+      cidr: 10.0.6.0/24
+    private6:
+      cidr: 10.0.7.0/24
 
 Resources:
 
@@ -362,6 +368,87 @@ Resources:
       RouteTableId:
         Ref: PrivateRouteTable3
 
+  PrivateSubnet4:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - private4
+        - cidr
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateSubnetRouteTableAssociation4:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet4
+      RouteTableId:
+        Ref: PrivateRouteTable1
+
+  PrivateSubnet5:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - private5
+        - cidr
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateSubnetRouteTableAssociation5:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet5
+      RouteTableId:
+        Ref: PrivateRouteTable1
+
+  PrivateSubnet6:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::FindInMap:
+        - Subnet2Cidr
+        - private6
+        - cidr
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      Tags:
+      - Key: Application
+        Value:
+          Ref: AWS::StackId
+
+  PrivateSubnetRouteTableAssociation6:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet6
+      RouteTableId:
+        Ref: PrivateRouteTable1
+
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -589,9 +676,9 @@ Resources:
                   ${AppNode1Interface.PrimaryPrivateIpAddress}      node-1.lab         node-1
                   ${AppNode2Interface.PrimaryPrivateIpAddress}      node-2.lab         node-2
                   ${AppNode3Interface.PrimaryPrivateIpAddress}      node-3.lab         node-3
-                  ${AppNode4Interface.PrimaryPrivateIpAddress}      node-4.lab         node-4
-                  ${AppNode5Interface.PrimaryPrivateIpAddress}      node-5.lab         node-5
-                  ${AppNode6Interface.PrimaryPrivateIpAddress}      node-6.lab         node-6
+                  ${AppNode4Interface1.PrimaryPrivateIpAddress}      node-4.lab         node-4
+                  ${AppNode5Interface1.PrimaryPrivateIpAddress}      node-5.lab         node-5
+                  ${AppNode6Interface1.PrimaryPrivateIpAddress}      node-6.lab         node-6
                   ${MirrorNodeInterface.PrimaryPrivateIpAddress}      mirror.lab         mirror
                 path: /etc/hosts
 
@@ -637,9 +724,9 @@ Resources:
                   node-1.lab openshift_hostname=node-1.lab openshift_ip=${AppNode1Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-2.lab openshift_hostname=node-2.lab openshift_ip=${AppNode2Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-3.lab openshift_hostname=node-3.lab openshift_ip=${AppNode3Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                 path: /etc/ansible/hosts
 
               - content: |
@@ -692,9 +779,9 @@ Resources:
                   node-1.lab openshift_hostname=node-1.lab openshift_ip=${AppNode1Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-2.lab openshift_hostname=node-2.lab openshift_ip=${AppNode2Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-3.lab openshift_hostname=node-3.lab openshift_ip=${AppNode3Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
 
                   [glusterfs_registry]
                   infra-1.lab glusterfs_ip=${InfraNode1Interface.PrimaryPrivateIpAddress} glusterfs_zone=1 glusterfs_devices='[ "/dev/xvdc" ]'
@@ -751,8 +838,8 @@ Resources:
                   node-2.lab openshift_hostname=node-2.lab openshift_ip=${AppNode2Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-3.lab openshift_hostname=node-3.lab openshift_ip=${AppNode3Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
 
                   [glusterfs]
                   node-1.lab glusterfs_ip=${AppNode1Interface.PrimaryPrivateIpAddress} glusterfs_zone=1 glusterfs_devices='[ "/dev/xvdc" ]'
@@ -776,10 +863,7 @@ Resources:
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=mirror.lab"
               - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
               - ansible masters,nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
-              - ansible all -m shell -a "modprobe dm-thin-pool"
-              - "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml ; /opt/aws/bin/cfn-signal -e $? '${OpenShiftInstallerHandle}'"
-              - oc --config=/home/ec2-user/.kube/config adm policy add-cluster-role-to-user cluster-admin operator
-              - oadm --config=/home/ec2-user/.kube/config manage-node master.lab --schedulable=false
+              - ansible all -m shell -a "modprobe dm-thin-pool
 
   OpenShiftInstallerHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
@@ -1055,7 +1139,7 @@ Resources:
       - Key: Name
         Value: 'node-3'
 
-  AppNode4Interface:
+  AppNode4Interface1:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -1067,6 +1151,19 @@ Resources:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet1
       PrivateIpAddress: 10.0.2.204
+
+  AppNode4Interface2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet4
+      PrivateIpAddress: 10.0.5.204
 
   AppNode4:
     Type: AWS::EC2::Instance
@@ -1088,8 +1185,10 @@ Resources:
             VolumeType: 'st1'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref AppNode4Interface
+      - NetworkInterfaceId: !Ref AppNode4Interface1
         DeviceIndex: '0'
+      - NetworkInterfaceId: !Ref AppNode4Interface2
+        DeviceIndex: '1'
       Tags:
       - Key: Application
         Value:
@@ -1097,7 +1196,7 @@ Resources:
       - Key: Name
         Value: 'node-4'
 
-  AppNode5Interface:
+  AppNode5Interface1:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -1109,6 +1208,19 @@ Resources:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet2
       PrivateIpAddress: 10.0.3.205
+
+  AppNode5Interface2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet5
+      PrivateIpAddress: 10.0.6.205
 
   AppNode5:
     Type: AWS::EC2::Instance
@@ -1130,8 +1242,10 @@ Resources:
             VolumeType: 'st1'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref AppNode5Interface
+      - NetworkInterfaceId: !Ref AppNode5Interface1
         DeviceIndex: '0'
+      - NetworkInterfaceId: !Ref AppNode5Interface2
+        DeviceIndex: '1'
       Tags:
       - Key: Application
         Value:
@@ -1139,7 +1253,7 @@ Resources:
       - Key: Name
         Value: 'node-5'
 
-  AppNode6Interface:
+  AppNode6Interface1:
     Type: AWS::EC2::NetworkInterface
     Properties:
       Tags:
@@ -1151,6 +1265,19 @@ Resources:
         - Ref: NodeSecurityGroup
       SubnetId: !Ref PrivateSubnet3
       PrivateIpAddress: 10.0.4.206
+
+  AppNode6Interface2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Tags:
+        - Key: Application
+          Value:
+            Ref: AWS::StackId
+      SourceDestCheck: 'false'
+      GroupSet:
+        - Ref: NodeSecurityGroup
+      SubnetId: !Ref PrivateSubnet6
+      PrivateIpAddress: 10.0.7.206
 
   AppNode6:
     Type: AWS::EC2::Instance
@@ -1177,8 +1304,10 @@ Resources:
             VolumeType: 'st1'
             DeleteOnTermination: 'true'
       NetworkInterfaces:
-      - NetworkInterfaceId: !Ref AppNode6Interface
+      - NetworkInterfaceId: !Ref AppNode6Interface1
         DeviceIndex: '0'
+      - NetworkInterfaceId: !Ref AppNode6Interface2
+        DeviceIndex: '1'
       Tags:
       - Key: Application
         Value:
