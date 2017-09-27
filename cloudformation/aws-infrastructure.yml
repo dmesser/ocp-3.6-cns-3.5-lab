@@ -837,7 +837,7 @@ Resources:
                   node-1.lab openshift_hostname=node-1.lab openshift_ip=${AppNode1Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-2.lab openshift_hostname=node-2.lab openshift_ip=${AppNode2Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-3.lab openshift_hostname=node-3.lab openshift_ip=${AppNode3Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
-                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+                  node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
 
