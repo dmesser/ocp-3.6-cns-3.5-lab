@@ -726,9 +726,9 @@ Resources:
                   node-3.lab openshift_hostname=node-3.lab openshift_ip=${AppNode3Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
 
                   [crs]
-                  node-4.lab
-                  node-5.lab
-                  node-6.lab
+                  node-4.lab openshift_hostname=node-4.lab
+                  node-5.lab openshift_hostname=node-5.lab
+                  node-6.lab openshift_hostname=node-6.lab
                 path: /etc/ansible/hosts
 
               - content: |
@@ -788,9 +788,9 @@ Resources:
                   infra-3.lab glusterfs_ip=${InfraNode3Interface1.PrimaryPrivateIpAddress} glusterfs_zone=3 glusterfs_devices='[ "/dev/xvdc" ]'
 
                   [crs]
-                  node-4.lab
-                  node-5.lab
-                  node-6.lab
+                  node-4.lab openshift_hostname=node-4.lab
+                  node-5.lab openshift_hostname=node-5.lab
+                  node-6.lab openshift_hostname=node-6.lab
                 path: /etc/ansible/ocp-with-glusterfs-registry
 
               - content: |
@@ -848,9 +848,9 @@ Resources:
                   node-3.lab glusterfs_ip=${AppNode3Interface1.PrimaryPrivateIpAddress} glusterfs_zone=3 glusterfs_devices='[ "/dev/xvdc" ]'
 
                   [crs]
-                  node-4.lab
-                  node-5.lab
-                  node-6.lab
+                  node-4.lab openshift_hostname=node-4.lab
+                  node-5.lab openshift_hostname=node-5.lab
+                  node-6.lab openshift_hostname=node-6.lab
                 path: /etc/ansible/ocp-with-glusterfs
 
             runcmd:
@@ -869,7 +869,7 @@ Resources:
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=mirror.lab"
               - ansible all -m copy -a "src=/etc/hosts dest=/etc/hosts"
               - ansible all -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
-              - ansible all -m shell -a "modprobe dm-thin-pool
+              - ansible all -m shell -a "modprobe dm-thin-pool"
 
   MasterNodePublicIP:
     Type: AWS::EC2::EIP
