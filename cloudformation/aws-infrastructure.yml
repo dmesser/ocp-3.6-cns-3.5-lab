@@ -867,8 +867,8 @@ Resources:
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-5.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-6.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=mirror.lab"
-              - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
-              - ansible masters,nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
+              - ansible all -m copy -a "src=/etc/hosts dest=/etc/hosts"
+              - ansible all -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - ansible all -m shell -a "modprobe dm-thin-pool
 
   MasterNodePublicIP:
