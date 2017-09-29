@@ -727,6 +727,11 @@ Resources:
                   node-4.lab openshift_hostname=node-4.lab openshift_ip=${AppNode4Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-5.lab openshift_hostname=node-5.lab openshift_ip=${AppNode5Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-6.lab openshift_hostname=node-6.lab openshift_ip=${AppNode6Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+
+                  [crs]
+                  node-4.lab openshift_hostname=node-4.lab
+                  node-5.lab openshift_hostname=node-5.lab
+                  node-6.lab openshift_hostname=node-6.lab
                 path: /etc/ansible/hosts
 
               - content: |
@@ -787,6 +792,11 @@ Resources:
                   infra-1.lab glusterfs_ip=${InfraNode1Interface.PrimaryPrivateIpAddress} glusterfs_zone=1 glusterfs_devices='[ "/dev/xvdc" ]'
                   infra-2.lab glusterfs_ip=${InfraNode2Interface.PrimaryPrivateIpAddress} glusterfs_zone=2 glusterfs_devices='[ "/dev/xvdc" ]'
                   infra-3.lab glusterfs_ip=${InfraNode3Interface.PrimaryPrivateIpAddress} glusterfs_zone=3 glusterfs_devices='[ "/dev/xvdc" ]'
+
+                  [crs]
+                  node-4.lab openshift_hostname=node-4.lab
+                  node-5.lab openshift_hostname=node-5.lab
+                  node-6.lab openshift_hostname=node-6.lab
                 path: /etc/ansible/ocp-with-glusterfs-registry
 
               - content: |
@@ -845,6 +855,11 @@ Resources:
                   node-1.lab glusterfs_ip=${AppNode1Interface.PrimaryPrivateIpAddress} glusterfs_zone=1 glusterfs_devices='[ "/dev/xvdc" ]'
                   node-2.lab glusterfs_ip=${AppNode2Interface.PrimaryPrivateIpAddress} glusterfs_zone=2 glusterfs_devices='[ "/dev/xvdc" ]'
                   node-3.lab glusterfs_ip=${AppNode3Interface.PrimaryPrivateIpAddress} glusterfs_zone=3 glusterfs_devices='[ "/dev/xvdc" ]'
+
+                  [crs]
+                  node-4.lab openshift_hostname=node-4.lab
+                  node-5.lab openshift_hostname=node-5.lab
+                  node-6.lab openshift_hostname=node-6.lab
                 path: /etc/ansible/ocp-with-glusterfs
 
             runcmd:
@@ -861,8 +876,8 @@ Resources:
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-5.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=node-6.lab"
               - ansible localhost -m wait_for -a "port=22 timeout=600 host=mirror.lab"
-              - ansible nodes -m copy -a "src=/etc/hosts dest=/etc/hosts"
-              - ansible masters,nodes -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
+              - ansible all -m copy -a "src=/etc/hosts dest=/etc/hosts"
+              - ansible all -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - ansible all -m shell -a "modprobe dm-thin-pool
 
   MasterNodePublicIP:
