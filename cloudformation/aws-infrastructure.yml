@@ -724,6 +724,11 @@ Resources:
                   node-1.lab openshift_hostname=node-1.lab openshift_ip=${AppNode1Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-2.lab openshift_hostname=node-2.lab openshift_ip=${AppNode2Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
                   node-3.lab openshift_hostname=node-3.lab openshift_ip=${AppNode3Interface1.PrimaryPrivateIpAddress} openshift_node_labels="{'role': 'app'}"
+
+                  [crs]
+                  node-4.lab
+                  node-5.lab
+                  node-6.lab
                 path: /etc/ansible/hosts
 
               - content: |
@@ -781,6 +786,11 @@ Resources:
                   infra-1.lab glusterfs_ip=${InfraNode1Interface1.PrimaryPrivateIpAddress} glusterfs_zone=1 glusterfs_devices='[ "/dev/xvdc" ]'
                   infra-2.lab glusterfs_ip=${InfraNode2Interface1.PrimaryPrivateIpAddress} glusterfs_zone=2 glusterfs_devices='[ "/dev/xvdc" ]'
                   infra-3.lab glusterfs_ip=${InfraNode3Interface1.PrimaryPrivateIpAddress} glusterfs_zone=3 glusterfs_devices='[ "/dev/xvdc" ]'
+
+                  [crs]
+                  node-4.lab
+                  node-5.lab
+                  node-6.lab
                 path: /etc/ansible/ocp-with-glusterfs-registry
 
               - content: |
@@ -836,6 +846,11 @@ Resources:
                   node-1.lab glusterfs_ip=${AppNode1Interface1.PrimaryPrivateIpAddress} glusterfs_zone=1 glusterfs_devices='[ "/dev/xvdc" ]'
                   node-2.lab glusterfs_ip=${AppNode2Interface1.PrimaryPrivateIpAddress} glusterfs_zone=2 glusterfs_devices='[ "/dev/xvdc" ]'
                   node-3.lab glusterfs_ip=${AppNode3Interface1.PrimaryPrivateIpAddress} glusterfs_zone=3 glusterfs_devices='[ "/dev/xvdc" ]'
+
+                  [crs]
+                  node-4.lab
+                  node-5.lab
+                  node-6.lab
                 path: /etc/ansible/ocp-with-glusterfs
 
             runcmd:
