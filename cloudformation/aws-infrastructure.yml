@@ -1179,8 +1179,7 @@ Resources:
         - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
-      InstanceType:
-        Ref: NodeInstanceType
+      InstanceType: 'm4.large'
       KeyName:
         Ref: KeyName
       BlockDeviceMappings:
@@ -1188,7 +1187,7 @@ Resources:
           Ebs:
             VolumeSize: '50'
             VolumeType: 'io1'
-            Iops: 5000
+            Iops: 2500
             DeleteOnTermination: 'true'
       NetworkInterfaces:
       - NetworkInterfaceId: !Ref AppNode4Interface1
@@ -1237,8 +1236,7 @@ Resources:
         - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
-      InstanceType:
-        Ref: NodeInstanceType
+      InstanceType: 'm4.large'
       KeyName:
         Ref: KeyName
       BlockDeviceMappings:
@@ -1246,7 +1244,7 @@ Resources:
           Ebs:
             VolumeSize: '50'
             VolumeType: 'io1'
-            Iops: 5000
+            Iops: 2500
             DeleteOnTermination: 'true'
       NetworkInterfaces:
       - NetworkInterfaceId: !Ref AppNode5Interface1
@@ -1295,8 +1293,7 @@ Resources:
         - AWSRegion2OCPAMI
         - Ref: AWS::Region
         - ami
-      InstanceType:
-        Ref: NodeInstanceType
+      InstanceType: 'm4.large'
       KeyName:
         Ref: KeyName
       BlockDeviceMappings:
@@ -1304,7 +1301,7 @@ Resources:
           Ebs:
             VolumeSize: '50'
             VolumeType: 'io1'
-            Iops: 5000
+            Iops: 2500
             DeleteOnTermination: 'true'
       NetworkInterfaces:
       - NetworkInterfaceId: !Ref AppNode6Interface1
