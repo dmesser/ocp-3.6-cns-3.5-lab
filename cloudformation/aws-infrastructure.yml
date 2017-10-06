@@ -620,6 +620,7 @@ Resources:
                   openshift_docker_insecure_registries=mirror.lab:5555
                   oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
                   openshift_examples_modify_imagestreams=false
+                  openshift_hosted_modify_imagestreams=true
                   openshift_disable_check=disk_availability,memory_availability
 
                   [masters]
@@ -675,6 +676,7 @@ Resources:
                   openshift_docker_insecure_registries=mirror.lab:5555
                   oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
                   openshift_examples_modify_imagestreams=false
+                  openshift_hosted_modify_imagestreams=true
                   openshift_disable_check=disk_availability,memory_availability
 
                   [masters]
@@ -733,6 +735,7 @@ Resources:
                   openshift_docker_insecure_registries=mirror.lab:5555
                   oreg_url=mirror.lab:5555/openshift3/ose-${!component}:${!version}
                   openshift_examples_modify_imagestreams=false
+                  openshift_hosted_modify_imagestreams=true
                   openshift_disable_check=disk_availability,memory_availability
 
                   [masters]
