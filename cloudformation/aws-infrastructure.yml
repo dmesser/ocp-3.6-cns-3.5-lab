@@ -870,6 +870,17 @@ Resources:
               - ansible all -m copy -a "src=/etc/hosts dest=/etc/hosts"
               - ansible all -m shell -a "hostnamectl set-hostname {{ openshift_hostname }} --static"
               - ansible all -m shell -a "modprobe dm-thin-pool"
+              - "python /opt/aws/bin/cfn-signal -e 0 '${OpenShiftInstallerHandle}'"
+
+  OpenShiftInstallerHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  OpenShiftInstaller:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: MasterNode
+    Properties:
+      Handle: !Ref OpenShiftInstallerHandle
+      Timeout: '1800'
 
   MasterNodePublicIP:
     Type: AWS::EC2::EIP
